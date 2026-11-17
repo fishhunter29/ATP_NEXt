@@ -394,3 +394,31 @@ for (const [w, h] of [[360, 780], [1440, 900]]) {
     await page.close();
   });
 }
+
+/* ---------- light mode ---------- */
+test('light mode: tabs, small labels and pass cards', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
+  await page.goto('/trips');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  // /trips is not the Trip tab
+  await expect(page.locator('.dnav [aria-current="page"]')).toHaveCount(0);
+  // faint text (tabs, step labels) is readable on the light background: at least 4.5:1
+  const ratio = await page.evaluate(() => {
+    const rgb = (c: string) => (c.match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+    const lum = (v: number[]) => { const f = (x: number) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(v[0]) + 0.7152 * f(v[1]) + 0.0722 * f(v[2]); };
+    const probe = document.createElement('span'); probe.style.color = 'var(--faint)'; document.body.appendChild(probe);
+    const fg = lum(rgb(getComputedStyle(probe).color)); const bg = lum(rgb(getComputedStyle(document.body).backgroundColor)); probe.remove();
+    return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+  });
+  expect(ratio).toBeGreaterThanOrEqual(4.5);
+  // pass cards in a row start at the same height
+  await page.goto('/plan');
+  await page.getByRole('button', { name: /Build my trip/ }).click();
+  await page.goto('/checkout');
+  await page.fill('#ln', 'Priya Sharma'); await page.fill('#lp', '+91 9876543210'); await page.fill('#le', 'priya@example.com');
+  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
+  const tops = await page.locator('.passgrid').first().locator('.pass').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round((e.firstElementChild as HTMLElement).getBoundingClientRect().top)));
+  expect(new Set(tops).size).toBe(1);
+  await page.close();
+});

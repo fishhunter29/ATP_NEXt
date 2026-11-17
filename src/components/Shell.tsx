@@ -47,7 +47,8 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
 
   const isRoot = TABS.some((t) => t.href === path);
   const over = path === '/';
-  const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+  // a tab is active on its own page and the pages under it: /trip and /trip/edit, but not /trips
+  const active = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
   // the header shows before the engine loads; an early tap waits for it rather than being lost
   const setLang = async (l: string) => { const M = E || await loadEngine(); M.S.lang = l; commit(); };
   const cycleTheme = async () => {
