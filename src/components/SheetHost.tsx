@@ -1,18 +1,21 @@
 'use client';
-/* Bottom sheets that still come from the engine (dates & flights, price breakdown, fix menu, move/swap, help).
-   They are scheduled to become React components in stage 2; their buttons already work through the engine. */
+/* Shows the open bottom sheet. Most are React components (components/sheets); the few not yet ported
+   (move & swap, ferry added, day plan, planned-trip loader) still come from the engine and work through its actions. */
 import { useEffect } from 'react';
 import { useEngine } from '@/engine/client';
+import { REACT_SHEETS } from './sheets/Sheets';
 
-const MAP: Record<string, string> = { pkgload: 'pkgSheet', dates: 'datesSheet', help: 'helpSheet', breakdown: 'breakdownSheet', fixmenu: 'fixMenuSheet', autofix: 'autoFixSheet', ferryadded: 'ferryAddedSheet', block: 'blockSheet', move: 'moveSheet' };
+const LEGACY: Record<string, string> = { pkgload: 'pkgSheet', ferryadded: 'ferryAddedSheet', block: 'blockSheet', move: 'moveSheet' };
 
 export default function SheetHost() {
   const E = useEngine();
-  const k = E?.S.sheet;
-  const fn = k && MAP[k] && E ? E[MAP[k]] : null;
+  const k: string | null = E?.S.sheet || null;
+  const R = k ? REACT_SHEETS[k] : null;
   let html = '';
-  if (fn) { try { html = fn() || ''; } catch (e) { console.warn('sheet', k, e); } }
-  useEffect(() => { document.body.style.overflow = html ? 'hidden' : ''; }, [html]);
+  if (E && k && !R && LEGACY[k]) { try { html = E[LEGACY[k]]() || ''; } catch (e) { console.warn('sheet', k, e); } }
+  useEffect(() => { if (!R) document.body.style.overflow = html ? 'hidden' : ''; }, [html, R]);
+  if (!E || !k) return null;
+  if (R) return <R E={E} />;
   if (!html) return null;
   return <div className="sheet-host" dangerouslySetInnerHTML={{ __html: html }} />;
 }
