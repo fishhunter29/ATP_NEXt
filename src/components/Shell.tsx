@@ -3,15 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, type ReactNode } from 'react';
-import { commit, loadEngine, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
+import { commit, lang, loadEngine, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
 import { Ic, Raw } from './ui';
 import SheetHost from './SheetHost';
 
 const TABS = [
-  { href: '/', label: 'Explore', icon: 'explore' },
-  { href: '/trip', label: 'Trip', icon: 'trip' },
-  { href: '/my-trips', label: 'My trips', icon: 'ticket' },
-  { href: '/profile', label: 'Profile', icon: 'user' },
+  { href: '/', label: 'Explore', hi: 'देखें', icon: 'explore' },
+  { href: '/trip', label: 'Trip', hi: 'यात्रा', icon: 'trip' },
+  { href: '/my-trips', label: 'My trips', hi: 'मेरी यात्राएँ', icon: 'ticket' },
+  { href: '/profile', label: 'Profile', hi: 'प्रोफ़ाइल', icon: 'user' },
 ];
 
 function useTheme(theme: string | undefined) {
@@ -40,7 +40,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
   const path = usePathname();
   const router = useRouter();
   const toast = useToast();
-  const S = E?.S;
+  const S = E?.S; const L = lang(E);
   useTheme(S?.theme);
   useEffect(() => { registerNav((v) => { const r = routeFor(v); if (r && r.split('?')[0] !== window.location.pathname) router.push(r); }); }, [router]);
   useEffect(() => { document.documentElement.lang = S?.lang === 'hi' ? 'hi' : 'en'; }, [S?.lang]);
@@ -73,7 +73,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
           </Link>
           <span className="topttl" />
           <nav className="dnav" aria-label="Main">
-            {TABS.map((t) => <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>{t.label}{t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}</Link>)}
+            {TABS.map((t) => <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>{L(t.label, t.hi)}{t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}</Link>)}
           </nav>
           <div className="tools">
             <div className="lang" role="group" aria-label="Language">
@@ -92,7 +92,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
         {TABS.map((t) => (
           <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>
             <Ic n={t.icon} s={22} />
-            <span>{t.label}</span>
+            <span>{L(t.label, t.hi)}</span>
             {t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}
             {t.href === '/my-trips' && S && S.booked.length > 0 && <span className="badge">{S.booked.length}</span>}
           </Link>
@@ -100,7 +100,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
       </nav>
       <SheetHost />
       {toast && (
-        <div className="toast" role="status">{toast.undo ? <><span>{toast.text}</span><button onClick={() => { const u = toast.undo; u && u(); }}>Undo</button></> : toast.text}</div>
+        <div className="toast" role="status">{toast.undo ? <><span>{toast.text}</span><button onClick={() => { const u = toast.undo; u && u(); }}>{L('Undo', 'वापस लें')}</button></> : toast.text}</div>
       )}
     </div>
   );

@@ -363,3 +363,34 @@ test('home and island pages list day plans, and one opens its sheet', async ({ p
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('dialog').locator('.pkrow').first()).toBeVisible();
 });
+
+/* ---------- Hindi ---------- */
+for (const [w, h] of [[360, 780], [1440, 900]]) {
+  test(`Hindi: main screens switch language and fit at ${w}px`, async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    const fits = async (where: string) => expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${where} at ${w}px`).toBeLessThanOrEqual(1);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'हिं', exact: true }).click();
+    await expect(page.locator('h1')).toContainText('अंडमान');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
+    await expect(page.getByRole('link', { name: /यात्रा/ }).first()).toBeVisible();
+    await expect(page.getByText('आधे दिन और पूरे दिन की योजनाएँ')).toBeVisible();
+    await fits('home');
+    await page.getByText('नमूना यात्रा देखें').click();
+    await expect(page).toHaveURL(/\/trip$/);
+    await expect(page.locator('section.day').first()).toContainText('दिन');
+    await expect(page.getByRole('button', { name: /यात्रा सेव करें/ })).toBeVisible();
+    await fits('trip');
+    await page.getByRole('button', { name: 'बदलें' }).first().click();
+    await expect(page.getByRole('dialog', { name: 'यात्रा की तारीखें' })).toBeVisible();
+    await fits('dates sheet');
+    await page.keyboard.press('Escape');
+    await page.goto('/checkout');
+    await expect(page.getByText('मुख्य यात्री')).toBeVisible();
+    await fits('checkout');
+    // and back to English
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
+    await expect(page.getByText('Lead traveller')).toBeVisible();
+    await page.close();
+  });
+}
