@@ -37,7 +37,17 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
   const remove = () => { if (!editing) return; E.removeItem(editing.uid); commit(); E.toast('Removed from your trip'); router.push('/trip'); };
   const add = () => {
     const it = { ...c };
-    if (kind === 'ferry') it.seats = E.autoSeats({ sid: it.ref, cls: it.cls, date: it.date });
+    if (kind === 'ferry') {
+      /* same as the engine's addFerry: seats, the cab from the jetty, trim stays that no longer fit, then "what next?" */
+      const s = E.SAIL[it.ref];
+      it.seats = it.own ? [] : E.autoSeats({ sid: it.ref, cls: it.cls, date: it.date });
+      const f = E.addItem(it, true);
+      if (!it.own) { const L = E.jettyLegs(s, it.date); if (L.post) E.addItem({ kind: 'cab', ref: L.post.r.id, date: it.date, t: s.arr, for: f.uid, leg: 'post', ...(L.post.rev ? { rev: true } : {}) }, true); }
+      const tr: string[] = E.trimStays() || [];
+      E.S.lastFerry = f.uid; E.S.sheet = 'ferryadded'; E.syncTrip(); commit();
+      if (tr.length) E.toast(`Adjusted to match your ferry: ${tr.join('; ')}`);
+      return;
+    }
     E.addItem(it, true);
     const day = E.S.trip ? E.dayIdx(it.date) + 1 : 1;
     commit();

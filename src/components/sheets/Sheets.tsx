@@ -184,9 +184,67 @@ export function HelpSheet({ E }: { E: Engine }) {
   );
 }
 
+
+/* ---------------- move or swap one plan (opened from the ⋮⋮ handle) ---------------- */
+export function MoveSheet({ E }: { E: Engine }) {
+  const { S } = E; const it = S.cart.find((x: any) => x.uid === S.moveUid); const a = it && E.ACT[it.ref];
+  if (!it || !a) return null;
+  const cur = E.tm(it.t || a.t);
+  const ear = E.fitOn(it, it.date, cur, -1), lat = E.fitOn(it, it.date, cur, 1);
+  const days: { n: number; d: string; t: string }[] = [];
+  for (let n = 0; n < E.nDays(); n++) { const d = E.addD(S.trip.start, n); if (d === it.date) continue; const t = E.fitOn(it, d, cur, 0); if (t) days.push({ n, d, t }); }
+  const sw: any[] = a.meal || a.sched ? [] : E.swapsFor(it);
+  const Mv = ({ label, sub, date, t }: { label: string; sub: string; date?: string; t?: string }) => (
+    <button className="lx-mv" disabled={!t} onClick={() => t && dispatch('mvto', { date, t })}><b>{label}</b><small>{sub}</small></button>
+  );
+  return (
+    <Sheet label="Move or swap" onClose={() => close(E)}>
+      <h2>{E.shortName(a)}</h2>
+      <p className="note" style={{ marginTop: -6 }}>Now on Day {E.dayIdx(it.date) + 1}, {E.fD(it.date)} at {it.t || a.t}. We only show options that work with your ferries, opening hours and travel time.</p>
+      <div className="eyebrow">Same day</div>
+      <div className="lx-mvrow"><Mv label="Earlier" sub={ear || 'Nothing earlier fits'} date={it.date} t={ear || undefined} /><Mv label="Later" sub={lat || 'Nothing later fits'} date={it.date} t={lat || undefined} /></div>
+      <div className="eyebrow">Another day</div>
+      {days.length ? <div className="lx-mvrow wrap">{days.map((x) => <Mv key={x.d} label={`Day ${x.n + 1}`} sub={`${E.fD(x.d)} · ${x.t}`} date={x.d} t={x.t} />)}</div>
+        : <p className="note">No other day works{a.z !== 'PBL' ? `: you are on ${E.ZN[a.z].name} only on this day, or the other days are full` : ''}.</p>}
+      {sw.length > 0 && (
+        <>
+          <div className="eyebrow">Swap for something similar</div>
+          <div className="lx-mvcol">{sw.map(({ x, t }: any) => { const u = E.actUnit(x, it.date); return (
+            <button key={x.id} className="lx-sw" onClick={() => dispatch('swapact', { ref: x.id, t })}><span><b>{x.n}</b><small>{x.v || ''} · {t} · {E.durOf(x)}</small></span><span className="price">{u ? E.inr(u) : 'Free'}</span></button>
+          ); })}</div>
+        </>
+      )}
+      <div className="lx-mvrow" style={{ marginTop: 14 }}>
+        <button className="btn ghost block" onClick={() => { const uid = it.uid; S.sheet = null; commit(); dispatch('edit', { uid }); }}>Open details</button>
+        <button className="btn ghost block" style={{ color: 'var(--bad)' }} onClick={() => dispatch('mvdel')}>Remove</button>
+      </div>
+    </Sheet>
+  );
+}
+
+/* ---------------- after adding a ferry: what usually comes next ---------------- */
+export function FerryAddedSheet({ E }: { E: Engine }) {
+  const { S } = E; const it = S.cart.find((x: any) => x.uid === S.lastFerry); if (!it) return null; const s = E.SAIL[it.ref];
+  const hasRet = S.cart.some((x: any) => x.kind === 'ferry' && E.SAIL[x.ref].f === s.to && E.SAIL[x.ref].to === s.f && x.date >= it.date);
+  const hasStay = !!E.stayOn(S.cart, s.to, it.date, false);
+  const fo = E.flightOut(); const sz = E.season(it.date);
+  return (
+    <Sheet label="Ferry added" onClose={() => close(E)}>
+      <h2>{it.own ? 'Ferry added to your trip' : 'Ferry added'}</h2>
+      <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr}{it.seats && it.seats.length ? ` · seats ${it.seats.join(', ')}` : ''}</p>
+      <div className="menu">
+        {!hasStay && !(s.to === 'PBL' && fo && fo.date === it.date) && <button onClick={() => dispatch('fasheet', { go: 'stay' })}><Ic n="bed" s={22} /><div><b>Find a stay on {E.ZN[s.to].name}</b><small>Check-in {E.fD(it.date)}, {sz === 'pk' ? 'peak' : sz === 'ln' ? 'lean' : 'high'}-season prices</small></div></button>}
+        {!hasRet && s.to !== 'PBL' && <button onClick={() => dispatch('fasheet', { go: 'ret' })}><Ic n="ferry" s={22} /><div><b>{E.t('addReturn')}</b><small>{E.ZN[s.to].name} → {E.ZN[s.f].name}</small></div></button>}
+        <button onClick={() => dispatch('fasheet', { go: 'do' })}><Ic n="mask" s={22} /><div><b>Things to do on {E.ZN[s.to].name}</b><small>We check each one fits around your ferry</small></div></button>
+      </div>
+      <div className="two"><button className="btn ghost" onClick={() => close(E)}>{E.t('keep')}</button><button className="btn primary" onClick={() => dispatch('fasheet', { go: 'trip' })}>{E.t('viewTrip')}</button></div>
+    </Sheet>
+  );
+}
+
 /** Which sheets are React now. The rest still come from the engine until they are ported. */
 export const REACT_SHEETS: Record<string, (p: { E: Engine }) => ReactNode> = {
-  dates: DatesSheet, breakdown: BreakdownSheet, fixmenu: FixMenuSheet, autofix: AutoFixSheet, help: HelpSheet,
+  dates: DatesSheet, breakdown: BreakdownSheet, fixmenu: FixMenuSheet, autofix: AutoFixSheet, help: HelpSheet, move: MoveSheet, ferryadded: FerryAddedSheet,
 };
 
 export function useEngineSheet() { return useEngine(); }

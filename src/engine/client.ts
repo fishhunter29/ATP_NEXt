@@ -33,7 +33,7 @@ export function loadEngine(): Promise<Engine> {
       try { m.applyPO(); } catch {}
       lastTop = JSON.stringify((m.S.stack || [])[(m.S.stack || []).length - 1] || null);
       m.__setRender(() => { try { m.save(); } catch {} watchStack(m); notify(); });
-      m.__setToast((text: string) => showToast(text), (text: string) => showToast(text));
+      m.__setToast((text: string) => showToast(text), (text: string) => showToast(text, () => dispatch('undo')));
       E = m;
       (window as any).__ATP__ = m; // handy for scripts/photo-map.mjs and debugging
       notify();
@@ -57,7 +57,7 @@ export function showToast(text: string, undo?: () => void) {
   toastState = { id: Date.now(), text, undo };
   toastSubs.forEach((f) => f());
   const id = toastState.id;
-  setTimeout(() => { if (toastState && toastState.id === id) { toastState = null; toastSubs.forEach((f) => f()); } }, 3200);
+  setTimeout(() => { if (toastState && toastState.id === id) { toastState = null; toastSubs.forEach((f) => f()); } }, undo ? 5000 : 3200);
 }
 export function useToast(): Toast | null {
   return useSyncExternalStore((cb) => { toastSubs.add(cb); return () => { toastSubs.delete(cb); }; }, () => toastState, () => null);

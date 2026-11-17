@@ -91,7 +91,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       </nav>
       <SheetHost />
       {toast && (
-        <div className="toast" role="status">{toast.text}</div>
+        <div className="toast" role="status">{toast.undo ? <><span>{toast.text}</span><button onClick={() => { const u = toast.undo; u && u(); }}>Undo</button></> : toast.text}</div>
       )}
     </div>
   );
