@@ -25,5 +25,11 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 ## Bottom sheets
 All bottom sheets are React (`src/components/sheets/Sheets.tsx`): dates & flights, price breakdown, fix menu / auto-fix, help, move & swap, ferry added, day plans, and "replace your trip?". `S.sheet` names the open one and `SheetHost` shows it. Their buttons call the engine's named actions through `dispatch()`. Icons and the photo SVGs still come from the engine as text.
 
+## Database (Supabase)
+- Tables (`supabase/migrations/0001_bookings.sql`): `customers` (one per lead traveller, by phone), `bookings` (one paid trip, with its `ATP-XXXXXX` code, totals and the trip as sent), `booking_items` (one pass each: the QR code, vendor, sell and net price), `payment_events` (Razorpay webhook log), `partners` and `partner_users` (ferry operators, hotels, vendors and their staff), `price_overrides` (prices set by the team).
+- **Writes** happen only on the server with the service-role key (`src/lib/db.ts`). A booking is saved by the Postgres function `create_booking` in one transaction: customer, booking and passes, or nothing. A pass code made on the phone that is already taken is given a new one and the phone updates its pass.
+- **Reads** with the public key are limited by Row Level Security: a signed-in traveller sees only their own bookings and passes; partner staff see only the passes booked with them; prices are public; payment events are server-only.
+- Without the keys every route answers "not connected" and the app works as before (passes on the phone).
+
 ## Server routes (`src/app/api`)
-`/api/health`, `/api/payments/order` (Razorpay order), `/api/payments/webhook` (signature-checked), `/api/ferries/availability` (live seats go here), `/api/bookings` (saves a paid trip). Payment and database routes answer "not connected" until their keys are set.
+`/api/health` (also says whether the database and payments are connected), `/api/payments/order` (Razorpay order), `/api/payments/webhook` (signature-checked; logs every event and marks the booking paid), `/api/ferries/availability` (live seats go here), `/api/bookings` (checks and saves a paid trip). Payment and database routes answer "not connected" until their keys are set.

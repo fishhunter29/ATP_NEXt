@@ -14,3 +14,18 @@ jobs:
       - run: npm run typecheck
       - run: npx playwright install --with-deps chromium
       - run: npm test
+  db:
+    # the Supabase migration and its Row Level Security checks, on a plain Postgres 16
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env: { PGHOST: localhost, PGUSER: postgres, PGPASSWORD: postgres }
+    steps:
+      - uses: actions/checkout@v4
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/local-stubs.sql -f supabase/migrations/0001_bookings.sql -f supabase/tests/rls.sql
+      - run: psql -v ON_ERROR_STOP=1 -q -f supabase/migrations/0001_bookings.sql   # the migration is safe to run again

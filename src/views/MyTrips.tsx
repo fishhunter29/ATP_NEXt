@@ -37,7 +37,7 @@ export default function MyTrips() {
   let last: string | null = null;
   return (
     <div className="wrap"><div className="sec">
-      {paid && <div className="health ok"><span className="hi"><Ic n="check" s={18} w={2.6} /></span><span><b>Paid and confirmed</b>Your {S.booked.length} passes are saved on this phone and work offline.</span></div>}
+      {paid && <div className="health ok"><span className="hi"><Ic n="check" s={18} w={2.6} /></span><span><b>Paid and confirmed{S.bookingCode ? ` · ${S.bookingCode}` : ''}</b>Your {S.booked.length} passes are saved on this phone and work offline.</span></div>}
       {saved.length > 0 && (
         <>
           <div className="sechd"><h2>Saved itineraries</h2><span className="sub">{saved.length} on this phone</span></div>
