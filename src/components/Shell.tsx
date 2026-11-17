@@ -2,7 +2,7 @@
 /* App frame: top bar, bottom tabs, toast. Theme and language live in the engine state (saved on the phone). */
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, type ReactNode } from 'react';
+import { Suspense, useEffect, type ReactNode } from 'react';
 import { commit, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
 import { Ic, Raw } from './ui';
 import SheetHost from './SheetHost';
@@ -27,13 +27,19 @@ function useTheme(theme: string | undefined) {
   }, [theme]);
 }
 
-export default function Shell({ children }: { children: ReactNode }) {
+/* Kept in its own Suspense: reading the query string must not stop the page itself from rendering on the server
+   (Google reads that HTML). */
+function StackSync({ E }: { E: any }) {
+  const path = usePathname(); const params = useSearchParams();
+  useEffect(() => { if (E) syncStack(path, new URLSearchParams(params.toString())); }, [E, path, params]);
+  return null;
+}
+
+export default function Shell({ children, footer }: { children: ReactNode; footer?: ReactNode }) {
   const E = useEngine();
   const path = usePathname();
   const router = useRouter();
   const toast = useToast();
-  const params = useSearchParams();
-  useEffect(() => { if (E) syncStack(path, new URLSearchParams(params.toString())); }, [E, path, params]);
   const S = E?.S;
   useTheme(S?.theme);
   useEffect(() => { registerNav((v) => { const r = routeFor(v); if (r && r.split('?')[0] !== window.location.pathname) router.push(r); }); }, [router]);
@@ -53,6 +59,7 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="app" data-tod="day">
+      <Suspense fallback={null}><StackSync E={E} /></Suspense>
       {E && <Raw html={E.artDefs()} as="div" aria-hidden style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} />}
       <header className={`top${over ? ' over' : ''}`}>
         <div className="topin wrap">
@@ -65,7 +72,7 @@ export default function Shell({ children }: { children: ReactNode }) {
           </Link>
           <span className="topttl" />
           <nav className="dnav" aria-label="Main">
-            {TABS.map((t) => <button key={t.href} onClick={() => router.push(t.href)} aria-current={active(t.href) ? 'page' : 'false'}>{t.label}{t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}</button>)}
+            {TABS.map((t) => <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>{t.label}{t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}</Link>)}
           </nav>
           <div className="tools">
             <div className="lang" role="group" aria-label="Language">
@@ -79,14 +86,15 @@ export default function Shell({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main id="main">{children}</main>
+      {path !== '/checkout' && footer}
       <nav className="nav" aria-label="Main">
         {TABS.map((t) => (
-          <button key={t.href} onClick={() => router.push(t.href)} aria-current={active(t.href) ? 'page' : 'false'}>
+          <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>
             <Ic n={t.icon} s={22} />
             <span>{t.label}</span>
             {t.href === '/trip' && n > 0 && <span className="badge">{n}</span>}
             {t.href === '/my-trips' && S && S.booked.length > 0 && <span className="badge">{S.booked.length}</span>}
-          </button>
+          </Link>
         ))}
       </nav>
       <SheetHost />

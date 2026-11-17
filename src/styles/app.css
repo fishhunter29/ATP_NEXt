@@ -101,9 +101,9 @@ svg{flex:none}
 @media (min-width:1024px){
   .top .back,.top .topttl{display:none}
   .dnav{display:flex;gap:4px;margin-left:28px}
-  .dnav button{position:relative;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-pill);font-weight:600;font-size:15px;opacity:.82;transition:background .15s,opacity .15s}
-  .dnav button:hover{background:color-mix(in srgb,currentColor 9%,transparent);opacity:1}
-  .dnav button[aria-current="page"]{opacity:1;background:color-mix(in srgb,currentColor 11%,transparent)}
+  .dnav>:is(a,button){text-decoration:none;position:relative;display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--r-pill);font-weight:600;font-size:15px;opacity:.82;transition:background .15s,opacity .15s}
+  .dnav>:is(a,button):hover{background:color-mix(in srgb,currentColor 9%,transparent);opacity:1}
+  .dnav>:is(a,button)[aria-current="page"]{opacity:1;background:color-mix(in srgb,currentColor 11%,transparent)}
   .dnav .badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:var(--surface);font-size:12px;font-weight:800;display:grid;place-items:center}
   .dnav .badge.bad{background:var(--bad)}
   .tripbtn{display:flex;align-items:center;gap:10px;min-height:46px;padding:0 18px 0 14px;border-radius:var(--r-pill);background:var(--cta);color:var(--cta-ink);font-weight:700;font-size:15px;box-shadow:0 10px 22px -10px var(--cta-glow);transition:transform .15s var(--ease)}
@@ -124,8 +124,8 @@ main.enter > *{animation:rise .45s var(--ease) both}
 
 /* ---------- mobile tab dock ---------- */
 .nav{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);width:calc(100% - 24px);max-width:440px;z-index:45;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);border:1px solid var(--line);border-radius:24px;box-shadow:var(--e-float);display:grid;grid-template-columns:repeat(4,1fr);padding:5px}
-.nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:54px;border-radius:19px;font-size:12px;font-weight:700;color:var(--faint);position:relative;transition:color .2s,background .2s}
-.nav button[aria-current="page"]{color:var(--brand);background:var(--brand-soft)}
+.nav>:is(a,button){text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:54px;border-radius:19px;font-size:12px;font-weight:700;color:var(--faint);position:relative;transition:color .2s,background .2s}
+.nav>:is(a,button)[aria-current="page"]{color:var(--brand);background:var(--brand-soft)}
 .nav .badge{position:absolute;top:5px;left:calc(50% + 8px);min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--cta);color:var(--cta-ink);font-size:11.5px;display:grid;place-items:center;font-weight:800;border:2px solid var(--surface)}
 .nav .badge.bad{background:var(--bad);color:var(--surface)}
 .nav .badge.bump{animation:bump .5s var(--ease)}
@@ -1065,8 +1065,8 @@ body:has(.cta) .toast{bottom:calc(160px + env(safe-area-inset-bottom,0px))}
 .lx-starter{margin-top:-118px}
 .lx-entry{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-bottom:10px;padding-bottom:2px}
 .lx-entry::-webkit-scrollbar{display:none}
-.lx-entry button{flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;background:rgba(10,19,30,.55);color:#fff;font-weight:700;font-size:14.5px;letter-spacing:.02em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22)}
-.lx-entry button:hover{background:rgba(10,19,30,.78)}
+.lx-entry :is(a,button){flex:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border-radius:8px;background:rgba(10,19,30,.55);color:#fff;font-weight:700;font-size:14.5px;letter-spacing:.02em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.22)}
+.lx-entry :is(a,button):hover{background:rgba(10,19,30,.78)}
 .lx-starter .starter-card{border-radius:12px}
 .st-alt .link{margin-left:auto}
 /* island cards replace the map */
@@ -1446,8 +1446,8 @@ h1,h2,h3,.hero h1,.sechd h2,.pd-title h1,.triphd h1,.empty h2,.banner h2,.storeh
 .lx-hero .eyebrow{color:rgba(255,255,255,.85)}
 .lx-hero .eyebrow i{background:#2BC4B4;box-shadow:0 0 0 4px rgba(43,196,180,.3)}
 .lx-starter{position:relative;z-index:3;margin-top:-330px}
-.lx-entry button{border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
-.lx-entry button:hover{background:rgba(255,255,255,.24)}
+.lx-entry :is(a,button){border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+.lx-entry :is(a,button):hover{background:rgba(255,255,255,.24)}
 .lx-starter .starter-card{border-radius:28px;background:rgba(8,28,36,.5);border:1px solid rgba(255,255,255,.26);-webkit-backdrop-filter:blur(28px) saturate(140%);backdrop-filter:blur(28px) saturate(140%);box-shadow:0 30px 60px -30px rgba(0,0,0,.6);color:#fff}
 .lx-starter .st-f{background:rgba(255,255,255,.12);color:#fff}
 .lx-starter .st-f:hover{background:rgba(255,255,255,.2)}
@@ -1554,9 +1554,9 @@ body.lx-co .nav{background:rgba(4,22,32,.55);-webkit-backdrop-filter:blur(24px);
 .lx-entry [data-v="pkgs"]{--k:var(--k-trip)}
 .lx-entry [data-v="adv"][data-k="scuba"]{--k:var(--k-adv)}
 /* chips on the home photo */
-.lx-entry button{border-color:color-mix(in srgb,var(--k,#fff) 60%,transparent);background:color-mix(in srgb,var(--k,#fff) 22%,rgba(8,28,36,.35))}
-.lx-entry button svg{color:var(--k,#fff)}
-.lx-entry button:hover{background:color-mix(in srgb,var(--k,#fff) 34%,rgba(8,28,36,.35))}
+.lx-entry :is(a,button){border-color:color-mix(in srgb,var(--k,#fff) 60%,transparent);background:color-mix(in srgb,var(--k,#fff) 22%,rgba(8,28,36,.35))}
+.lx-entry :is(a,button) svg{color:var(--k,#fff)}
+.lx-entry :is(a,button):hover{background:color-mix(in srgb,var(--k,#fff) 34%,rgba(8,28,36,.35))}
 
 /* ===================== TRIP, FINAL (canvas "Trip, final") ===================== */
 :root{--c-ferry:#5AB8F5;--c-boat:#3DD6D0;--c-cab:#FF8A65;--c-stay:#F5B841;--c-do:#5BD69A;--c-adv:#F48FB1;--c-meal:#F7E06B;--c-shop:#C8A2FF;--c-ok:#5BD69A;--c-wait:#F5B841;
@@ -1873,3 +1873,15 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 @media (min-width:1024px){ .tp + .cta{display:none} }
 .co-paybtn{display:none}
 @media (min-width:1024px){ .co-cta{display:none} .co-paybtn{display:flex;margin-top:12px} }
+/* site footer: an index of islands, ferries and trips (server-rendered, for people and for Google) */
+.sitefoot{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+.sitefoot .sf-brand{display:flex;flex-direction:column;gap:8px;max-width:46ch}
+.sitefoot .sf-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 16px}
+.sitefoot .sf-cols div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sitefoot .sf-cols b{color:var(--ink);font-size:13px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.sitefoot .sf-cols a{text-decoration:none;min-height:32px;display:flex;align-items:center;overflow-wrap:anywhere}
+.sitefoot .sf-cols a:hover{color:var(--ink);text-decoration:underline}
+.sitefoot .sf-legal{font-size:13px}
+@media (min-width:1024px){.sitefoot{padding-bottom:28px}.sitefoot .sf-cols{grid-template-columns:repeat(4,minmax(0,1fr))}}
+:where(a.lrow,a.sc,a.pkg,a.sig,a.lx-isle,a.lx-chtile,.lx-entry a){text-decoration:none}
+:where(a.btn){text-decoration:none}

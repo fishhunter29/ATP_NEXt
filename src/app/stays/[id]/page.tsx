@@ -2,19 +2,23 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import AddPanel from '@/components/AddPanel';
-import { HOTELS, ZN, hotelFrom, inr, slug, unslug } from '@/lib/catalogue';
+import { HOTELS, ZN, hotelFrom, inr, slug, unslug, zonePhoto } from '@/lib/catalogue';
+import JsonLd from '@/components/seo/JsonLd';
+import { abs, crumbs, pageMeta } from '@/lib/seo';
 
 export function generateStaticParams() { return HOTELS.map((h) => ({ id: slug(h.id) })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params; const h = HOTELS.find((x) => x.id === unslug(id)); if (!h) return {};
-  return { title: `${h.n}, ${ZN[h.z]?.name}`, description: `${h.n}: ${h.t} stay on ${ZN[h.z]?.name}, Andaman. Rooms from ${inr(hotelFrom(h))} a night. Book it with your ferries and transfers in one plan.`, alternates: { canonical: `/stays/${id}` } };
+  /* no photo of the hotel itself: the island's photo is used for link previews */
+  return pageMeta({ title: `${h.n}, ${ZN[h.z]?.name}`, description: `${h.n}: ${h.t} stay on ${ZN[h.z]?.name}, Andaman${h.rt ? `, rated ${h.rt} on Google` : ''}. Rooms from ${inr(hotelFrom(h))} a night. Book it with your ferries and transfers in one plan.`, path: `/stays/${id}`, image: `/img/f/${zonePhoto(h.z)}.webp` });
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const h = HOTELS.find((x) => x.id === unslug(id)); if (!h) notFound();
   const z = ZN[h.z];
-  const ld = { '@context': 'https://schema.org', '@type': 'LodgingBusiness', name: h.n, address: { '@type': 'PostalAddress', addressLocality: z?.name, addressRegion: 'Andaman and Nicobar Islands', addressCountry: 'IN' }, priceRange: `${inr(hotelFrom(h))}+`, aggregateRating: h.rt ? { '@type': 'AggregateRating', ratingValue: h.rt, reviewCount: h.rv || 1 } : undefined };
+  /* Google ratings are shown on the page but not marked up: Google does not allow ratings taken from another site in review markup */
+  const ld = { '@context': 'https://schema.org', '@type': 'LodgingBusiness', name: h.n, url: abs(`/stays/${id}`), address: { '@type': 'PostalAddress', addressLocality: z?.name, addressRegion: 'Andaman and Nicobar Islands', addressCountry: 'IN' }, containedInPlace: { '@type': 'Place', name: `${z?.name}, Andaman and Nicobar Islands` }, priceRange: `${inr(hotelFrom(h))}+ a night`, checkinTime: '12:00', checkoutTime: '10:00' };
   return (
     <>
       <div className="wrap pg-plain"><span className="eyebrow">{h.t} stay · {z?.name}</span><h1>{h.n}</h1>{h.rt && <span className="muted">★ {h.rt} on Google{h.rv ? ` · ${h.rv.toLocaleString('en-IN')} reviews` : ''}</span>}</div>
@@ -31,7 +35,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
         <aside><Suspense><AddPanel kind="stay" id={h.id} /></Suspense></aside>
       </div></div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <JsonLd data={[ld, crumbs([['Home', '/'], ['Stays', '/stays'], [z?.name || 'Island', `/islands/${slug(h.z)}`], [h.n, `/stays/${id}`]])]} />
     </>
   );
 }

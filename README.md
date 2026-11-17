@@ -17,7 +17,7 @@ Plan and book an Andaman trip as one itinerary: ferries, stays, cabs and things 
 Every pull request gets its own preview link. Merging to `main` updates the live site.
 
 ## Check it
-- `npm test`: builds the site and runs the phone tests (pages open, example trip, build → pay → passes, add/change/remove, Google pages).
+- `npm test`: builds the site and runs the tests: pages open, example trip, build → pay → passes, add/change/remove, sheets, and the Google checks (`tests/seo.spec.ts`: full server HTML, titles, canonicals, structured data, sitemap, no sideways scrolling at 360px and 1440px).
 - `npm run typecheck`: TypeScript.
 GitHub runs both on every change (`.github/workflows/ci.yml`).
 
