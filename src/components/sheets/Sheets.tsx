@@ -3,7 +3,7 @@
    ferry added, day plans and the planned-trip loader.
    They read the trip from the engine and call its functions; nothing here is HTML text any more. */
 import { useEffect, useState, type ReactNode } from 'react';
-import { commit, dispatch, useEngine, type Engine } from '@/engine/client';
+import { commit, dispatch, lang, useEngine, type Engine } from '@/engine/client';
 import { Ic, Raw } from '../ui';
 
 export function close(E: Engine) { E.S.sheet = null; commit(); }
@@ -26,6 +26,7 @@ export function Sheet({ label, onClose, children }: { label: string; onClose: ()
 
 /* ---------------- dates, travellers and flights ---------------- */
 export function DatesSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const { S, D } = E;
   const w = S.win || (S.trip ? { start: S.trip.start, end: S.trip.end } : { start: E.SAMPLE0, end: E.addD(E.SAMPLE0, 5) });
   const n0 = Math.max(1, Math.round((E.pDate(w.end) - E.pDate(w.start)) / 864e5));
@@ -43,80 +44,81 @@ export function DatesSheet({ E }: { E: Engine }) {
   const N = (v: number) => Math.max(1, Math.min(20, v));
 
   const save = () => {
-    if (!start) { E.toast('Pick the day you land'); return; }
+    if (!start) { E.toast(tr('Pick the day you land', 'पहुँचने का दिन चुनें')); return; }
     const before = E.pax();
     const pkP = S.pkg && S.cart.length && E.pkgSig() === S.pkg.sig ? E.PKGS.find((x: any) => x.id === S.pkg.id) : null; // an untouched ready-made trip is rebuilt around the new dates
     if (S.win && S.win.start !== start && S.cart.length && !pkP) {
       const delta = Math.round((E.pDate(start) - E.pDate(S.win.start)) / 864e5);
       S.cart.forEach((i: any) => { i.date = E.addD(i.date, delta); });
-      setTimeout(() => E.toast(`Moved your whole plan by ${delta > 0 ? '+' : ''}${delta} day${Math.abs(delta) === 1 ? '' : 's'}`), 80);
+      setTimeout(() => E.toast(tr(`Moved your whole plan by ${delta > 0 ? '+' : ''}${delta} day${Math.abs(delta) === 1 ? '' : 's'}`, `पूरी योजना ${delta > 0 ? '+' : ''}${delta} दिन खिसकाई गई`)), 80);
     }
     S.win = { start, end }; S.datesAssumed = false;
     S.pax = { adults, kids, infants, ages: ages.slice(0, kids), sen };
     if (E.pax() !== before) {
       let n = 0; S.cart.filter((i: any) => i.kind === 'ferry' && !i.own).forEach((i: any) => { i.seats = E.autoSeats({ sid: i.ref, cls: i.cls, date: i.date }); n++; });
       S.cart.filter((i: any) => i.kind === 'act').forEach((i: any) => { delete i.pa; delete i.pk; });
-      if (n) setTimeout(() => E.toast(`Ferry seats updated for ${E.pax()} travellers`), 50);
+      if (n) setTimeout(() => E.toast(tr(`Ferry seats updated for ${E.pax()} travellers`, `${E.pax()} यात्रियों के लिए फ़ेरी सीटें बदली गईं`)), 50);
     }
     S.fin = fin ? { no: fin, date: start } : null; S.fout = fout ? { no: fout, date: end } : null;
     if (!S.planDate || S.planDate < start || S.planDate > end) S.planDate = start;
     if (pkP && nights >= pkP.nights) {
       S.undo = JSON.parse(JSON.stringify(S.cart)); S.cart = []; S.seq = 1; S.dismissed = {}; E.buildPkg(pkP, start); S.sheet = null; E.syncTrip(); commit();
-      E.toastUndo(fin || fout ? 'Plan fitted to your flights' : 'Plan moved to your dates'); return;
+      E.toastUndo(fin || fout ? tr('Plan fitted to your flights', 'योजना आपकी उड़ानों के हिसाब से बनी') : tr('Plan moved to your dates', 'योजना आपकी तारीखों पर ले जाई गई')); return;
     }
-    S.sheet = null; E.syncTrip(); commit(); E.toast('Dates saved');
+    S.sheet = null; E.syncTrip(); commit(); E.toast(tr('Dates saved', 'तारीखें सेव हो गईं'));
   };
 
   const Step = ({ label, v, set, min }: { label: string; v: number; set: (n: number) => void; min: number }) => (
     <div className="field"><label>{label}</label><div className="stepper">
-      <button onClick={() => set(Math.max(min, v - 1))} aria-label={`Fewer ${label}`}>−</button><span>{v}</span><button onClick={() => set(Math.min(12, v + 1))} aria-label={`More ${label}`}>+</button>
+      <button onClick={() => set(Math.max(min, v - 1))} aria-label={`${tr('Fewer', 'कम')} ${label}`}>−</button><span>{v}</span><button onClick={() => set(Math.min(12, v + 1))} aria-label={`${tr('More', 'ज़्यादा')} ${label}`}>+</button>
     </div></div>
   );
 
   return (
-    <Sheet label="Trip dates" onClose={() => close(E)}>
-      <h2>Trip dates</h2>
-      <p className="note" style={{ marginTop: -6 }}>Pick the day you land, then how many nights. Changing dates keeps your items; we re-check every timing.</p>
+    <Sheet label={tr('Trip dates', 'यात्रा की तारीखें')} onClose={() => close(E)}>
+      <h2>{tr('Trip dates', 'यात्रा की तारीखें')}</h2>
+      <p className="note" style={{ marginTop: -6 }}>{tr('Pick the day you land, then how many nights. Changing dates keeps your items; we re-check every timing.', 'पहुँचने का दिन चुनें, फिर कितनी रातें। तारीखें बदलने पर आपकी चीज़ें रहती हैं; हम हर समय दोबारा जाँचते हैं।')}</p>
       <div className="two">
-        <div className="field"><label htmlFor="ds">Arrival day</label><input id="ds" type="date" value={start} min={E.TODAY} onChange={(e) => setStart(e.target.value)} /></div>
-        <div className="field"><label>Nights</label><div className="stepper"><button onClick={() => setNights(N(nights - 1))} aria-label="One night less">−</button><span>{nights}</span><button onClick={() => setNights(N(nights + 1))} aria-label="One more night">+</button></div></div>
+        <div className="field"><label htmlFor="ds">{tr('Arrival day', 'पहुँचने का दिन')}</label><input id="ds" type="date" value={start} min={E.TODAY} onChange={(e) => setStart(e.target.value)} /></div>
+        <div className="field"><label>{tr('Nights', 'रातें')}</label><div className="stepper"><button onClick={() => setNights(N(nights - 1))} aria-label={tr('One night less', 'एक रात कम')}>−</button><span>{nights}</span><button onClick={() => setNights(N(nights + 1))} aria-label={tr('One more night', 'एक रात ज़्यादा')}>+</button></div></div>
       </div>
-      <div className="lx-nchips">{[3, 4, 5, 6, 7, 9].map((n) => <button key={n} className={`chip sm${n === nights ? ' on' : ''}`} aria-pressed={n === nights} onClick={() => setNights(n)}>{n}N / {n + 1}D</button>)}</div>
-      <p className="lx-leave"><Ic n="plane" s={14} /> Fly home <b>{E.fD(end)}</b> · {nights} night{nights > 1 ? 's' : ''}, {nights + 1} days</p>
-      <div className="three"><Step label="Adults" v={adults} set={setAdults} min={1} /><Step label="Children" v={kids} set={setKids} min={0} /><Step label="Infants" v={infants} set={setInfants} min={0} /></div>
+      <div className="lx-nchips">{[3, 4, 5, 6, 7, 9].map((n) => <button key={n} className={`chip sm${n === nights ? ' on' : ''}`} aria-pressed={n === nights} onClick={() => setNights(n)}>{tr(`${n}N / ${n + 1}D`, `${n} रात / ${n + 1} दिन`)}</button>)}</div>
+      <p className="lx-leave"><Ic n="plane" s={14} /> {tr('Fly home', 'वापसी')} <b>{E.fD(end)}</b> · {tr(`${nights} night${nights > 1 ? 's' : ''}, ${nights + 1} days`, `${nights} रातें, ${nights + 1} दिन`)}</p>
+      <div className="three"><Step label={tr('Adults', 'वयस्क')} v={adults} set={setAdults} min={1} /><Step label={tr('Children', 'बच्चे')} v={kids} set={setKids} min={0} /><Step label={tr('Infants', 'शिशु')} v={infants} set={setInfants} min={0} /></div>
       {kids > 0 && (
-        <div className="ages"><div className="field"><label>Children’s ages</label><div className="opts">
+        <div className="ages"><div className="field"><label>{tr('Children’s ages', 'बच्चों की उम्र')}</label><div className="opts">
           {Array.from({ length: kids }, (_, i) => (
-            <select key={i} className="agesel" aria-label={`Age of child ${i + 1}`} value={ages[i]} onChange={(e) => { const a = ages.slice(); a[i] = +e.target.value; setAges(a); }}>
-              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((y) => <option key={y} value={y}>{y} yrs</option>)}
+            <select key={i} className="agesel" aria-label={tr(`Age of child ${i + 1}`, `बच्चे ${i + 1} की उम्र`)} value={ages[i]} onChange={(e) => { const a = ages.slice(); a[i] = +e.target.value; setAges(a); }}>
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((y) => <option key={y} value={y}>{y} {tr('yrs', 'साल')}</option>)}
             </select>
           ))}
         </div></div></div>
       )}
       <label className="ownrow" style={{ cursor: 'pointer' }}>
-        <span style={{ flex: 1, textAlign: 'left' }}><b>Someone in the group is 60+</b><small>We’ll suggest easier-paced things and skip adventure sports</small></span>
+        <span style={{ flex: 1, textAlign: 'left' }}><b>{tr('Someone in the group is 60+', 'समूह में कोई 60+ है')}</b><small>{tr('We’ll suggest easier-paced things and skip adventure sports', 'हम आराम वाली चीज़ें सुझाएँगे और एडवेंचर स्पोर्ट्स छोड़ देंगे')}</small></span>
         <input type="checkbox" checked={sen} onChange={(e) => setSen(e.target.checked)} style={{ width: 22, height: 22, accentColor: 'var(--accent)' }} />
       </label>
-      <p className="note" style={{ marginTop: -4 }}>Children are 2–11 years; their ages decide which activities they can join. Infants under 2 travel free on ferries.</p>
-      <div className="field"><label htmlFor="fi">Flight in (optional)</label>
-        <select id="fi" value={fin} onChange={(e) => setFin(e.target.value)}><option value="">I’ll add it later</option>{arr.map((f: any) => <option key={f.no} value={f.no}>{f.no} · {f.fr.split(' (')[0]} → lands {f.arr}</option>)}</select></div>
-      <div className="field"><label htmlFor="fo">Flight out (optional)</label>
-        <select id="fo" value={fout} onChange={(e) => setFout(e.target.value)}><option value="">I’ll add it later</option>{dep.map((f: any) => <option key={f.no} value={f.no}>{f.no} · {f.dep} to {f.to.split(' (')[0]}</option>)}</select></div>
-      <p className="note">Flights help us check dive-before-flying rules and ferry connections.</p>
-      <button className="btn primary block" onClick={save}>Save</button>
-      {!(S.win && !S.datesAssumed) && <button className="btn ghost block" onClick={() => { S.datesSkipped = true; close(E); E.toast('No problem. Plan away, we will remind you later.'); }}>Skip for now</button>}
+      <p className="note" style={{ marginTop: -4 }}>{tr('Children are 2–11 years; their ages decide which activities they can join. Infants under 2 travel free on ferries.', 'बच्चे 2–11 साल के; उनकी उम्र से तय होता है कि वे किन एक्टिविटी में जा सकते हैं। 2 साल से छोटे शिशु फ़ेरी पर मुफ़्त।')}</p>
+      <div className="field"><label htmlFor="fi">{tr('Flight in (optional)', 'आने की उड़ान (ज़रूरी नहीं)')}</label>
+        <select id="fi" value={fin} onChange={(e) => setFin(e.target.value)}><option value="">{tr('I’ll add it later', 'बाद में जोड़ूँगा')}</option>{arr.map((f: any) => <option key={f.no} value={f.no}>{f.no} · {f.fr.split(' (')[0]} → {tr('lands', 'पहुँचे')} {f.arr}</option>)}</select></div>
+      <div className="field"><label htmlFor="fo">{tr('Flight out (optional)', 'जाने की उड़ान (ज़रूरी नहीं)')}</label>
+        <select id="fo" value={fout} onChange={(e) => setFout(e.target.value)}><option value="">{tr('I’ll add it later', 'बाद में जोड़ूँगा')}</option>{dep.map((f: any) => <option key={f.no} value={f.no}>{f.no} · {f.dep} → {f.to.split(' (')[0]}</option>)}</select></div>
+      <p className="note">{tr('Flights help us check dive-before-flying rules and ferry connections.', 'उड़ानों से हम उड़ान-से-पहले-डाइव के नियम और फ़ेरी कनेक्शन जाँचते हैं।')}</p>
+      <button className="btn primary block" onClick={save}>{tr('Save', 'सेव करें')}</button>
+      {!(S.win && !S.datesAssumed) && <button className="btn ghost block" onClick={() => { S.datesSkipped = true; close(E); E.toast(tr('No problem. Plan away, we will remind you later.', 'कोई बात नहीं। योजना बनाइए, हम बाद में याद दिलाएँगे।')); }}>{tr('Skip for now', 'अभी छोड़ें')}</button>}
     </Sheet>
   );
 }
 
 /* ---------------- price breakdown ---------------- */
 export function BreakdownSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const { S } = E;
   const t = (it: any) => (it.kind === 'stay' ? E.hm(E.CHECKIN) : it.kind === 'ferry' ? E.SAIL[it.ref].dep : it.t || '');
   const days: string[] = [...new Set<string>(S.cart.map((i: any) => i.date))].sort();
   return (
-    <Sheet label="Price breakdown" onClose={() => close(E)}>
-      <h2>Price breakdown</h2>
+    <Sheet label={tr('Price breakdown', 'कीमत का ब्योरा')} onClose={() => close(E)}>
+      <h2>{tr('Price breakdown', 'कीमत का ब्योरा')}</h2>
       <div className="split">
         {days.map((d) => {
           const its = S.cart.filter((i: any) => i.date === d).sort((a: any, b: any) => t(a).localeCompare(t(b)));
@@ -126,45 +128,47 @@ export function BreakdownSheet({ E }: { E: Engine }) {
               <span className="dayrow">{E.fD(d)}</span><span className="v dayrow">{E.inr(sub)}</span>
               {its.map((i: any) => { const I = E.info(i); return (
                 <div key={i.uid} style={{ display: 'contents' }}>
-                  <span>{I.title}<small className="faint" style={{ display: 'block' }}>{I.own ? 'Booked elsewhere' : I.perTxt ? I.perTxt : I.per > 1 ? `${I.per} × ${E.inr(I.unit)}` : I.sub}</small><Raw html={E.bkTag(i) || ''} style={{ display: 'contents' }} /></span>
-                  <span className="v">{I.own ? '—' : I.price == null ? 'On request' : E.inr(I.price)}</span>
+                  <span>{I.title}<small className="faint" style={{ display: 'block' }}>{I.own ? tr('Booked elsewhere', 'कहीं और बुक') : I.perTxt ? I.perTxt : I.per > 1 ? `${I.per} × ${E.inr(I.unit)}` : I.sub}</small><Raw html={E.bkTag(i) || ''} style={{ display: 'contents' }} /></span>
+                  <span className="v">{I.own ? '—' : I.price == null ? E.t('onReq') : E.inr(I.price)}</span>
                 </div>
               ); })}
             </div>
           );
         })}
-        <span className="hr" /><span>Subtotal</span><span className="v">{E.inr(E.subtotal())}</span><span>GST</span><span className="v">{E.inr(E.gstTotal())}</span>
-        <span className="hr" /><span><b>Total</b></span><span className="v" style={{ fontSize: 18 }}>{E.inr(E.total())}</span>
-        {E.onReq() > 0 && <span className="sub">{E.onReq()} item(s) priced on request are confirmed before you pay for them.</span>}
+        <span className="hr" /><span>{tr('Subtotal', 'उप-योग')}</span><span className="v">{E.inr(E.subtotal())}</span><span>GST</span><span className="v">{E.inr(E.gstTotal())}</span>
+        <span className="hr" /><span><b>{tr('Total', 'कुल')}</b></span><span className="v" style={{ fontSize: 18 }}>{E.inr(E.total())}</span>
+        {E.onReq() > 0 && <span className="sub">{tr(`${E.onReq()} item(s) priced on request are confirmed before you pay for them.`, `अनुरोध पर कीमत वाली ${E.onReq()} चीज़ें भुगतान से पहले पक्की की जाती हैं।`)}</span>}
       </div>
-      <button className="btn ghost block" onClick={() => close(E)}>Done</button>
+      <button className="btn ghost block" onClick={() => close(E)}>{tr('Done', 'हो गया')}</button>
     </Sheet>
   );
 }
 
 /* ---------------- things that do not fit: fix for me, or show me ---------------- */
 export function FixMenuSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const R = E.run(E.S.cart);
   return (
-    <Sheet label="Fix issues" onClose={() => close(E)}>
-      <h2>{R.hard} thing{R.hard > 1 ? 's' : ''} won’t work as planned</h2>
-      <p className="note" style={{ marginTop: -6 }}>We can rearrange your trip using island timing rules: move times, switch to a ferry that fits, or add the missing ferry, cab or boat. You’ll see every change and can undo it.</p>
-      <button className="btn primary block" onClick={() => dispatch('autofix')}><Ic n="check" s={18} w={2.4} /> Fix it for me</button>
-      <button className="btn ghost block" onClick={() => dispatch('firstissue')}>I’ll fix them myself</button>
+    <Sheet label={tr('Fix issues', 'समस्याएँ ठीक करें')} onClose={() => close(E)}>
+      <h2>{tr(`${R.hard} thing${R.hard > 1 ? 's' : ''} won’t work as planned`, `${R.hard} चीज़ें योजना के मुताबिक नहीं चलेंगी`)}</h2>
+      <p className="note" style={{ marginTop: -6 }}>{tr('We can rearrange your trip using island timing rules: move times, switch to a ferry that fits, or add the missing ferry, cab or boat. You’ll see every change and can undo it.', 'हम द्वीप के समय नियमों से आपकी यात्रा फिर से जमा सकते हैं: समय बदलना, फिट होने वाली फ़ेरी लेना, या छूटी फ़ेरी, कैब या नाव जोड़ना। हर बदलाव आपको दिखेगा और आप उसे वापस ले सकते हैं।')}</p>
+      <button className="btn primary block" onClick={() => dispatch('autofix')}><Ic n="check" s={18} w={2.4} /> {tr('Fix it for me', 'मेरे लिए ठीक करें')}</button>
+      <button className="btn ghost block" onClick={() => dispatch('firstissue')}>{tr('I’ll fix them myself', 'मैं खुद ठीक करूँगा')}</button>
     </Sheet>
   );
 }
 
 export function AutoFixSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const L: any[] = E.S.autoLog || []; const R = E.run(E.S.cart);
   return (
-    <Sheet label="Fixes" onClose={() => close(E)}>
-      <h2>{L.length ? `We changed ${L.length} thing${L.length > 1 ? 's' : ''}` : 'This one needs your choice'}</h2>
-      <p className="note" style={{ marginTop: -6 }}>{R.hard ? `${R.hard} still need${R.hard > 1 ? '' : 's'} you to pick. They’re marked in red.` : 'Every timing works now.'}</p>
+    <Sheet label={tr('Fixes', 'सुधार')} onClose={() => close(E)}>
+      <h2>{L.length ? tr(`We changed ${L.length} thing${L.length > 1 ? 's' : ''}`, `हमने ${L.length} चीज़ें बदलीं`) : tr('This one needs your choice', 'इसमें आपको चुनना होगा')}</h2>
+      <p className="note" style={{ marginTop: -6 }}>{R.hard ? tr(`${R.hard} still need${R.hard > 1 ? '' : 's'} you to pick. They’re marked in red.`, `${R.hard} में अभी भी आपको चुनना है। वे लाल रंग में हैं।`) : tr('Every timing works now.', 'अब हर समय ठीक बैठता है।')}</p>
       {L.length > 0 && <div className="menu">{L.map((l, i) => <div key={i} className="fixlog"><Ic n={l.icon || 'check'} s={18} /><div><b>{l.t}</b>{l.s && <small>{l.s}</small>}</div></div>)}</div>}
       <div className="two">
-        {L.length > 0 && <button className="btn ghost" onClick={() => dispatch('autofixundo')}>Undo</button>}
-        <button className="btn primary" onClick={() => (R.hard ? dispatch('firstissue') : close(E))}>{R.hard ? 'Show me' : 'Done'}</button>
+        {L.length > 0 && <button className="btn ghost" onClick={() => dispatch('autofixundo')}>{tr('Undo', 'वापस लें')}</button>}
+        <button className="btn primary" onClick={() => (R.hard ? dispatch('firstissue') : close(E))}>{R.hard ? tr('Show me', 'दिखाएँ') : tr('Done', 'हो गया')}</button>
       </div>
     </Sheet>
   );
@@ -172,15 +176,16 @@ export function AutoFixSheet({ E }: { E: Engine }) {
 
 /* ---------------- help ---------------- */
 export function HelpSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const num = process.env.NEXT_PUBLIC_WHATSAPP || '+91 00000 00000';
   return (
-    <Sheet label="Help" onClose={() => close(E)}>
-      <h2>Talk to us on WhatsApp</h2>
-      <p className="note">A local team member replies in Hindi, English, Bengali or Tamil, 7 am to 10 pm.</p>
+    <Sheet label={tr('Help', 'मदद')} onClose={() => close(E)}>
+      <h2>{tr('Talk to us on WhatsApp', 'WhatsApp पर हमसे बात करें')}</h2>
+      <p className="note">{tr('A local team member replies in Hindi, English, Bengali or Tamil, 7 am to 10 pm.', 'हमारी स्थानीय टीम हिंदी, अंग्रेज़ी, बांग्ला या तमिल में सुबह 7 से रात 10 बजे तक जवाब देती है।')}</p>
       <div className="card" style={{ flexDirection: 'row', alignItems: 'center' }}><b className="mono" style={{ flex: 1, fontSize: 17, userSelect: 'all' }}>{num}</b>
-        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast('Number copied'); }}>Copy</button></div>
-      <a className="btn primary block" href={`https://wa.me/${num.replace(/\D/g, '')}`} target="_blank" rel="noopener">Open WhatsApp</a>
-      <button className="btn ghost block" onClick={() => close(E)}>Done</button>
+        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast(tr('Number copied', 'नंबर कॉपी हो गया')); }}>{tr('Copy', 'कॉपी')}</button></div>
+      <a className="btn primary block" href={`https://wa.me/${num.replace(/\D/g, '')}`} target="_blank" rel="noopener">{tr('Open WhatsApp', 'WhatsApp खोलें')}</a>
+      <button className="btn ghost block" onClick={() => close(E)}>{tr('Done', 'हो गया')}</button>
     </Sheet>
   );
 }
@@ -188,6 +193,7 @@ export function HelpSheet({ E }: { E: Engine }) {
 
 /* ---------------- move or swap one plan (opened from the ⋮⋮ handle) ---------------- */
 export function MoveSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const { S } = E; const it = S.cart.find((x: any) => x.uid === S.moveUid); const a = it && E.ACT[it.ref];
   if (!it || !a) return null;
   const cur = E.tm(it.t || a.t);
@@ -199,25 +205,25 @@ export function MoveSheet({ E }: { E: Engine }) {
     <button className="lx-mv" disabled={!t} onClick={() => t && dispatch('mvto', { date, t })}><b>{label}</b><small>{sub}</small></button>
   );
   return (
-    <Sheet label="Move or swap" onClose={() => close(E)}>
+    <Sheet label={tr('Move or swap', 'बदलें या अदला-बदली')} onClose={() => close(E)}>
       <h2>{E.shortName(a)}</h2>
-      <p className="note" style={{ marginTop: -6 }}>Now on Day {E.dayIdx(it.date) + 1}, {E.fD(it.date)} at {it.t || a.t}. We only show options that work with your ferries, opening hours and travel time.</p>
-      <div className="eyebrow">Same day</div>
-      <div className="lx-mvrow"><Mv label="Earlier" sub={ear || 'Nothing earlier fits'} date={it.date} t={ear || undefined} /><Mv label="Later" sub={lat || 'Nothing later fits'} date={it.date} t={lat || undefined} /></div>
-      <div className="eyebrow">Another day</div>
-      {days.length ? <div className="lx-mvrow wrap">{days.map((x) => <Mv key={x.d} label={`Day ${x.n + 1}`} sub={`${E.fD(x.d)} · ${x.t}`} date={x.d} t={x.t} />)}</div>
-        : <p className="note">No other day works{a.z !== 'PBL' ? `: you are on ${E.ZN[a.z].name} only on this day, or the other days are full` : ''}.</p>}
+      <p className="note" style={{ marginTop: -6 }}>{tr(`Now on Day ${E.dayIdx(it.date) + 1}, ${E.fD(it.date)} at ${it.t || a.t}. We only show options that work with your ferries, opening hours and travel time.`, `अभी दिन ${E.dayIdx(it.date) + 1}, ${E.fD(it.date)} को ${it.t || a.t} बजे। हम सिर्फ़ वही विकल्प दिखाते हैं जो आपकी फ़ेरी, खुलने के समय और सफ़र के साथ चलें।`)}</p>
+      <div className="eyebrow">{tr('Same day', 'उसी दिन')}</div>
+      <div className="lx-mvrow"><Mv label={tr('Earlier', 'पहले')} sub={ear || tr('Nothing earlier fits', 'पहले कुछ फिट नहीं')} date={it.date} t={ear || undefined} /><Mv label={tr('Later', 'बाद में')} sub={lat || tr('Nothing later fits', 'बाद में कुछ फिट नहीं')} date={it.date} t={lat || undefined} /></div>
+      <div className="eyebrow">{tr('Another day', 'दूसरा दिन')}</div>
+      {days.length ? <div className="lx-mvrow wrap">{days.map((x) => <Mv key={x.d} label={tr(`Day ${x.n + 1}`, `दिन ${x.n + 1}`)} sub={`${E.fD(x.d)} · ${x.t}`} date={x.d} t={x.t} />)}</div>
+        : <p className="note">{tr(`No other day works${a.z !== 'PBL' ? `: you are on ${E.ZN[a.z].name} only on this day, or the other days are full` : ''}.`, `कोई दूसरा दिन नहीं चलता${a.z !== 'PBL' ? `: आप सिर्फ़ इसी दिन ${E.ZN[a.z].name} पर हैं, या बाकी दिन भरे हैं` : ''}।`)}</p>}
       {sw.length > 0 && (
         <>
-          <div className="eyebrow">Swap for something similar</div>
+          <div className="eyebrow">{tr('Swap for something similar', 'मिलती-जुलती चीज़ से बदलें')}</div>
           <div className="lx-mvcol">{sw.map(({ x, t }: any) => { const u = E.actUnit(x, it.date); return (
-            <button key={x.id} className="lx-sw" onClick={() => dispatch('swapact', { ref: x.id, t })}><span><b>{x.n}</b><small>{x.v || ''} · {t} · {E.durOf(x)}</small></span><span className="price">{u ? E.inr(u) : 'Free'}</span></button>
+            <button key={x.id} className="lx-sw" onClick={() => dispatch('swapact', { ref: x.id, t })}><span><b>{x.n}</b><small>{x.v || ''} · {t} · {E.durOf(x)}</small></span><span className="price">{u ? E.inr(u) : tr('Free', 'मुफ़्त')}</span></button>
           ); })}</div>
         </>
       )}
       <div className="lx-mvrow" style={{ marginTop: 14 }}>
-        <button className="btn ghost block" onClick={() => { const uid = it.uid; S.sheet = null; commit(); dispatch('edit', { uid }); }}>Open details</button>
-        <button className="btn ghost block" style={{ color: 'var(--bad)' }} onClick={() => dispatch('mvdel')}>Remove</button>
+        <button className="btn ghost block" onClick={() => { const uid = it.uid; S.sheet = null; commit(); dispatch('edit', { uid }); }}>{tr('Open details', 'जानकारी खोलें')}</button>
+        <button className="btn ghost block" style={{ color: 'var(--bad)' }} onClick={() => dispatch('mvdel')}>{tr('Remove', 'हटाएँ')}</button>
       </div>
     </Sheet>
   );
@@ -225,18 +231,19 @@ export function MoveSheet({ E }: { E: Engine }) {
 
 /* ---------------- after adding a ferry: what usually comes next ---------------- */
 export function FerryAddedSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const { S } = E; const it = S.cart.find((x: any) => x.uid === S.lastFerry); if (!it) return null; const s = E.SAIL[it.ref];
   const hasRet = S.cart.some((x: any) => x.kind === 'ferry' && E.SAIL[x.ref].f === s.to && E.SAIL[x.ref].to === s.f && x.date >= it.date);
   const hasStay = !!E.stayOn(S.cart, s.to, it.date, false);
   const fo = E.flightOut(); const sz = E.season(it.date);
   return (
-    <Sheet label="Ferry added" onClose={() => close(E)}>
-      <h2>{it.own ? 'Ferry added to your trip' : 'Ferry added'}</h2>
-      <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr}{it.seats && it.seats.length ? ` · seats ${it.seats.join(', ')}` : ''}</p>
+    <Sheet label={tr('Ferry added', 'फ़ेरी जोड़ी गई')} onClose={() => close(E)}>
+      <h2>{it.own ? tr('Ferry added to your trip', 'फ़ेरी आपकी यात्रा में जोड़ी गई') : tr('Ferry added', 'फ़ेरी जोड़ी गई')}</h2>
+      <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr}{it.seats && it.seats.length ? ` · ${tr('seats', 'सीटें')} ${it.seats.join(', ')}` : ''}</p>
       <div className="menu">
-        {!hasStay && !(s.to === 'PBL' && fo && fo.date === it.date) && <button onClick={() => dispatch('fasheet', { go: 'stay' })}><Ic n="bed" s={22} /><div><b>Find a stay on {E.ZN[s.to].name}</b><small>Check-in {E.fD(it.date)}, {sz === 'pk' ? 'peak' : sz === 'ln' ? 'lean' : 'high'}-season prices</small></div></button>}
+        {!hasStay && !(s.to === 'PBL' && fo && fo.date === it.date) && <button onClick={() => dispatch('fasheet', { go: 'stay' })}><Ic n="bed" s={22} /><div><b>{tr(`Find a stay on ${E.ZN[s.to].name}`, `${E.ZN[s.to].name} पर होटल खोजें`)}</b><small>{tr(`Check-in ${E.fD(it.date)}, ${sz === 'pk' ? 'peak' : sz === 'ln' ? 'lean' : 'high'}-season prices`, `चेक-इन ${E.fD(it.date)}, ${sz === 'pk' ? 'पीक' : sz === 'ln' ? 'कम भीड़ वाले' : 'हाई'} सीज़न की कीमतें`)}</small></div></button>}
         {!hasRet && s.to !== 'PBL' && <button onClick={() => dispatch('fasheet', { go: 'ret' })}><Ic n="ferry" s={22} /><div><b>{E.t('addReturn')}</b><small>{E.ZN[s.to].name} → {E.ZN[s.f].name}</small></div></button>}
-        <button onClick={() => dispatch('fasheet', { go: 'do' })}><Ic n="mask" s={22} /><div><b>Things to do on {E.ZN[s.to].name}</b><small>We check each one fits around your ferry</small></div></button>
+        <button onClick={() => dispatch('fasheet', { go: 'do' })}><Ic n="mask" s={22} /><div><b>{tr(`Things to do on ${E.ZN[s.to].name}`, `${E.ZN[s.to].name} पर घूमना-फिरना`)}</b><small>{tr('We check each one fits around your ferry', 'हम जाँचते हैं कि हर एक आपकी फ़ेरी के साथ फिट हो')}</small></div></button>
       </div>
       <div className="two"><button className="btn ghost" onClick={() => close(E)}>{E.t('keep')}</button><button className="btn primary" onClick={() => dispatch('fasheet', { go: 'trip' })}>{E.t('viewTrip')}</button></div>
     </Sheet>
@@ -245,26 +252,28 @@ export function FerryAddedSheet({ E }: { E: Engine }) {
 
 /* ---------------- pick a day: the trip's days (with where you are that day), then the next fortnight ---------------- */
 export function DayPicker({ E, sel, onPick }: { E: Engine; sel: string; onPick: (d: string) => void }) {
+  const tr = lang(E);
   const { S } = E; const set = new Set<string>();
   if (S.trip) for (let n = 0; n < E.nDays() && n < 21; n++) set.add(E.addD(S.trip.start, n));
   for (let i = -3; i <= 10; i++) { const d = E.addD(sel, i); if (d >= E.TODAY) set.add(d); }
   const days = [...set].filter((d) => d >= E.TODAY).sort();
   const inTrip = (d: string) => S.trip && S.cart.length && d >= S.trip.start && d <= S.trip.end;
   return (
-    <div className="daypick" role="group" aria-label="Day">
+    <div className="daypick" role="group" aria-label={tr('Day', 'दिन')}>
       {days.map((d) => { const dt = E.pDate(d); const z = inTrip(d) ? E.zoneAt(d) : null; return (
         <button key={d} className="dp" aria-pressed={d === sel} onClick={() => onPick(d)}>
           <small>{S.lang === 'hi' ? E.DOW_HI[dt.getUTCDay()] : E.DOW[dt.getUTCDay()]}</small><b>{dt.getUTCDate()}</b>
           {z ? <i style={{ background: E.ZC(z) }}>{E.ZSHORT[z] || E.ZN[z].name}</i> : <i className="nt">{E.MON[dt.getUTCMonth()]}</i>}
         </button>
       ); })}
-      <label className="dp more"><Ic n="cal" s={18} /><i className="nt">More</i><input type="date" aria-label="Another day" min={E.TODAY} value={sel} onChange={(e) => e.target.value && onPick(e.target.value)} /></label>
+      <label className="dp more"><Ic n="cal" s={18} /><i className="nt">{tr('More', 'और')}</i><input type="date" aria-label={tr('Another day', 'दूसरा दिन')} min={E.TODAY} value={sel} onChange={(e) => e.target.value && onPick(e.target.value)} /></label>
     </div>
   );
 }
 
 /* ---------------- a half-day or full-day plan: its stops timed for one day, then add them all ---------------- */
 export function BlockSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   const { S } = E; const q = S.blk; const b = q && E.BLK[q.id]; if (!b) return null;
   const zb = b.z === 'WAN' || b.z === 'BAR' ? 'PBL' : b.z; const date: string = q.date || E.defaultDayFor(zb);
   const st = E.stayAt(S.cart, zb, date, 600); const hk = st ? E.hotelKey(E.HOT[st.ref]) : undefined;
@@ -275,27 +284,27 @@ export function BlockSheet({ E }: { E: Engine }) {
   const book = (id: string) => { S.sheet = null; commit(); dispatch('product', { kind: 'act', id, date }); };
   return (
     <Sheet label={b.n} onClose={() => close(E)}>
-      <span className="tag acc" style={{ alignSelf: 'flex-start' }}>{p ? p.label : m.full ? 'Full-day plan' : 'Half-day plan'} · {E.ZN[zb].name}</span>
+      <span className="tag acc" style={{ alignSelf: 'flex-start' }}>{(p ? p.label : m.full ? 'Full-day plan' : 'Half-day plan') === 'Full-day plan' ? tr('Full-day plan', 'पूरे दिन की योजना') : tr('Half-day plan', 'आधे दिन की योजना')} · {E.ZN[zb].name}</span>
       <h2>{b.n}</h2>
-      <p className="note" style={{ marginTop: -8 }}>{b.why}. {p ? `${E.hm(p.start)} to ${E.hm(p.end)}, with about ${p.backMin} min back to ${st ? 'your stay' : 'the centre'}.` : ''}</p>
-      <div className="eyebrow">Day</div>
+      <p className="note" style={{ marginTop: -8 }}>{b.why}. {p ? tr(`${E.hm(p.start)} to ${E.hm(p.end)}, with about ${p.backMin} min back to ${st ? 'your stay' : 'the centre'}.`, `${E.hm(p.start)} से ${E.hm(p.end)} तक, फिर ${st ? 'आपके होटल' : 'शहर'} तक लगभग ${p.backMin} मिनट।`) : ''}</p>
+      <div className="eyebrow">{tr('Day', 'दिन')}</div>
       <DayPicker E={E} sel={date} onPick={pick} />
       <div className="pkday" style={{ border: 0, padding: 0 }}>
         {p ? p.items.map((i: any) => (
           <div key={i.ref + i.s} className="pkrow"><span className="mono">{E.hm(i.s)}</span><span className="nd" style={{ background: E.ZC(i.x.z) }}><Ic n={icon(i.x)} s={13} w={2} /></span>
-            <span><b>{i.x.n}</b><small>{i.x.v || ''} · {E.durTxt(i.d)}{i.during ? ' · during the boat trip' : ''}</small></span>
-            <button className="link" style={{ gridColumn: 3, justifySelf: 'start', minHeight: 32 }} onClick={() => book(i.ref)}>Book this on its own</button></div>
+            <span><b>{i.x.n}</b><small>{i.x.v || ''} · {E.durTxt(i.d)}{i.during ? tr(' · during the boat trip', ' · नाव की सैर के दौरान') : ''}</small></span>
+            <button className="link" style={{ gridColumn: 3, justifySelf: 'start', minHeight: 32 }} onClick={() => book(i.ref)}>{tr('Book this on its own', 'इसे अलग से बुक करें')}</button></div>
         )) : m.xs.map((x: any, n: number) => (
           <div key={x.id} className="pkrow"><span className="mono">{n + 1}</span><span className="nd" style={{ background: E.ZC(x.z) }}><Ic n={icon(x)} s={13} w={2} /></span><span><b>{x.n}</b><small>{x.v || ''} · {E.durTxt(x.d)}</small></span></div>
         ))}
       </div>
       {p ? (
         <>
-          <div className="split"><span className="hr" /><span><b>Plan total</b><span className="sub" style={{ display: 'block' }}>{E.paxTxt()} · before GST · itemised at checkout</span></span><span className="v" style={{ font: '800 24px var(--f-display)' }}>{E.inr(p.price)}</span></div>
-          <button className="btn primary block" onClick={() => dispatch('blkadd', { id: b.id, date, ...(q.from != null ? { from: q.from, to: q.to, eve: q.eve ? 1 : 0 } : {}) })}><Ic n="plus" s={18} w={2.6} /> Add plan to {E.fD(date)}</button>
+          <div className="split"><span className="hr" /><span><b>{tr('Plan total', 'योजना की कुल राशि')}</b><span className="sub" style={{ display: 'block' }}>{E.paxTxt()} · {tr('before GST · itemised at checkout', 'GST से पहले · चेकआउट पर पूरा ब्योरा')}</span></span><span className="v" style={{ font: '800 24px var(--f-display)' }}>{E.inr(p.price)}</span></div>
+          <button className="btn primary block" onClick={() => dispatch('blkadd', { id: b.id, date, ...(q.from != null ? { from: q.from, to: q.to, eve: q.eve ? 1 : 0 } : {}) })}><Ic n="plus" s={18} w={2.6} /> {tr(`Add plan to ${E.fD(date)}`, `${E.fD(date)} में योजना जोड़ें`)}</button>
         </>
       ) : (
-        <div className="fitbox warn"><div className="ln"><Ic n="alert" s={18} /><p>This plan does not fit on {E.fD(date)}: a stop is closed, out of season, already booked, or it clashes with something in your trip. Try another day, or book a stop on its own.</p></div></div>
+        <div className="fitbox warn"><div className="ln"><Ic n="alert" s={18} /><p>{tr(`This plan does not fit on ${E.fD(date)}: a stop is closed, out of season, already booked, or it clashes with something in your trip. Try another day, or book a stop on its own.`, `यह योजना ${E.fD(date)} को फिट नहीं होती: कोई जगह बंद है, मौसम नहीं है, पहले से बुक है, या आपकी यात्रा की किसी चीज़ से टकराती है। कोई दूसरा दिन चुनें, या कोई जगह अलग से बुक करें।`)}</p></div></div>
       )}
       <button className="btn ghost block" onClick={() => close(E)}>{E.t('done')}</button>
     </Sheet>
@@ -304,6 +313,7 @@ export function BlockSheet({ E }: { E: Engine }) {
 
 /* ---------------- loading a planned trip over plans you already have ---------------- */
 export function PkgLoadSheet({ E }: { E: Engine }) {
+  const tr = lang(E);
   return (
     <Sheet label={E.t('replaceQ')} onClose={() => close(E)}>
       <h2>{E.t('replaceQ')}</h2>

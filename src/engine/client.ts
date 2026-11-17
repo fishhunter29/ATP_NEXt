@@ -123,3 +123,8 @@ export function syncStack(path: string, params: URLSearchParams) {
   E.S.sheet = null;
   lastTop = JSON.stringify(v);
 }
+
+/** English or Hindi, by the traveller's language switch: L('Day', 'दिन'). English until the engine loads (so it matches the server HTML). */
+export function lang(E: Engine | null) { const hi = !!E && E.S.lang === 'hi'; return (en: string, hiText: string) => (hi ? hiText : en); }
+/** The same as lang(), for components that do not have the engine at hand. */
+export function useL() { return lang(useEngine()); }

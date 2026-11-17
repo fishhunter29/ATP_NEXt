@@ -2,13 +2,13 @@
 /* Pick a day (and time, room or class) and add it to the trip. Prices and "does it fit" come from the trip engine. */
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
-import { commit, useEngine } from '@/engine/client';
+import { commit, lang, useEngine } from '@/engine/client';
 import { Ic } from './ui';
 
 type Kind = 'act' | 'stay' | 'ferry' | 'cab' | 'rent';
 
 export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; uid?: string }) {
-  const E = useEngine();
+  const E = useEngine(); const L = lang(E);
   const router = useRouter();
   const params = useSearchParams();
   const [cfg, setCfg] = useState<any>(null);
@@ -32,9 +32,9 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
     if (!editing) return;
     Object.assign(editing, c);
     if (kind === 'ferry' && !editing.own) editing.seats = E.autoSeats({ sid: editing.ref, cls: editing.cls, date: editing.date });
-    E.S.flashUid = editing.uid; E.syncTrip(); commit(); E.toast('Changes saved'); router.push('/trip');
+    E.S.flashUid = editing.uid; E.syncTrip(); commit(); E.toast(L('Changes saved', 'बदलाव सेव हो गए')); router.push('/trip');
   };
-  const remove = () => { if (!editing) return; E.removeItem(editing.uid); commit(); E.toast('Removed from your trip'); router.push('/trip'); };
+  const remove = () => { if (!editing) return; E.removeItem(editing.uid); commit(); E.toast(L('Removed from your trip', 'आपकी यात्रा से हटाया गया')); router.push('/trip'); };
   const add = () => {
     const it = { ...c };
     if (kind === 'ferry') {
@@ -45,21 +45,21 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
       if (!it.own) { const L = E.jettyLegs(s, it.date); if (L.post) E.addItem({ kind: 'cab', ref: L.post.r.id, date: it.date, t: s.arr, for: f.uid, leg: 'post', ...(L.post.rev ? { rev: true } : {}) }, true); }
       const tr: string[] = E.trimStays() || [];
       E.S.lastFerry = f.uid; E.S.sheet = 'ferryadded'; E.syncTrip(); commit();
-      if (tr.length) E.toast(`Adjusted to match your ferry: ${tr.join('; ')}`);
+      if (tr.length) E.toast(L(`Adjusted to match your ferry: ${tr.join('; ')}`, `आपकी फ़ेरी के हिसाब से बदला गया: ${tr.join('; ')}`));
       return;
     }
     E.addItem(it, true);
     const day = E.S.trip ? E.dayIdx(it.date) + 1 : 1;
     commit();
-    E.toast(`Added to Day ${day}`);
+    E.toast(L(`Added to Day ${day}`, `दिन ${day} में जोड़ा गया`));
     router.push('/trip');
   };
 
   return (
     <div className="card addpanel">
-      <h3 style={{ fontSize: 18 }}>{editing ? 'Change this booking' : 'Add to your trip'}</h3>
-      <div className="eyebrow">Day</div>
-      <div className="daypick" role="radiogroup" aria-label="Day">
+      <h3 style={{ fontSize: 18 }}>{editing ? L('Change this booking', 'यह बुकिंग बदलें') : L('Add to your trip', 'अपनी यात्रा में जोड़ें')}</h3>
+      <div className="eyebrow">{L('Day', 'दिन')}</div>
+      <div className="daypick" role="radiogroup" aria-label={L('Day', 'दिन')}>
         {days.map((d) => { const p = E.pDate(d); return (
           <button key={d} className="dp" aria-pressed={c.date === d} onClick={() => update({ date: d, ...(kind === 'ferry' ? {} : {}) })}>
             <small>{E.DOW[p.getUTCDay()]}</small><b>{p.getUTCDate()}</b><small>{E.MON[p.getUTCMonth()]}</small>
@@ -70,12 +70,12 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
       {kind === 'stay' && <StayOpts E={E} c={c} update={update} />}
       {kind === 'ferry' && <FerryOpts E={E} c={c} update={update} />}
       {(kind === 'cab') && <CabOpts E={E} c={c} update={update} />}
-      {fit && fit.state === 'bad' && <p className="note" style={{ color: 'var(--bad)' }}><Ic n="alert" s={14} /> {fit.msg || 'This clashes with something on that day. Try another time or day.'}</p>}
+      {fit && fit.state === 'bad' && <p className="note" style={{ color: 'var(--bad)' }}><Ic n="alert" s={14} /> {fit.msg || L('This clashes with something on that day. Try another time or day.', 'यह उस दिन की किसी चीज़ से टकराता है। कोई दूसरा समय या दिन चुनें।')}</p>}
       <div className="addpanel-f">
-        <span className="price"><b>{I && I.price != null ? E.inr(I.price) : 'On request'}</b>{I && I.perTxt && <small>{I.perTxt}</small>}</span>
+        <span className="price"><b>{I && I.price != null ? E.inr(I.price) : E.t('onReq')}</b>{I && I.perTxt && <small>{I.perTxt}</small>}</span>
         {editing ? (
-          <span style={{ display: 'flex', gap: 8 }}><button className="btn ghost" onClick={remove}>Remove</button><button className="btn primary" onClick={save}>Save changes</button></span>
-        ) : <button className="btn primary" onClick={add}><Ic n="plus" s={18} w={2.6} /> Add to trip</button>}
+          <span style={{ display: 'flex', gap: 8 }}><button className="btn ghost" onClick={remove}>{L('Remove', 'हटाएँ')}</button><button className="btn primary" onClick={save}>{L('Save changes', 'बदलाव सेव करें')}</button></span>
+        ) : <button className="btn primary" onClick={add}><Ic n="plus" s={18} w={2.6} /> {L('Add to trip', 'यात्रा में जोड़ें')}</button>}
       </div>
     </div>
   );
@@ -96,10 +96,10 @@ function Slots({ E, c, update }: any) {
   if (sl.length < 2) return null;
   return (
     <>
-      <div className="eyebrow">Time</div>
+      <div className="eyebrow">{lang(E)('Time', 'समय')}</div>
       <div className="chips">
         {sl.map((s) => { const n = safe(() => E.availability({ kind: 'act', ref: c.ref, date: c.date, t: s })); return (
-          <button key={s} className="chip" aria-pressed={c.t === s} disabled={n === 0} onClick={() => update({ t: s })}>{s}{n === 0 && <small className="sf"> Sold out</small>}</button>
+          <button key={s} className="chip" aria-pressed={c.t === s} disabled={n === 0} onClick={() => update({ t: s })}>{s}{n === 0 && <small className="sf">{lang(E)(' Sold out', ' भर गया')}</small>}</button>
         ); })}
       </div>
     </>
@@ -110,11 +110,11 @@ function StayOpts({ E, c, update }: any) {
   const h = E.HOT[c.ref];
   return (
     <>
-      <div className="eyebrow">Room</div>
+      <div className="eyebrow">{lang(E)('Room', 'कमरा')}</div>
       <div className="chips">{h.rooms.map((r: any) => <button key={r.n} className="chip" aria-pressed={c.room === r.n} onClick={() => update({ room: r.n })}>{r.n}</button>)}</div>
-      <div className="eyebrow">Nights</div>
+      <div className="eyebrow">{lang(E)('Nights', 'रातें')}</div>
       <div className="chips">{[1, 2, 3, 4, 5].map((n) => <button key={n} className="chip" aria-pressed={c.nights === n} onClick={() => update({ nights: n })}>{n}</button>)}</div>
-      <div className="eyebrow">Rooms</div>
+      <div className="eyebrow">{lang(E)('Rooms', 'कमरे')}</div>
       <div className="chips">{[1, 2, 3, 4].map((n) => <button key={n} className="chip" aria-pressed={c.qty === n} onClick={() => update({ qty: n })}>{n}</button>)}</div>
     </>
   );
@@ -124,7 +124,7 @@ function FerryOpts({ E, c, update }: any) {
   const s = E.SAIL[c.ref]; const fares: any[] = s.fares && s.fares.length ? s.fares : String(s.cls || '').split(',').map((n: string) => ({ n: n.trim(), f: s.fare }));
   return (
     <>
-      <div className="eyebrow">Class</div>
+      <div className="eyebrow">{lang(E)('Class', 'क्लास')}</div>
       <div className="chips">{fares.map((f) => <button key={f.n} className="chip" aria-pressed={c.cls === f.n} onClick={() => update({ cls: f.n })}>{f.n} · {E.inr(f.f)}</button>)}</div>
     </>
   );
@@ -134,11 +134,11 @@ function CabOpts({ E, c, update }: any) {
   const r = E.ROUTE[c.ref];
   return (
     <>
-      <div className="eyebrow">Car</div>
+      <div className="eyebrow">{lang(E)('Car', 'गाड़ी')}</div>
       <div className="chips">{r.prices.map((p: any) => <button key={p.c} className="chip" aria-pressed={c.vc === p.c} onClick={() => update({ vc: p.c })}>{p.c} · {p.seats} seats</button>)}</div>
-      <div className="eyebrow">Pickup</div>
+      <div className="eyebrow">{lang(E)('Pickup', 'पिकअप')}</div>
       <div className="chips">{['07:00', '08:00', '09:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((t) => <button key={t} className="chip" aria-pressed={c.t === t} onClick={() => update({ t })}>{t}</button>)}</div>
-      {r.prices.some((p: any) => p.ret) && <div className="chips"><button className="chip" aria-pressed={!!c.ret} onClick={() => update({ ret: !c.ret })}>Return trip with waiting</button></div>}
+      {r.prices.some((p: any) => p.ret) && <div className="chips"><button className="chip" aria-pressed={!!c.ret} onClick={() => update({ ret: !c.ret })}>{lang(E)('Return trip with waiting', 'इंतज़ार के साथ वापसी')}</button></div>}
     </>
   );
 }
