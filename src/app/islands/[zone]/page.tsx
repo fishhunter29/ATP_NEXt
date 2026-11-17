@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ACTS, HOTELS, ZN, ZONES, actPhoto, ferryRoutes, hotelFrom, inr, slug, unslug, zonePhoto } from '@/lib/catalogue';
+import JsonLd from '@/components/seo/JsonLd';
+import { abs, crumbs, pageMeta } from '@/lib/seo';
 
 export function generateStaticParams() { return ZONES.map((z) => ({ zone: slug(z.id) })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ zone: string }> }): Promise<Metadata> {
   const { zone } = await params; const z = ZN[unslug(zone)]; if (!z) return {};
-  return { title: `${z.name} (${z.official}): stays, ferries and things to do`, description: `Plan ${z.name} in the Andaman Islands: ${HOTELS.filter((h) => h.z === z.id).length} stays, ${ACTS.filter((a) => a.z === z.id).length} things to do, ferry times and how to get there. ${z.notes}`, alternates: { canonical: `/islands/${zone}` }, openGraph: { images: [`/img/f/${zonePhoto(z.id)}.webp`] } };
+  return pageMeta({ title: `${z.name} (${z.official}): stays, ferries and things to do`, description: `Plan ${z.name} in the Andaman Islands: ${HOTELS.filter((h) => h.z === z.id).length} stays, ${ACTS.filter((a) => a.z === z.id).length} things to do, ferry times and how to get there. ${z.notes}`, path: `/islands/${zone}`, image: `/img/f/${zonePhoto(z.id)}.webp` });
 }
 
 export default async function Page({ params }: { params: Promise<{ zone: string }> }) {
@@ -14,6 +16,8 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
   const acts = ACTS.filter((a) => a.z === z.id && !/^ACV-(MEAL|SHOP)/.test(a.id)).sort((a, b) => (b.g?.rt || 0) - (a.g?.rt || 0));
   const stays = HOTELS.filter((h) => h.z === z.id).sort((a, b) => (b.rt || 0) - (a.rt || 0));
   const routes = ferryRoutes().filter((r) => r.from === z.id || r.to === z.id);
+  const ld = { '@context': 'https://schema.org', '@type': 'TouristDestination', name: `${z.name} (${z.official})`, alternateName: z.official, description: z.notes, url: abs(`/islands/${zone}`), image: abs(`/img/f/${zonePhoto(z.id)}.webp`), containedInPlace: { '@type': 'Place', name: 'Andaman and Nicobar Islands, India' },
+    includesAttraction: acts.slice(0, 10).map((a) => ({ '@type': 'TouristAttraction', name: a.n, url: abs(`/things-to-do/${slug(a.id)}`) })) };
   return (
     <>
       <section className="pg-hero">
@@ -34,6 +38,7 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
         <div className="sec"><div className="sechd"><h2>Where to stay</h2><span className="sub">{stays.length} stays</span></div>
           <div className="linklist">{stays.map((h) => <a key={h.id} href={`/stays/${slug(h.id)}`}><b>{h.n}</b><small>{h.t}{h.rt ? ` · ★ ${h.rt}` : ''} · from {inr(hotelFrom(h))}</small></a>)}</div></div>
       </div>
+      <JsonLd data={[ld, crumbs([['Home', '/'], [z.name, `/islands/${zone}`]])]} />
     </>
   );
 }

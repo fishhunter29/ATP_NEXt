@@ -3,20 +3,22 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import AddPanel from '@/components/AddPanel';
 import { ACTS, ZN, actPhoto, durTxt, inr, per, slug, unslug } from '@/lib/catalogue';
+import JsonLd from '@/components/seo/JsonLd';
+import { abs, crumbs, pageMeta } from '@/lib/seo';
 
 export function generateStaticParams() { return ACTS.map((a) => ({ id: slug(a.id) })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params; const a = ACTS.find((x) => x.id === unslug(id)); if (!a) return {};
   const z = ZN[a.z]?.name;
-  return { title: `${a.n}, ${z}`, description: `${a.n} on ${z}, Andaman: ${a.v}. ${a.p ? `From ${inr(a.p)} ${per(a.b)}.` : ''} Book it inside your Andaman itinerary, timed around ferries and check-ins.`, alternates: { canonical: `/things-to-do/${id}` }, openGraph: { images: [`/img/f/${actPhoto(a.id)}.webp`] } };
+  return pageMeta({ title: `${a.n}, ${z}`, description: `${a.n} on ${z}, Andaman: ${a.v}. ${a.p ? `From ${inr(a.p)} ${per(a.b)}.` : ''} Book it inside your Andaman itinerary, timed around ferries and check-ins.`, path: `/things-to-do/${id}`, image: `/img/f/${actPhoto(a.id)}.webp` });
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params; const a = ACTS.find((x) => x.id === unslug(id)); if (!a) notFound();
   const z = ZN[a.z];
   const facts = [['Island', z?.name], ['How long', durTxt(a.d)], ['When', a.slot || a.t], ['Where', a.site], ['Age', a.age ? `${a.age}+` : ''], ['Season', a.sea], ['Rating', a.g?.rt ? `★ ${a.g.rt} on Google${a.g.n ? ` (${a.g.n.toLocaleString('en-IN')})` : ''}` : '']].filter(([, v]) => v);
-  const ld = { '@context': 'https://schema.org', '@type': 'TouristTrip', name: a.n, description: a.v, touristType: a.fam, offers: a.p ? { '@type': 'Offer', price: a.p, priceCurrency: 'INR' } : undefined, itinerary: { '@type': 'Place', name: `${a.site || z?.name}, Andaman and Nicobar Islands` } };
+  const ld = { '@context': 'https://schema.org', '@type': 'TouristTrip', name: a.n, description: a.v, url: abs(`/things-to-do/${id}`), image: abs(`/img/f/${actPhoto(a.id)}.webp`), touristType: a.fam, provider: { '@id': abs('/#org') }, offers: a.p ? { '@type': 'Offer', price: a.p, priceCurrency: 'INR', url: abs(`/things-to-do/${id}`), availability: 'https://schema.org/InStock' } : undefined, itinerary: { '@type': 'Place', name: `${a.site || z?.name}, Andaman and Nicobar Islands` } };
   return (
     <>
       <section className="pg-hero">
@@ -34,7 +36,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
         <aside><Suspense><AddPanel kind="act" id={a.id} /></Suspense></aside>
       </div></div>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />
+      <JsonLd data={[ld, crumbs([['Home', '/'], ['Things to do', '/things-to-do'], [z?.name || 'Island', `/islands/${slug(a.z)}`], [a.n, `/things-to-do/${id}`]])]} />
     </>
   );
 }

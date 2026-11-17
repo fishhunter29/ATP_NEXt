@@ -1,14 +1,14 @@
 'use client';
 /* Boat charters: every private boat, speedboat, fishing boat, cruise and volcano trip (canvas "Boat charters page"). */
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useEngine } from '@/engine/client';
 import { Art, Ic, Loading } from '@/components/ui';
 
-export default function Charters() {
+export default function Charters({ fallback }: { fallback?: ReactNode }) {
   const E = useEngine(); const router = useRouter();
   const [fk, setFk] = useState('all'); const [fz, setFz] = useState('all');
-  if (!E) return <Loading />;
+  if (!E) return <>{fallback ?? <Loading />}</>;
   const G: any[] = E.chList(); const all = G.reduce((s, g) => s + g.l.length, 0);
   const zones: string[] = [...new Set<string>(G.flatMap((g) => g.l.map((a: any) => a.z)))];
   const secs = G.filter((g) => fk === 'all' || g.k === fk).map((g) => ({ ...g, l: g.l.filter((a: any) => fz === 'all' || a.z === fz) })).filter((g) => g.l.length);

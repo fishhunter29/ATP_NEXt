@@ -1,7 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { ACTS, HOTELS, ZONES, ferryRoutes, slug } from '@/lib/catalogue';
+import PKGS from '@/data/packages.json';
+import { SITE as BASE } from '@/lib/seo';
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL || 'https://andamantravelplanner.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
@@ -12,5 +13,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...ferryRoutes().map((r) => u(`/ferries/${r.key}`, 0.8)),
     ...ACTS.filter((a) => !/^ACV-(MEAL|SHOP)/.test(a.id)).map((a) => u(`/things-to-do/${slug(a.id)}`)),
     ...HOTELS.map((h) => u(`/stays/${slug(h.id)}`)),
+    ...(PKGS as { id: string }[]).map((p) => u(`/trips/${slug(p.id)}`, 0.7)),
   ];
 }
