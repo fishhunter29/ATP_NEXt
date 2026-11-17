@@ -59,10 +59,11 @@ export default function Checkout() {
               <span className="hr" /><span><b>Total</b></span><span className="v" style={{ font: '800 24px var(--f-display)' }}>{E.inr(tot)}</span>
               {E.onReq() > 0 && <span className="sub">{E.onReq()} item(s) confirmed by the partner before you’re charged</span>}
             </div>
+            <button className="btn primary block co-paybtn" onClick={pay}>Pay {E.inr(tot)}</button>
           </div>
         </aside></div>
       </div></div>
-      <div className="cta wrap abovenav">
+      <div className="cta wrap abovenav co-cta">
         <span className="tot"><b>{E.inr(tot)}</b><small>{S.cart.length} item{S.cart.length === 1 ? '' : 's'} · incl. GST</small></span>
         <button className="btn primary" onClick={pay}>Pay {E.inr(tot)}</button>
       </div>
