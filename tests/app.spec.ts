@@ -264,3 +264,102 @@ test('plan for me replaces the trip instead of stacking on it', async ({ page })
   expect(S.ferries).toBeLessThanOrEqual(6);
   expect(S.saved).toBeGreaterThan(0);
 });
+
+/* ---------- trip tools ---------- */
+async function example(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+}
+const S = (page: import('@playwright/test').Page, f: string): Promise<any> => page.evaluate(new Function('return (' + f + ')((window).__ATP__)') as any);
+
+test('vehicle chip: switch the day\'s cab rides to another car', async ({ page }) => {
+  await example(page);
+  const chip = page.locator('.lx-dt-row button[aria-expanded]').filter({ hasText: '▾' }).first();
+  await chip.click();
+  const panel = page.locator('.lx-dt-panel').first();
+  await expect(panel).toContainText('Vehicle for');
+  const opt = panel.locator('.lx-vopt[aria-pressed="false"]').first();
+  const car = await opt.locator('b').innerText();
+  const t0 = await S(page, 'E => E.total()');
+  await opt.click();
+  await expect(page.locator('.toast')).toContainText(`${car} on`);
+  await expect(page.locator('.lx-dt-panel')).toHaveCount(0);
+  expect(await S(page, 'E => E.total()')).not.toBe(t0);
+  await expect(page.locator('.lx-dt-row').first()).toContainText(car);
+});
+
+test('scooter for the day replaces sightseeing cabs, and back to cabs', async ({ page }) => {
+  await example(page);
+  const chip = page.getByRole('button', { name: /Scooter or bike for the day/ }).first();
+  await chip.click();
+  await page.locator('.lx-dt-panel .lx-vopt').first().click();
+  await expect(page.locator('.toast')).toContainText('booked for');
+  expect(await S(page, "E => E.S.cart.filter(i => i.kind === 'rent').length")).toBe(1);
+  await page.getByRole('button', { name: 'Back to cabs' }).first().click();
+  expect(await S(page, "E => E.S.cart.filter(i => i.kind === 'rent').length")).toBe(0);
+});
+
+test('add a day after and before the trip', async ({ page }) => {
+  await example(page);
+  const n0 = await page.locator('section.day').count();
+  await page.getByRole('button', { name: /Add a day after/ }).click();
+  await expect(page.locator('.toast')).toContainText('you now fly home');
+  await expect(page.locator('section.day')).toHaveCount(n0 + 1);
+  await page.getByRole('button', { name: /Add a day before/ }).click();
+  await expect(page.locator('.toast')).toContainText('you now arrive');
+  await expect(page.locator('section.day')).toHaveCount(n0 + 2);
+});
+
+test('quick compare stays and switch hotel', async ({ page }) => {
+  await example(page);
+  await page.getByRole('button', { name: 'Quick compare' }).first().click();
+  const panel = page.locator('.lx-dt-panel').filter({ hasText: 'Other stays on' });
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('trip total');
+  const name = await panel.locator('.lx-vopt b').first().innerText();
+  await panel.locator('.lx-vopt').first().click();
+  await expect(page.locator('.toast')).toContainText(`Now staying at ${name}`);
+  await expect(page.locator('.ev', { hasText: name }).first()).toBeVisible();
+});
+
+test('pairing rail appears after adding something, and hides', async ({ page }) => {
+  await example(page);
+  await page.goto('/things-to-do/ent-radhanagar');
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const rail = page.locator('.lx-pair');
+  await expect(rail).toBeVisible();
+  await expect(rail).toContainText('Goes well with');
+  const n = await S(page, 'E => E.S.cart.length');
+  // tap it where a person would: rail in the middle of the screen. (Playwright's own click re-scrolls on a phone
+  // and lands the button under the sticky price bar, then the rail's scroll-snap moves it, so it never settles.)
+  await rail.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const add = rail.getByRole('button', { name: 'Add' }).first();
+  const box = (await add.boundingBox())!;
+  expect(await add.evaluate((b) => { const r = b.getBoundingClientRect(); return b.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })).toBe(true);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator('.toast')).toContainText('Added');
+  expect(await S(page, 'E => E.S.cart.length')).toBeGreaterThan(n);
+  // add something else from its page: a rail for it appears, and Hide removes it
+  await page.goto('/things-to-do/ent-kalapathar');
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  if (await page.locator('.lx-pair').count()) {
+    await page.locator('.lx-pair').getByRole('button', { name: 'Hide' }).evaluate((b: HTMLElement) => b.click());
+    await expect(page.locator('.lx-pair')).toHaveCount(0);
+  }
+});
+
+test('home and island pages list day plans, and one opens its sheet', async ({ page, request }) => {
+  const home = await (await request.get('/')).text();
+  expect(home).toContain('Half-day and full-day plans');
+  expect(home).toContain('Elephant Beach with snorkelling');
+  const hav = await (await request.get('/islands/hav')).text();
+  expect(hav).toContain('Day plans on Havelock');
+  expect(hav).not.toContain('Neil in a day');
+  await page.goto('/islands/hav');
+  await page.locator('.blkt').first().click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await expect(page.getByRole('dialog').locator('.pkrow').first()).toBeVisible();
+});

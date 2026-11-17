@@ -11,7 +11,8 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - **Links, not buttons.** Anything that goes to another page is a `<Link>`/`<a>`, so Google can follow it. The site footer (`SiteFooter`) links every island, the main ferry routes, planned trips and lists.
 - **Metadata.** Use `pageMeta()` from `src/lib/seo.ts`: title, description, canonical, Open Graph and Twitter card all point at the same address. Personal pages (`/trip`, `/checkout`, `/my-trips`, `/profile`, `/search`) are `noindex` and have no canonical.
 - **Structured data** (`<JsonLd>`): TravelAgency + WebSite on every page; BreadcrumbList on lists and details; TouristDestination (islands), TouristTrip (activities and planned trips), BoatTrip (each sailing), LodgingBusiness (stays). Google ratings are shown on the page but never put in rating markup: Google does not allow ratings collected by another site there.
-- **Planned trips** come from the engine, which only runs in the browser. `scripts/pkg-index.mjs` writes them to `src/data/packages.json` for the server pages; run it after changing planned trips or prices.
+- **Planned trips and day plans** come from the engine, which only runs in the browser. `scripts/pkg-index.mjs` writes them to `src/data/packages.json` and `src/data/dayplans.json` for the server pages; run it after changing planned trips, day plans or prices.
+- **Photos in `.art` boxes** must be an `<svg>` (app.css hides an `.art` box without one). Use `PhotoArt` for catalogue photos on server pages.
 - **Instruments.** Search Console and Bing ownership tags and Google Analytics 4 switch on from environment variables (see `.env.example`). After going live: verify the site in Search Console and Bing, submit `/sitemap.xml` in both.
 
 ## The engine
