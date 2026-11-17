@@ -234,10 +234,10 @@ export function FerryAddedSheet({ E }: { E: Engine }) {
       <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr}{it.seats && it.seats.length ? ` · seats ${it.seats.join(', ')}` : ''}</p>
       <div className="menu">
         {!hasStay && !(s.to === 'PBL' && fo && fo.date === it.date) && <button onClick={() => dispatch('fasheet', { go: 'stay' })}><Ic n="bed" s={22} /><div><b>Find a stay on {E.ZN[s.to].name}</b><small>Check-in {E.fD(it.date)}, {sz === 'pk' ? 'peak' : sz === 'ln' ? 'lean' : 'high'}-season prices</small></div></button>}
-        {!hasRet && s.to !== 'PBL' && <button onClick={() => dispatch('fasheet', { go: 'ret' })}><Ic n="ferry" s={22} /><div><b>Add the return ferry</b><small>{E.ZN[s.to].name} → {E.ZN[s.f].name}</small></div></button>}
+        {!hasRet && s.to !== 'PBL' && <button onClick={() => dispatch('fasheet', { go: 'ret' })}><Ic n="ferry" s={22} /><div><b>{E.t('addReturn')}</b><small>{E.ZN[s.to].name} → {E.ZN[s.f].name}</small></div></button>}
         <button onClick={() => dispatch('fasheet', { go: 'do' })}><Ic n="mask" s={22} /><div><b>Things to do on {E.ZN[s.to].name}</b><small>We check each one fits around your ferry</small></div></button>
       </div>
-      <button className="btn ghost block" onClick={() => close(E)}>Done</button>
+      <div className="two"><button className="btn ghost" onClick={() => close(E)}>{E.t('keep')}</button><button className="btn primary" onClick={() => dispatch('fasheet', { go: 'trip' })}>{E.t('viewTrip')}</button></div>
     </Sheet>
   );
 }

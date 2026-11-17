@@ -80,3 +80,110 @@ test('price breakdown and fix-for-me sheets open and close', async ({ page }) =>
   await expect(page.getByRole('dialog', { name: 'Fixes' })).toBeVisible();
   await page.getByRole('button', { name: 'Undo' }).click();
 });
+
+/* ---------- move & swap (the ⋮⋮ handle on a plan) ---------- */
+const cartItem = (page: import('@playwright/test').Page, uid: string) =>
+  page.evaluate((u) => { const it = (window as any).__ATP__.S.cart.find((x: any) => x.uid === u); return it ? { date: it.date, t: it.t, ref: it.ref } : null; }, uid);
+
+async function openMove(page: import('@playwright/test').Page) {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const grip = page.locator('.lx-grip').first();
+  const uid = (await grip.getAttribute('data-drag'))!;
+  await grip.click();
+  const dlg = page.getByRole('dialog', { name: 'Move or swap' });
+  await expect(dlg).toBeVisible();
+  await expect(dlg).toContainText('We only show options that work');
+  return { uid, dlg, before: (await cartItem(page, uid))! };
+}
+
+test('move sheet: move a plan to another day', async ({ page }) => {
+  const { uid, dlg, before } = await openMove(page);
+  const other = dlg.locator('.lx-mvrow.wrap .lx-mv').first();
+  const label = (await other.locator('small').innerText()).split(' · ');
+  await other.click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const after = (await cartItem(page, uid))!;
+  expect(after.date).not.toBe(before.date);
+  expect(after.t).toBe(label[1]);
+  expect(after.ref).toBe(before.ref);
+});
+
+test('move sheet: earlier or later on the same day', async ({ page }) => {
+  const { uid, dlg, before } = await openMove(page);
+  const btn = dlg.locator('.lx-mv:not([disabled])').first();
+  const t = await btn.locator('small').innerText();
+  await btn.click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const after = (await cartItem(page, uid))!;
+  expect(after.t).toBe(t);
+});
+
+test('move sheet: swap for something similar, then undo', async ({ page }) => {
+  const { uid, dlg, before } = await openMove(page);
+  const sw = dlg.locator('.lx-sw').first();
+  const name = await sw.locator('b').innerText();
+  await sw.click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.toast')).toContainText('Swapped for');
+  expect((await cartItem(page, uid))!.ref).not.toBe(before.ref);
+  await expect(page.locator('.ev', { hasText: name }).first()).toBeVisible();
+  await page.locator('.toast').getByRole('button', { name: 'Undo' }).click();
+  expect((await cartItem(page, uid))!.ref).toBe(before.ref);
+});
+
+test('move sheet: remove a plan', async ({ page }) => {
+  const { uid, dlg } = await openMove(page);
+  const n = await page.evaluate(() => (window as any).__ATP__.S.cart.length);
+  await dlg.getByRole('button', { name: 'Remove' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.toast')).toContainText('Removed');
+  expect(await cartItem(page, uid)).toBeNull();
+  expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeLessThan(n);
+});
+
+test('move sheet: open details goes to the edit page', async ({ page }) => {
+  const { uid, dlg } = await openMove(page);
+  await dlg.getByRole('button', { name: 'Open details' }).click();
+  await expect(page).toHaveURL(new RegExp(`/trip/edit\\?uid=${uid}`));
+});
+
+/* ---------- after adding a ferry ---------- */
+async function addFerry(page: import('@playwright/test').Page) {
+  await page.goto('/ferries/pbl-hav');
+  await page.locator('.lrow').first().click();
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  const dlg = page.getByRole('dialog', { name: 'Ferry added' });
+  await expect(dlg).toBeVisible();
+  return dlg;
+}
+
+test('ferry added: follow-up sheet offers stay, return and things to do', async ({ page }) => {
+  const dlg = await addFerry(page);
+  await expect(dlg).toContainText('Port Blair → Havelock');
+  await expect(dlg.getByRole('button', { name: /Find a stay on Havelock/ })).toBeVisible();
+  await expect(dlg.getByRole('button', { name: /Add return ferry/ })).toBeVisible();
+  await expect(dlg.getByRole('button', { name: /Things to do on Havelock/ })).toBeVisible();
+  const kinds = await page.evaluate(() => (window as any).__ATP__.S.cart.map((x: any) => x.kind));
+  expect(kinds).toContain('ferry');
+  await dlg.getByRole('button', { name: 'View my trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('.tc-ferry').first()).toBeVisible();
+});
+
+test('ferry added: find a stay and add the return ferry', async ({ page }) => {
+  let dlg = await addFerry(page);
+  await dlg.getByRole('button', { name: /Find a stay on Havelock/ }).click();
+  await expect(page).toHaveURL(/\/stays\?zone=HAV/);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  dlg = await addFerry(page);
+  await dlg.getByRole('button', { name: /Add return ferry/ }).click();
+  await expect(page).toHaveURL(/\/ferries\/hav-pbl/);
+  await page.goto('/ferries/pbl-hav');
+  await page.locator('.lrow').first().click();
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await page.getByRole('dialog', { name: 'Ferry added' }).getByRole('button', { name: 'Keep browsing' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ferries\/pbl-hav/);
+});
