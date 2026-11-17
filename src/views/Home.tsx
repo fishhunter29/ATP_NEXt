@@ -43,32 +43,32 @@ export default function Home() {
           <h1>The Andamans,<em>without the guesswork.</em></h1>
           <p>Ferries, rooms, cabs and things to do, in one plan. We check that it all connects before you pay.</p>
         </div>
+      <div className="wrap starter lx-starter in-hero">
+          <nav className="lx-entry" aria-label="Book one thing">
+            {PILLS.map((p) => (
+              <button key={p.k} {...PILL_ATTR[p.k]} onClick={() => router.push(p.href)}><Ic n={p.icon} s={18} /><span>{p.label}</span></button>
+            ))}
+          </nav>
+          <div className="starter-card">
+            <button className="st-f" onClick={() => router.push('/plan?step=dates')}>
+              <span className="sti"><Ic n="cal" s={20} /></span>
+              <span><small>Dates, flights and travellers</small><b className={S.win ? '' : 'ph'}>{datesLabel}</b></span>
+            </button>
+            <span className="st-sep" aria-hidden="true" />
+            <button className="st-f wide" onClick={() => router.push('/search')}>
+              <span className="sti"><Ic n="search" s={20} /></span>
+              <span><small>Find</small><b className="ph">Search beaches, dives, hotels…</b></span>
+            </button>
+            <button className="btn primary" onClick={() => router.push('/plan')}>Plan my trip for me <Ic n="arrow" s={18} w={2.2} /></button>
+          </div>
+          <div className="st-alt">
+            <span><Ic n="check" s={14} w={2.6} />Planning is free. Pay when you are sure</span>
+            <span><Ic n="check" s={14} w={2.6} />Every ferry and check-in timed</span>
+            <span><Ic n="check" s={14} w={2.6} />No surprise charges</span>
+            {S.cart.length ? <button className="link" onClick={() => router.push('/trip')}>Continue my trip · {E.inr(E.total())}</button> : <button className="link" onClick={sample}>Show me an example trip</button>}
+          </div>
+        </div>
       </section>
-      <div className="wrap starter lx-starter">
-        <nav className="lx-entry" aria-label="Book one thing">
-          {PILLS.map((p) => (
-            <button key={p.k} {...PILL_ATTR[p.k]} onClick={() => router.push(p.href)}><Ic n={p.icon} s={18} /><span>{p.label}</span></button>
-          ))}
-        </nav>
-        <div className="starter-card">
-          <button className="st-f" onClick={() => router.push('/plan?step=dates')}>
-            <span className="sti"><Ic n="cal" s={20} /></span>
-            <span><small>Dates, flights and travellers</small><b className={S.win ? '' : 'ph'}>{datesLabel}</b></span>
-          </button>
-          <span className="st-sep" aria-hidden="true" />
-          <button className="st-f wide" onClick={() => router.push('/search')}>
-            <span className="sti"><Ic n="search" s={20} /></span>
-            <span><small>Find</small><b className="ph">Search beaches, dives, hotels…</b></span>
-          </button>
-          <button className="btn primary" onClick={() => router.push('/plan')}>Plan my trip for me <Ic n="arrow" s={18} w={2.2} /></button>
-        </div>
-        <div className="st-alt">
-          <span><Ic n="check" s={14} w={2.6} />Planning is free. Pay when you are sure</span>
-          <span><Ic n="check" s={14} w={2.6} />Every ferry and check-in timed</span>
-          <span><Ic n="check" s={14} w={2.6} />No surprise charges</span>
-          {S.cart.length ? <button className="link" onClick={() => router.push('/trip')}>Continue my trip · {E.inr(E.total())}</button> : <button className="link" onClick={sample}>Show me an example trip</button>}
-        </div>
-      </div>
       <div className="wrap">
         <Section title="Need one thing, or the whole trip?" sub="Add anything. We will show you what goes with it">
           <div className="shortcuts">

@@ -20,7 +20,13 @@ export function Ic({ n, s = 18, w = 2 }: { n: string; s?: number; w?: number }) 
 let io: IntersectionObserver | null = null;
 function reveal(svg: Element) {
   const im = svg.querySelector('image[data-src]');
-  if (im) { im.setAttribute('href', String(im.getAttribute('data-src')).replace(/^img\//, '/img/')); im.removeAttribute('data-src'); }
+  if (im) {
+    let src = String(im.getAttribute('data-src')).replace(/^img\//, '/img/');
+    // thumbnails are 560 px wide: wherever the photo shows bigger than that on this screen, load the full-size one so it stays sharp
+    const w = (svg as SVGElement).getBoundingClientRect().width * (window.devicePixelRatio || 1);
+    if (w > 520) src = src.replace('/img/t/', '/img/f/');
+    im.setAttribute('href', src); im.removeAttribute('data-src');
+  }
   svg.setAttribute('data-on', '1');
 }
 function observe(svg: Element) {

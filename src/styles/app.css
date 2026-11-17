@@ -1771,20 +1771,20 @@ section.day>.anchor{padding-left:54px!important}
 .chhero>img{position:absolute;inset:0;z-index:-2}
 /* ===== FRUIT PALETTE for trip tiles (canvas "Fruit palette"): OKLCH, same lightness per mode, hues 35°+ apart, away from pill hues.
    light tiles L 93.5% · dark tiles L 31% · text 12:1 (AAA) · labels 5:1+ (AA) ===== */
-.ev[data-c="stay"]{--tbg:#472806;--tline:#754614;--tacc:#FEBA7E;--tbadge:#FEBA7E}
-:root[data-theme="light"] .ev[data-c="stay"]{--tbg:#FFE4CE;--tline:#FBB77B;--tacc:#915100}
-.ev[data-c="do"]{--tbg:#3E2E00;--tline:#674F00;--tacc:#EBC669;--tbadge:#EBC669}
-:root[data-theme="light"] .ev[data-c="do"]{--tbg:#FAE8BC;--tline:#E5C370;--tacc:#7B5F01}
-.ev[data-c="cab"]{--tbg:#27360F;--tline:#445C20;--tacc:#B4DA83;--tbadge:#B4DA83}
-:root[data-theme="light"] .ev[data-c="cab"]{--tbg:#DEF2C7;--tline:#B3D587;--tacc:#4D7000}
-.ev[data-c="shop"]{--tbg:#222E51;--tline:#3D5084;--tacc:#B5C9FE;--tbadge:#B5C9FE}
-:root[data-theme="light"] .ev[data-c="shop"]{--tbg:#E1E9FE;--tline:#B0C6FF;--tacc:#3F5BB8}
-.ev[data-c="boat"]{--tbg:#38274A;--tline:#5E457A;--tacc:#D9BBFE;--tbadge:#D9BBFE}
-:root[data-theme="light"] .ev[data-c="boat"]{--tbg:#EFE4FF;--tline:#D7B6FF;--tacc:#7847A6}
-.ev[data-c="adv"]{--tbg:#472238;--tline:#753C5E;--tacc:#FEADDB;--tbadge:#FEADDB}
-:root[data-theme="light"] .ev[data-c="adv"]{--tbg:#FEDFF0;--tline:#FBAAD8;--tacc:#9B3876}
-.ev[data-c="meal"]{--tbg:#4C2122;--tline:#7D3C3D;--tacc:#FFB4B3;--tbadge:#FFB4B3}
-:root[data-theme="light"] .ev[data-c="meal"]{--tbg:#FFE2E1;--tline:#FFAFAE;--tacc:#A8353E}
+.ev[data-c="stay"]{--tbg:#512A00;--tline:#915100;--tacc:#FFC898;--tbadge:#FFC898}
+:root[data-theme="light"] .ev[data-c="stay"]{--tbg:#FFE0C6;--tline:#FFA752;--tacc:#854A00}
+.ev[data-c="do"]{--tbg:#443300;--tline:#7B5F01;--tacc:#FDCE4E;--tbadge:#FDCE4E}
+:root[data-theme="light"] .ev[data-c="do"]{--tbg:#FFE4A2;--tline:#E6B731;--tacc:#715700}
+.ev[data-c="cab"]{--tbg:#283D00;--tline:#4D7000;--tacc:#B8E777;--tbadge:#B8E777}
+:root[data-theme="light"] .ev[data-c="cab"]{--tbg:#D5F2B2;--tline:#A2D060;--tacc:#466700}
+.ev[data-c="shop"]{--tbg:#213166;--tline:#415CB2;--tacc:#C3D4FE;--tbadge:#C3D4FE}
+:root[data-theme="light"] .ev[data-c="shop"]{--tbg:#DCE6FE;--tline:#A2BCFF;--tacc:#314DBE}
+.ev[data-c="boat"]{--tbg:#41265C;--tline:#764AA2;--tacc:#E0C8FE;--tbadge:#E0C8FE}
+:root[data-theme="light"] .ev[data-c="boat"]{--tbg:#EDDFFF;--tline:#D1A9FF;--tacc:#7334A9}
+.ev[data-c="adv"]{--tbg:#551D40;--tline:#983C75;--tacc:#FEBEE1;--tbadge:#FEBEE1}
+:root[data-theme="light"] .ev[data-c="adv"]{--tbg:#FFDAEE;--tline:#FF96D3;--tacc:#9A1B71}
+.ev[data-c="meal"]{--tbg:#5D1C20;--tline:#A43A41;--tacc:#FEC3C2;--tbadge:#FEC3C2}
+:root[data-theme="light"] .ev[data-c="meal"]{--tbg:#FFDDDC;--tline:#FF9F9F;--tacc:#A8112D}
 .ev .item.tc:not(.tc-ferry){background:var(--tbg)!important;border:1.5px solid var(--tline)!important;--c:var(--tacc);--c-cab:var(--tacc);--c-stay:var(--tacc);--c-boat:var(--tacc);--c-ok:var(--tacc)}
 .ev .item.tc-meal,.ev .item.tc-shop{border-style:solid!important}
 .ev .tc-boat .tc-wave path{fill:var(--tbg)}
@@ -1849,3 +1849,27 @@ section.day>.anchor{padding-left:54px!important}
 .filt::-webkit-scrollbar{display:none}
 .filt .chip{flex:none}
 .srch{width:100%;min-height:48px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:0 14px;font:inherit;font-size:16px}
+
+/* ---- home hero v2: the search card sits inside the hero, below the words, so they can never overlap ---- */
+.lx-hero{display:flex;flex-direction:column;min-height:min(100svh,900px)}
+.lx-hero .hero-in{flex:1 0 auto;padding-bottom:20px;justify-content:center}
+.lx-hero .lx-starter.in-hero{margin-top:0!important;position:relative;z-index:3;padding-bottom:22px}
+.lx-hero .hero-phcap{bottom:auto!important;top:calc(var(--top-h, 64px) + 18px)!important;right:16px}
+@media (max-width:719.9px){
+  .lx-hero{min-height:min(calc(100svh - 64px),900px)}
+  .lx-hero .hero-in{justify-content:flex-start;padding-top:calc(var(--top-h, 56px) + 18px)}
+  .lx-hero .lx-starter.in-hero{padding-bottom:84px}
+}
+@media (max-height:700px) and (min-width:720px){.lx-hero .hero-in{padding-top:calc(var(--top-h, 64px) + 24px)}.lx-hero h1{font-size:clamp(46px,8.4vh,96px)}}
+
+/* ---- sharper: crisp tile edges, a clean top highlight, and less haze over photos ---- */
+.ev .item.tc:not(.tc-ferry){border-width:1.5px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 2px rgba(0,0,0,.12)}
+:root[data-theme="light"] .ev .item.tc:not(.tc-ferry){box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(42,36,26,.08)}
+.tc .tc-ph::after{background:linear-gradient(180deg,rgba(7,26,34,.22) 0,rgba(7,26,34,0) 26%,rgba(7,26,34,0) 50%,rgba(7,26,34,.82) 100%)!important}
+.lx-hero::after{background:linear-gradient(180deg,rgba(4,20,26,.45) 0%,rgba(4,20,26,0) 30%,rgba(4,20,26,.12) 55%,rgba(4,20,26,.8) 100%)!important}
+svg.ph image,.lx-hero image{image-rendering:auto}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+/* desktop: the trip sidebar already has the price and button, so the floating bar is for phones only */
+@media (min-width:1024px){ .tp + .cta{display:none} }
+.co-paybtn{display:none}
+@media (min-width:1024px){ .co-cta{display:none} .co-paybtn{display:flex;margin-top:12px} }
