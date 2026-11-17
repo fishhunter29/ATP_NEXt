@@ -55,3 +55,28 @@ test('pages for Google have titles, descriptions and a sitemap', async ({ page, 
   expect(sm.status()).toBe(200);
   expect((await sm.text()).split('<url>').length).toBeGreaterThan(400);
 });
+
+test('dates sheet: add a night and a child, totals and travellers update', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.getByRole('button', { name: 'Change' }).first().click();
+  await expect(page.getByRole('dialog', { name: 'Trip dates' })).toBeVisible();
+  await page.getByRole('button', { name: 'One more night' }).click();
+  await page.getByRole('button', { name: 'More Children' }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.locator('.triphd .muted').first()).toContainText('1 child');
+  await expect(page.locator('.triphd .eyebrow').first()).toContainText('6 nights');
+});
+
+test('price breakdown and fix-for-me sheets open and close', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await page.locator('.cta button.tot').click();
+  await expect(page.getByRole('dialog', { name: 'Price breakdown' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await page.locator('button.health.bad').click();
+  await expect(page.getByRole('dialog', { name: 'Fixes' })).toBeVisible();
+  await page.getByRole('button', { name: 'Undo' }).click();
+});
