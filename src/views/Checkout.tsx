@@ -26,7 +26,20 @@ export default function Checkout() {
     S.lead = { name: L.name.trim(), phone: L.phone.trim(), email: L.email.trim() };
     if (!E.checkLead()) { commit(); return; }
     E.bookAll(); setBusy(true); commit();
-    setTimeout(() => { S.cart = []; S.win = null; commit(); router.push('/my-trips?paid=1'); }, 1400);
+    /* send it to the server (saved in the database once Supabase is connected); the passes stay on the phone either way */
+    E.syncTrip(); const trip = S.trip || S.win || {};   // S.trip is only filled once the trip has been laid out; checkout can be opened directly
+    const send = fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      lead: S.lead, pay: 'simulated', pax: { adults: S.pax.adults, kids: S.pax.kids, infants: S.pax.infants },
+      start: trip.start, end: trip.end, subtotal: sub, gst, total: tot,
+      items: S.booked, trip: { cart: S.cart, pax: S.pax, win: S.win, fin: S.fin, fout: S.fout, method: S.pay },
+    }) }).then((r) => r.json()).then((j) => {
+      if (!j || !j.stored) return;
+      S.bookingCode = j.code;
+      // the server gave a new code to any pass whose code was already taken, so the QR matches the database
+      Object.entries(j.renamed || {}).forEach(([from, to]) => { const b = S.booked.find((x: any) => x.code === from); if (b) b.code = to; });
+    }).catch(() => {});
+    const wait = new Promise((r) => setTimeout(r, 1400));
+    Promise.all([wait, Promise.race([send, new Promise((r) => setTimeout(r, 6000))])]).then(() => { S.cart = []; S.win = null; commit(); router.push('/my-trips?paid=1'); });
   };
 
   return (

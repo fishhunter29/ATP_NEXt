@@ -39,7 +39,7 @@ const t = k => (T[S.lang] && T[S.lang][k]) || T.en[k] || k;
 const TODAY = (() => { const d = new Date(Date.now() + 5.5 * 3600e3).toISOString().slice(0, 10); return d < '2026-10-25' ? '2026-10-25' : d > '2027-08-31' ? '2027-08-31' : d; })();
 const SAMPLE0 = (() => { let d = '2026-12-07'; while (d < addD(TODAY, 10)) d = addD(d, 7); return d; })();
 const S = {lang:'en', cart:[], pax:{adults:2, kids:0, infants:0}, fin:null, fout:null, dismissed:{}, stack:[{v:'home'}], booked:[], scans:{}, vendorStatus:{}, offline:false, pay:'upi', lead:{name:'', phone:'', email:''}, seq:1, priceOverride:{}, trip:null, sheet:null, planDate:null, win:null, po:{}, poUndo:null, ownSails:[], theme:'system', homeZone:null, datesAssumed:false, datesSkipped:false};
-const SAVE_KEYS = ['lang','cart','pax','fin','fout','dismissed','booked','scans','vendorStatus','lead','seq','priceOverride','planDate','win','po','ownSails','theme','homeZone','datesAssumed','datesSkipped'];
+const SAVE_KEYS = ['lang','cart','pax','fin','fout','dismissed','booked','scans','vendorStatus','lead','seq','priceOverride','planDate','win','po','ownSails','theme','homeZone','datesAssumed','datesSkipped','bookingCode'];
 function save() { try { const o = {}; SAVE_KEYS.forEach(k => o[k] = S[k]); localStorage.setItem('atp_v6', JSON.stringify(o)); } catch (e) {} }
 function regOwn(o) { if (!SAIL[o.id]) { SAIL[o.id] = o; D.sails.push(o); } }
 function load() { try { const o = JSON.parse(localStorage.getItem('atp_v6') || 'null'); if (o) SAVE_KEYS.forEach(k => { if (o[k] !== undefined) S[k] = o[k]; }); } catch (e) {}
@@ -2169,7 +2169,7 @@ document.addEventListener('click', e => {
 /* ============ EVENTS ============ */
 function bookAll() {
   S.booked = S.cart.map(it => { const I = info(it);
-    const code = 'ATP-' + hash(it.uid + it.ref + it.date + S.seq).toString(36).toUpperCase().slice(0, 6);
+    const code = 'ATP-' + hash(it.uid + it.ref + it.date + S.seq + Math.random()).toString(36).toUpperCase().slice(0, 6);   // random part: two travellers with the same plan must not share pass codes
     const time = it.kind === 'stay' ? hm(CHECKIN) : it.kind === 'ferry' ? SAIL[it.ref].dep : (it.t || '09:00');
     const report = it.kind === 'ferry' ? `Report ${hm(tm(time) - I.rep)} at ${SAIL[it.ref].fromPt}` : it.kind === 'stay' ? `Check-in from ${hm(CHECKIN)} · ${it.nights}N` : it.kind === 'cab' ? `Driver meets you at ${time}` : it.kind === 'rent' ? `Pick up from ${time}` : I.rep ? `Report ${hm(tm(time) - I.rep)}` : `Arrive by ${time}`;
     const net = I.own || I.price == null ? null : Math.round(I.price / (1 + (MARKUP[it.kind] || .12)));
