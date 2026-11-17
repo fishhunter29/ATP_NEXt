@@ -2,7 +2,7 @@
 /* Planned trips: ready-made itineraries you can load and then change. Also the "Plan my trip for me" builder. */
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
-import { commit, useEngine } from '@/engine/client';
+import { commit, dispatch, useEngine } from '@/engine/client';
 import { Ic, Loading } from '@/components/ui';
 import { PkgCard } from './Home';
 
@@ -27,7 +27,8 @@ export function PlannedTripBuy({ id }: { id: string }) {
   const p = E.PKGS.find((x: any) => x.id.toLowerCase() === id.toLowerCase());
   if (!p) return null;
   const pr = E.pkgPreview(p);
-  const use = () => { E.buildPkg(p, pr.start); E.S.pkg = null; E.syncTrip(); commit(); router.push('/trip'); };
+  // same as v1: with plans already in the trip, ask before replacing them (the pkgload sheet); otherwise load and open the trip
+  const use = () => dispatch('usepkg', { id: p.id });
   return (
     <div className="card"><span className="price" style={{ font: '700 26px var(--f-mono)' }}>{E.inr(pr.total)}</span><small className="muted">for {E.paxLabel(p)} · {E.inr(pr.pp)} a person · incl. GST · from {E.fD(pr.start)}</small>
       <button className="btn primary block" onClick={use}>Use this trip <Ic n="arrow" s={18} w={2.2} /></button>
@@ -39,7 +40,13 @@ export function Plan() {
   const E = useEngine(); const router = useRouter();
   const [n, setN] = useState(4); const [style, setStyle] = useState('classic'); const [tier, setTier] = useState('Standard');
   if (!E) return <Loading />;
-  const build = () => { const start = E.S.win ? E.S.win.start : E.addD(E.baseDate(), 0); E.buildPkg(E.genSpec(n, style, tier), start); E.S.pkg = null; E.syncTrip(); commit(); router.push('/trip'); };
+  /* like v1's useGen: the trip you had is saved to My trips first, then the new one replaces it (never stacked on top) */
+  const build = () => {
+    const { S } = E; const start = S.win ? S.win.start : E.addD(E.baseDate(), 0); const had = S.cart.length > 0;
+    E.stashCurrent(); S.cart = []; S.seq = 1; S.dismissed = {}; S.tripId = null;
+    const spec = E.genSpec(n, style, tier); E.buildPkg(spec, start); S.pkg = null; S.tripName = `${spec.n || 'My trip'} · ${n} nights`; E.syncTrip(); commit();
+    if (had) E.toast('Your earlier trip is saved in My trips'); router.push('/trip');
+  };
   return (
     <div className="wrap">
       <div className="card" style={{ gap: 14 }}>

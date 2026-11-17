@@ -1,5 +1,6 @@
 'use client';
-/* Bottom sheets in React: dates & travellers & flights, price breakdown, fix menu, fix report, help.
+/* Bottom sheets in React: dates & travellers & flights, price breakdown, fix menu, fix report, help, move & swap,
+   ferry added, day plans and the planned-trip loader.
    They read the trip from the engine and call its functions; nothing here is HTML text any more. */
 import { useEffect, useState, type ReactNode } from 'react';
 import { commit, dispatch, useEngine, type Engine } from '@/engine/client';
@@ -242,9 +243,81 @@ export function FerryAddedSheet({ E }: { E: Engine }) {
   );
 }
 
-/** Which sheets are React now. The rest still come from the engine until they are ported. */
+/* ---------------- pick a day: the trip's days (with where you are that day), then the next fortnight ---------------- */
+export function DayPicker({ E, sel, onPick }: { E: Engine; sel: string; onPick: (d: string) => void }) {
+  const { S } = E; const set = new Set<string>();
+  if (S.trip) for (let n = 0; n < E.nDays() && n < 21; n++) set.add(E.addD(S.trip.start, n));
+  for (let i = -3; i <= 10; i++) { const d = E.addD(sel, i); if (d >= E.TODAY) set.add(d); }
+  const days = [...set].filter((d) => d >= E.TODAY).sort();
+  const inTrip = (d: string) => S.trip && S.cart.length && d >= S.trip.start && d <= S.trip.end;
+  return (
+    <div className="daypick" role="group" aria-label="Day">
+      {days.map((d) => { const dt = E.pDate(d); const z = inTrip(d) ? E.zoneAt(d) : null; return (
+        <button key={d} className="dp" aria-pressed={d === sel} onClick={() => onPick(d)}>
+          <small>{S.lang === 'hi' ? E.DOW_HI[dt.getUTCDay()] : E.DOW[dt.getUTCDay()]}</small><b>{dt.getUTCDate()}</b>
+          {z ? <i style={{ background: E.ZC(z) }}>{E.ZSHORT[z] || E.ZN[z].name}</i> : <i className="nt">{E.MON[dt.getUTCMonth()]}</i>}
+        </button>
+      ); })}
+      <label className="dp more"><Ic n="cal" s={18} /><i className="nt">More</i><input type="date" aria-label="Another day" min={E.TODAY} value={sel} onChange={(e) => e.target.value && onPick(e.target.value)} /></label>
+    </div>
+  );
+}
+
+/* ---------------- a half-day or full-day plan: its stops timed for one day, then add them all ---------------- */
+export function BlockSheet({ E }: { E: Engine }) {
+  const { S } = E; const q = S.blk; const b = q && E.BLK[q.id]; if (!b) return null;
+  const zb = b.z === 'WAN' || b.z === 'BAR' ? 'PBL' : b.z; const date: string = q.date || E.defaultDayFor(zb);
+  const st = E.stayAt(S.cart, zb, date, 600); const hk = st ? E.hotelKey(E.HOT[st.ref]) : undefined;
+  const w = q.from != null ? { from: +q.from, to: +q.to + (q.eve ? 30 : 0), evening: !!q.eve, hk } : { hk };
+  const p = E.planBlock(b, date, w); const m = E.blockMeta(b);
+  const icon = (x: any) => (x.entry ? 'camera' : E.FAMICON[x.fam] || 'wave');
+  const pick = (d: string) => { S.blk = { ...S.blk, date: d, from: null, to: null }; commit(); };
+  const book = (id: string) => { S.sheet = null; commit(); dispatch('product', { kind: 'act', id, date }); };
+  return (
+    <Sheet label={b.n} onClose={() => close(E)}>
+      <span className="tag acc" style={{ alignSelf: 'flex-start' }}>{p ? p.label : m.full ? 'Full-day plan' : 'Half-day plan'} · {E.ZN[zb].name}</span>
+      <h2>{b.n}</h2>
+      <p className="note" style={{ marginTop: -8 }}>{b.why}. {p ? `${E.hm(p.start)} to ${E.hm(p.end)}, with about ${p.backMin} min back to ${st ? 'your stay' : 'the centre'}.` : ''}</p>
+      <div className="eyebrow">Day</div>
+      <DayPicker E={E} sel={date} onPick={pick} />
+      <div className="pkday" style={{ border: 0, padding: 0 }}>
+        {p ? p.items.map((i: any) => (
+          <div key={i.ref + i.s} className="pkrow"><span className="mono">{E.hm(i.s)}</span><span className="nd" style={{ background: E.ZC(i.x.z) }}><Ic n={icon(i.x)} s={13} w={2} /></span>
+            <span><b>{i.x.n}</b><small>{i.x.v || ''} · {E.durTxt(i.d)}{i.during ? ' · during the boat trip' : ''}</small></span>
+            <button className="link" style={{ gridColumn: 3, justifySelf: 'start', minHeight: 32 }} onClick={() => book(i.ref)}>Book this on its own</button></div>
+        )) : m.xs.map((x: any, n: number) => (
+          <div key={x.id} className="pkrow"><span className="mono">{n + 1}</span><span className="nd" style={{ background: E.ZC(x.z) }}><Ic n={icon(x)} s={13} w={2} /></span><span><b>{x.n}</b><small>{x.v || ''} · {E.durTxt(x.d)}</small></span></div>
+        ))}
+      </div>
+      {p ? (
+        <>
+          <div className="split"><span className="hr" /><span><b>Plan total</b><span className="sub" style={{ display: 'block' }}>{E.paxTxt()} · before GST · itemised at checkout</span></span><span className="v" style={{ font: '800 24px var(--f-display)' }}>{E.inr(p.price)}</span></div>
+          <button className="btn primary block" onClick={() => dispatch('blkadd', { id: b.id, date, ...(q.from != null ? { from: q.from, to: q.to, eve: q.eve ? 1 : 0 } : {}) })}><Ic n="plus" s={18} w={2.6} /> Add plan to {E.fD(date)}</button>
+        </>
+      ) : (
+        <div className="fitbox warn"><div className="ln"><Ic n="alert" s={18} /><p>This plan does not fit on {E.fD(date)}: a stop is closed, out of season, already booked, or it clashes with something in your trip. Try another day, or book a stop on its own.</p></div></div>
+      )}
+      <button className="btn ghost block" onClick={() => close(E)}>{E.t('done')}</button>
+    </Sheet>
+  );
+}
+
+/* ---------------- loading a planned trip over plans you already have ---------------- */
+export function PkgLoadSheet({ E }: { E: Engine }) {
+  return (
+    <Sheet label={E.t('replaceQ')} onClose={() => close(E)}>
+      <h2>{E.t('replaceQ')}</h2>
+      <p className="note">{E.t('replaceS')}</p>
+      <button className="btn primary block" onClick={() => dispatch('pkgreplace', { id: E.S.pkgPending })}>{E.t('replace')}</button>
+      <button className="btn ghost block" onClick={() => close(E)}>{E.t('keepMine')}</button>
+    </Sheet>
+  );
+}
+
+/** Every bottom sheet, by the engine's name for it (S.sheet). */
 export const REACT_SHEETS: Record<string, (p: { E: Engine }) => ReactNode> = {
   dates: DatesSheet, breakdown: BreakdownSheet, fixmenu: FixMenuSheet, autofix: AutoFixSheet, help: HelpSheet, move: MoveSheet, ferryadded: FerryAddedSheet,
+  block: BlockSheet, pkgload: PkgLoadSheet,
 };
 
 export function useEngineSheet() { return useEngine(); }
