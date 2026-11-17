@@ -1,11 +1,11 @@
 'use client';
 /* Shows the open bottom sheet. Most are React components (components/sheets); the few not yet ported
-   (move & swap, ferry added, day plan, planned-trip loader) still come from the engine and work through its actions. */
+   (day plan, planned-trip loader) still come from the engine and work through its actions. */
 import { useEffect } from 'react';
 import { useEngine } from '@/engine/client';
 import { REACT_SHEETS } from './sheets/Sheets';
 
-const LEGACY: Record<string, string> = { pkgload: 'pkgSheet', ferryadded: 'ferryAddedSheet', block: 'blockSheet', move: 'moveSheet' };
+const LEGACY: Record<string, string> = { pkgload: 'pkgSheet', block: 'blockSheet' };
 
 export default function SheetHost() {
   const E = useEngine();
