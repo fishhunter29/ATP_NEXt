@@ -21,8 +21,8 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - `dispatch(action, data)` runs one of the engine's named actions (e.g. `pace`, `fx`, `dates`, `fixmenu`).
 - When an engine action moves to another screen, `routeFor()` turns it into the right web address.
 
-## What still comes from the engine as HTML (stage 2 moves these to React)
-Bottom sheets: dates & flights, price breakdown, fix menu / auto-fix, move & swap, help, planned-trip loader. They render through `SheetHost` and already work. Icons and the photo SVGs also come from the engine as text.
+## Bottom sheets
+All bottom sheets are React (`src/components/sheets/Sheets.tsx`): dates & flights, price breakdown, fix menu / auto-fix, help, move & swap, ferry added, day plans, and "replace your trip?". `S.sheet` names the open one and `SheetHost` shows it. Their buttons call the engine's named actions through `dispatch()`. Icons and the photo SVGs still come from the engine as text.
 
 ## Server routes (`src/app/api`)
 `/api/health`, `/api/payments/order` (Razorpay order), `/api/payments/webhook` (signature-checked), `/api/ferries/availability` (live seats go here), `/api/bookings` (saves a paid trip). Payment and database routes answer "not connected" until their keys are set.

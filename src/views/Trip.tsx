@@ -210,27 +210,46 @@ function Alert({ E, a }: { E: Engine; a: any }) {
 function Gap({ E, a, date }: { E: Engine; a: any; date: string }) {
   const router = useRouter();
   const len = Math.floor((a.end - a.at) / 30) * 30;
-  const head = (
+  const head = (extra: ReactNode) => (
     <div className="ev"><span className="et faint">{E.clock(a.at)}</span><span className="er"><span className="nd" style={{ background: 'var(--sunk)', color: 'var(--ink)' }}><Ic n="clock" s={12} w={2.2} /></span></span>
-      <span className="ec"><div className="idhd"><b>{E.durTxt(len)} free on {E.ZN[a.zone].name}</b><span>{E.clock(a.at)}–{E.clock(a.end)}{a.skipped && <> · <button className="link" onClick={() => dispatch('fx', { act: 'undismiss', key: 'gapday' + date })}>Show ideas</button></>}</span></div></span></div>
+      <span className="ec"><div className="idhd"><b>{E.durTxt(len)} free on {E.ZN[a.zone].name}</b><span>{E.clock(a.at)}–{E.clock(a.end)}{extra}</span></div></span></div>
   );
-  if (a.skipped) return head;
-  const { pick } = E.gapPicks(a, date);
-  if (!pick.length) return head;
+  if (a.skipped) return head(<> · <button className="link" onClick={() => dispatch('fx', { act: 'undismiss', key: 'gapday' + date })}>Show ideas</button></>);
+  const { pick, blocks, leaving, landing, fiArr } = E.gapPicks(a, date);
+  if (!pick.length && !blocks.length) return null;
+  /* the free window, so a day plan is timed inside it (same as v1's data-from / data-to / data-eve) */
+  const win = { date, from: a.at % 1440, to: a.end % 1440, eve: a.evening ? 1 : 0 };
+  const why = leaving ? 'short and close, so you make your connection' : landing ? (fiArr ? `timed for your ${fiArr} landing` : 'light plans for your first hours') : blocks.length ? 'ideas that fit the time you have' : E.t('fitsHere');
+  const grp = (k: string, n: number) => <div className="idgrp" key={'g' + k}><b>{k}</b><small>{n} that fit{n > 1 ? '' : 's'}</small></div>;
   return (
     <>
-      {head}
+      {head(<> · {why}</>)}
       <div className="bleed" role="region" aria-label={`Ideas for ${E.clock(a.at)}–${E.clock(a.end)}`}><div className="idrail">
-        {pick.map(({ x, slot, why }: any) => { const u = E.actUnit(x, date); return (
+        {blocks.map((p: any, i: number) => (
+          <div key={p.b.id} style={{ display: 'contents' }}>
+            {(i === 0 || blocks[i - 1].span !== p.span) && grp(p.span === 'full' ? 'Full day' : 'Half day', blocks.filter((q: any) => q.span === p.span).length)}
+            <div className="idc blk" style={{ ['--zc' as any]: E.ZC(p.b.z) }}>
+              <button className="idc-art" onClick={() => dispatch('blk', { id: p.b.id, ...win })} aria-label={`See what is inside: ${p.b.n}`}><Art z={p.b.z} seed={p.hero} /><span className="bk-n">{p.span === 'full' ? 'Full day' : 'Half day'}</span><span className="why">★ {p.b.why}</span></button>
+              <div className="idc-b"><b>{p.b.n}</b><small>{p.items.filter((i: any) => !i.during).map((i: any) => E.shortName(i.x)).join(' → ')}</small>
+                <span className="idc-m"><Ic n="clock" s={14} /> {E.hm(p.start)}–{E.hm(p.end)} · {p.items.length} bookings</span>
+                <div className="idc-f"><span className="price">{E.inr(p.price)}<small> for {E.pax()}</small></span>
+                  <button className="btn sm" onClick={() => dispatch('blkadd', { id: p.b.id, ...win })}><Ic n="plus" s={16} w={2.6} /> Add plan</button></div></div>
+            </div>
+          </div>
+        ))}
+        {pick.length > 0 && grp('Single stops', pick.length)}
+        {pick.map(({ x, slot, why: w, where }: any) => { const u = E.actUnit(x, date); return (
           <div key={x.id} className="idc" style={{ ['--zc' as any]: E.ZC(x.z) }}>
-            <button className="idc-art" onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${date}`)} aria-label={`Details: ${x.n}`}><Art z={x.z} seed={x.id} /><span className="why">★ {why}</span></button>
+            <button className="idc-art" onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${date}`)} aria-label={`Details: ${x.n}`}><Art z={x.z} seed={x.id} />{w && <span className="why">★ {w}</span>}</button>
             <div className="idc-b"><b>{x.n}</b><small>{x.v}</small>
-              <span className="idc-m"><Ic n="clock" s={14} /> {slot} · {E.durOf ? E.durOf(x) : ''}</span>
-              <div className="idc-f"><span className="price">{u ? E.inr(u) : 'On request'}<small>{x.b === 'per_pax' ? ' / person' : ''}</small></span>
+              <span className="idc-m"><Ic n="clock" s={14} /> {slot} · {E.durTxt(x.d)}{where ? ` · ${where}` : ''}</span>
+              <div className="idc-f"><span className="price">{x.entry ? (u ? E.inr(u) : 'Free') : u ? E.inr(u) : 'On request'}<small>{x.b === 'per_pax' ? ' / person' : ''}</small></span>
                 <button className="btn sm" onClick={() => dispatch('fx', { act: 'quickadd', kind: 'act', ref: x.id, date, t: slot })}><Ic n="plus" s={16} w={2.6} /> Add</button></div></div>
           </div>
         ); })}
-      </div></div>
+        <button className="idc more" onClick={() => router.push(`/islands/${String(a.zone).toLowerCase()}?date=${date}`)}><Ic n="search" s={24} /><b>Everything on {E.ZN[a.zone].name}</b></button>
+      </div>
+      <div className="idskip"><button className="link" onClick={() => dispatch('fx', { act: 'dismiss', key: 'gapday' + date })}>Skip</button></div></div>
     </>
   );
 }

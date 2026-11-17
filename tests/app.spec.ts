@@ -187,3 +187,80 @@ test('ferry added: find a stay and add the return ferry', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page).toHaveURL(/\/ferries\/pbl-hav/);
 });
+
+/* ---------- day plans (half-day / full-day blocks) ---------- */
+test('day plan: open from a free slot, pick another day, add it', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const card = page.locator('.idc.blk').first();
+  await expect(card).toBeVisible();
+  const name = await card.locator('.idc-b b').innerText();
+  await card.locator('.idc-art').click();
+  const dlg = page.getByRole('dialog', { name });
+  await expect(dlg).toBeVisible();
+  await expect(dlg.locator('.pkrow').first()).toBeVisible();
+  // another day re-times the plan (or explains why it does not fit)
+  await dlg.locator('.daypick .dp[aria-pressed="false"]').first().click();
+  await expect(dlg.locator('.pkrow').first()).toBeVisible();
+  await dlg.locator('.daypick .dp').first().click();
+  const n0 = await page.evaluate(() => (window as any).__ATP__.S.cart.length);
+  const add = dlg.getByRole('button', { name: /^Add plan to / });
+  if (await add.count()) {
+    await add.click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.locator('.toast')).toContainText('bookings added to');
+    expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeGreaterThan(n0);
+  } else {
+    await expect(dlg.locator('.fitbox.warn')).toBeVisible();
+  }
+});
+
+test('day plan: add straight from the free slot, then undo', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  const n0 = await page.evaluate(() => (window as any).__ATP__.S.cart.length);
+  await page.locator('.idc.blk').first().getByRole('button', { name: 'Add plan' }).click();
+  await expect(page.locator('.toast')).toContainText('bookings added to');
+  expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeGreaterThan(n0);
+  await page.locator('.toast').getByRole('button', { name: 'Undo' }).click();
+  expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBe(n0);
+});
+
+/* ---------- planned trips: loading one over an existing trip asks first ---------- */
+test('planned trip: replace my trip asks first, keep or replace', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  let dlg = page.getByRole('dialog', { name: 'Replace your current trip?' });
+  await expect(dlg).toBeVisible();
+  await dlg.getByRole('button', { name: 'Keep my trip' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page).toHaveURL(/\/trips\/p2/);
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  dlg = page.getByRole('dialog', { name: 'Replace your current trip?' });
+  await dlg.getByRole('button', { name: 'Replace with this plan' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('.toast')).toContainText('Honeymoon by the lagoon');
+});
+
+test('planned trip: with an empty trip it loads straight away', async ({ page }) => {
+  await page.goto('/trips/p1');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('section.day').first()).toBeVisible();
+});
+
+test('plan for me replaces the trip instead of stacking on it', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/plan');
+  await page.getByRole('button', { name: /Build my trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const S = await page.evaluate(() => { const S = (window as any).__ATP__.S; return { ferries: S.cart.filter((i: any) => i.kind === 'ferry').length, saved: (S.trips || []).length }; });
+  expect(S.ferries).toBeLessThanOrEqual(6);
+  expect(S.saved).toBeGreaterThan(0);
+});
