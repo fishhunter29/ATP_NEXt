@@ -867,7 +867,7 @@ details.clash .legs{padding-bottom:12px}
 
 /* ---------- passes ---------- */
 .passgrid{display:grid;gap:14px}
-@media (min-width:720px){.passgrid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}}
+@media (min-width:720px){.passgrid{grid-template-columns:repeat(auto-fill,minmax(340px,1fr));align-items:start}}
 .pass{position:relative;border-radius:22px;background:var(--surface);border:1px solid var(--line);text-align:left;width:100%;display:block;box-shadow:var(--e-1);transition:transform .2s var(--ease),box-shadow .2s}
 button.pass:hover{transform:translateY(-3px);box-shadow:var(--e-2)}
 .pass .band{position:relative;padding:12px 16px;background:color-mix(in srgb,var(--zc) 10%,var(--surface));color:var(--zc);border-bottom:1px solid color-mix(in srgb,var(--zc) 22%,transparent);display:flex;justify-content:space-between;align-items:center;gap:8px;border-radius:21px 21px 0 0;overflow:hidden}
@@ -1399,7 +1399,7 @@ section.day + section.day{margin-top:8px}
 :root[data-theme="light"]{
   color-scheme:light;
   --bg:#F6F1E7; --surface:#FFFFFF; --sunk:#EEE8DC; --raise:#FFFFFF;
-  --ink:#071A22; --muted:#4D5E66; --faint:#64747B; --line:#E0D9CB; --line-strong:#9AA4A6;
+  --ink:#071A22; --muted:#4D5E66; --faint:#5F6F76; --line:#E0D9CB; --line-strong:#9AA4A6;
   --brand:#0B7A70; --brand-deep:#071A22; --brand-soft:#DDF1EE; --aqua:#0B8579; --sun:#E3A51A; --sun-soft:#FBF1D6;
   --cta:#071A22; --cta-ink:#FFFFFF; --cta-press:#12303B; --cta-soft:#E6EEF0; --cta-glow:rgba(7,26,34,.22);
   --sel:#DDF1EE; --sel-ink:#075E56; --sel-line:#0B8579; --sel-soft:#EEF8F6;
