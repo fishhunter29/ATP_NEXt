@@ -2,6 +2,7 @@
    Same markup as the live lists, so nothing jumps when they swap. */
 import { ACTS, HOTELS, ZN, actPhoto, hotelFrom, inr, slug } from '@/lib/catalogue';
 import PKGS from '@/data/packages.json';
+import PhotoArt from './PhotoArt';
 
 const score = (rt?: number | null, n?: number | null) => (rt || 0) * Math.log10((n || 1) + 1);
 
@@ -11,8 +12,7 @@ export function ActsIndex() {
     <div className="wrap"><p className="note">{ACTS.length} to choose from</p>
       <div className="lst">{list.map((a) => (
         <a key={a.id} className="lrow" href={`/things-to-do/${slug(a.id)}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <span className="art"><img src={`/img/t/${actPhoto(a.id)}.webp`} alt="" loading="lazy" width={96} height={96} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></span>
+          <span className="art"><PhotoArt id={actPhoto(a.id)} /></span>
           <span className="lb"><b>{a.n}</b><small>{ZN[a.z]?.name} · {a.v}</small><span className="price">{a.p ? `from ${inr(a.p)}` : 'On request'}{a.g?.rt ? <small style={{ display: 'inline', marginLeft: 8 }}>★ {a.g.rt} Google</small> : null}</span></span>
         </a>
       ))}</div>

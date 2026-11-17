@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { commit, useEngine } from '@/engine/client';
+import { commit, loadEngine, useEngine } from '@/engine/client';
 import { Art, Ic, Loading, Photo, Section } from '@/components/ui';
+import DayPlans from '@/components/DayPlans';
 
 const TILES = [
   { href: '/ferries', icon: 'ferry', title: 'Ferries', sub: 'Private and government boats', z: 'HAV', seed: 'SC:ferry' },
@@ -30,7 +31,8 @@ export default function Home() {
   const [clock, setClock] = useState('');
   useEffect(() => { setClock(new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' }).toLowerCase()); }, []);
   const S = E?.S;
-  const sample = () => { if (!E) return; E.sampleTrip(); S.booked = []; S.scans = {}; S.vendorStatus = {}; commit(); router.push('/trip'); };
+  // the hero is on screen before the engine loads, so a quick tap waits for it instead of doing nothing
+  const sample = async () => { const M = E || await loadEngine(); M.sampleTrip(); M.S.booked = []; M.S.scans = {}; M.S.vendorStatus = {}; commit(); router.push('/trip'); };
   const datesLabel = E && S.win ? `${E.fD(S.win.start)} – ${E.fD(S.win.end)}` : 'When are you coming?';
 
   return (
@@ -69,7 +71,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-      {E ? <HomeBody E={E} /> : <Loading />}
+      {/* before the engine loads, the day plans still render (they come from the server data), so Google reads them */}
+      {E ? <HomeBody E={E} /> : <><div className="wrap"><DayPlans /></div><Loading /></>}
     </>
   );
 }
@@ -94,6 +97,7 @@ function HomeBody({ E }: { E: any }) {
             <span className="lx-chtile-go"><Ic n="arrow" s={18} w={2.2} /></span>
           </Link>
         </Section>
+        <DayPlans />
         <Section title="Trips we have planned" action={<Link className="link" href="/trips">See all {PKGS.length}</Link>}>
           <p className="note" style={{ marginTop: -8 }}>Full trips from 2 to 11 nights. We have checked every ferry.</p>
           <div className="railwrap"><div className="pkgrail">{pkgs.map((p: any) => <PkgCard key={p.id} p={p} />)}</div></div>

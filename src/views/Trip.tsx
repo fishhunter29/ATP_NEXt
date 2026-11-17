@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { commit, dispatch, useEngine, type Engine } from '@/engine/client';
 import { Art, Ic, Loading, Raw } from '@/components/ui';
+import { DayTools, ExtendBtn, PairRail, StayCompare } from '@/components/trip/TripTools';
 
 type Row = { at: number; key: string; node: ReactNode };
 
@@ -105,7 +106,9 @@ export default function Trip() {
               {dmeta.map((m, n) => <a key={n} href={`#day${n + 1}`} className={m.bad ? 'bad' : ''} style={{ ['--zc' as any]: E.ZC(m.zz) }}><i />Day {n + 1}<span className="faint" style={{ fontWeight: 600 }}>{(E.ZSHORT || {})[m.zz] || E.ZN[m.zz].name}</span></a>)}
             </nav>
           )}
+          <ExtendBtn E={E} dir="before" />
           {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} fi={fi} fo={fo} />)}
+          <ExtendBtn E={E} dir="after" />
           <div className="pad"><p className="note" style={{ paddingBlock: '12px 0' }}>Everything is in day and time order. Reporting times and the travel in between are already counted.</p></div>
         </div>
       </div>
@@ -173,6 +176,7 @@ function Day({ E, n, N, R, evs, zz, fi, fo }: { E: Engine; n: number; N: number;
         <button className="iconbtn" aria-label={`Add to day ${n + 1}`} onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><Ic n="plus" s={20} /></button>
         {load && <div className="lx-load"><span className="lx-load-b"><i style={{ width: `${Math.min(100, load.pct || 0)}%` }} /></span><b>{load.label}</b></div>}
       </div>
+      <DayTools E={E} date={date} zz={zz} />
       {mealOpts.length > 0 && (
         <div className="lx-meals"><small>ADD</small>
           {mealOpts.map((k) => <button key={k} className="lx-chip sm" data-k={k} onClick={() => E.addMeal(k, date)}><Ic n={k === 'shop' ? 'store' : 'cup'} s={14} /> {E.MEALK[k].n}</button>)}
@@ -355,12 +359,8 @@ function Ev({ E, e, R }: { E: Engine; e: any; R: any }) {
         {drag && <button className="lx-grip" aria-label={`Move or swap ${I.title}`} data-drag={it.uid}><Ic n="grip" s={14} w={2.2} /><span>Move</span></button>}
         {card}
         {show && al.map((a: any, i: number) => <Alert key={i} E={E} a={a} />)}
-        {e.kind === 'stay' && !it.own && (
-          <>
-            <button className="lx-chip sm" onClick={() => router.push(`/stays?zone=${e.zone}&date=${it.date}`)}><Ic n="search" s={13} /> Change hotel</button>
-            <button className="lx-chip sm" onClick={() => dispatch('swapopen', { uid: it.uid })}><Ic n="swap" s={13} /> Quick compare</button>
-          </>
-        )}
+        {e.kind === 'stay' && !it.own && <StayCompare E={E} it={it} zone={e.zone} />}
+        {e.kind === 'act' && show && E.S.justAdded === it.uid && <PairRail E={E} e={e} />}
       </span>
     </div>
   );

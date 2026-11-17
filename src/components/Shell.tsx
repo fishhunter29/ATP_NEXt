@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, type ReactNode } from 'react';
-import { commit, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
+import { commit, loadEngine, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
 import { Ic, Raw } from './ui';
 import SheetHost from './SheetHost';
 
@@ -48,11 +48,12 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
   const isRoot = TABS.some((t) => t.href === path);
   const over = path === '/';
   const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
-  const setLang = (l: string) => { if (!E) return; E.S.lang = l; commit(); };
-  const cycleTheme = () => {
-    if (!E) return;
+  // the header shows before the engine loads; an early tap waits for it rather than being lost
+  const setLang = async (l: string) => { const M = E || await loadEngine(); M.S.lang = l; commit(); };
+  const cycleTheme = async () => {
+    const M = E || await loadEngine();
     const cur = document.documentElement.dataset.theme;
-    E.S.theme = cur === 'light' ? 'dark' : 'light';
+    M.S.theme = cur === 'light' ? 'dark' : 'light';
     commit();
   };
   const n = S ? S.cart.length : 0;

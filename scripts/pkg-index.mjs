@@ -1,5 +1,6 @@
-// Rebuilds src/data/packages.json: the planned trips as plain data, so /trips and /trips/[id] can be rendered
-// on the server for Google (the trip engine only runs in the browser).
+// Rebuilds src/data/packages.json (planned trips) and src/data/dayplans.json (half-day and full-day plans) as plain data,
+// so /trips, /trips/[id], the home page and island pages can render them on the server for Google
+// (the trip engine only runs in the browser).
 // Run after changing planned trips or prices:  npm run build && npm start   (in one terminal)
 //                                              node scripts/pkg-index.mjs  (in another)
 import { chromium } from '@playwright/test';
@@ -20,4 +21,11 @@ const out = await p.evaluate(() => {
   });
 });
 writeFileSync(new URL('../src/data/packages.json', import.meta.url), JSON.stringify(out));
-console.log(`packages.json updated: ${out.length} planned trips`); await b.close();
+console.log(`packages.json updated: ${out.length} planned trips`);
+const plans = await p.evaluate(() => {
+  const E = window.__ATP__;
+  return E.BLOCKS.map((b) => { const m = E.blockMeta(b); const hero = (m.xs.find((x) => !x.entry) || m.xs[0]).id;
+    return { id: b.id, z: b.z === 'WAN' ? 'PBL' : b.z, ph: (String(E.art(b.z, null, 'BLK:' + b.id)).match(/i\d{3}/) || ['i179'])[0], n: b.n, why: b.why, full: m.full, mins: m.mins, pp: m.pp, hero, stops: m.xs.map((x) => ({ id: x.id, n: E.shortName(x) })) }; });
+});
+writeFileSync(new URL('../src/data/dayplans.json', import.meta.url), JSON.stringify(plans));
+console.log(`dayplans.json updated: ${plans.length} day plans`); await b.close();
