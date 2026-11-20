@@ -1270,7 +1270,7 @@ svg.ph:not([data-on]) image{opacity:0}
 .lx-extbtn{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:12px 14px;border:1.5px dashed var(--line);border-radius:16px;background:transparent;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer}
 .lx-extbtn small{flex-basis:100%;color:var(--muted,#6b7280);font-size:12.5px}
 .lx-extbtn:hover{border-color:var(--accent)}
-.lx-pair{margin:8px 0 4px;padding:10px 0 2px;border-top:1px dashed var(--line)}
+.lx-pair{margin:8px 0 4px;padding:10px 0 2px;border-top:1px dashed var(--line);min-width:0} /* min-width: or the rail inside pushes the page wider than the phone */
 .lx-pair-h{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;margin-bottom:6px}
 .lx-pair-h b{display:flex;align-items:center;gap:6px}
 /* drag to move */
