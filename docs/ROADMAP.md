@@ -14,7 +14,7 @@
 
 The new design (phone-first, categorised browsing, boarding-pass ferry tiles, optional meals out, one checkout) was approved on a clickable prototype. The app is being rebuilt to it in small pull requests, each one safe to ship on its own.
 
-**R1 · Trust, photos and names (this change).** Company details (CIN, GSTIN, DPIIT number, registered office, email) and the six recognition logos in the site footer and schema.org data; booking terms, refunds and privacy pages (`/terms`, `/refunds`, `/privacy`, drafts for a lawyer to check); hotels' own photos on stay pages and in the stays list (40 of 178 so far; the rest show one labelled sample photo); our own heading on all 96 itineraries.
+**R1 · Trust, photos and names (this change).** Company details (CIN, GSTIN, DPIIT number, registered office, email) and the six recognition logos in the site footer and schema.org data; booking terms, refunds and privacy pages (`/terms`, `/refunds`, `/privacy`, drafts for a lawyer to check); hotels' own photos on stay pages and in the stays list (57 of 178 so far; the rest show one labelled sample photo); our own heading on all 96 itineraries.
 
 **R2 · Design tokens and shell.** The approved colours, type and spacing as the app's tokens; header with the DPIIT line; four-tab dock (Explore, Trip, My trips, Profile).
 
