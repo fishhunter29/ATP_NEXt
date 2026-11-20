@@ -156,7 +156,7 @@ export default function Checkout() {
     <div className="atp-pg atp-co">
         <div className="atp-cosum">
           <span className="atp-ph"><Art z={cover} icon="beach" seed={'COVER:' + cover} /></span>
-          <span><b>{S.trip ? `${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}` : 'Your bookings'}</b><small>{E.paxTxt()}</small><small className="atp-okline"><TideIcon n="check" s={14} />{rows.length} booking{rows.length > 1 ? 's' : ''} checked</small></span>
+          <span><b>{S.trip ? (S.trip.start === S.trip.end ? E.fD(S.trip.start) : `${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}`) : 'Your bookings'}</b><small>{E.paxTxt()}</small><small className="atp-okline"><TideIcon n="check" s={14} />{rows.length} booking{rows.length > 1 ? 's' : ''} checked</small></span>
           <Link className="atp-btn is-text" href="/trip" prefetch={false}>Edit</Link>
         </div>
         <p className="atp-checked"><TideIcon n="clock" s={16} /><span>Prices checked{now ? <> at <b className="atp-mono">{now}</b></> : ''}. We check again the moment you pay.</span></p>

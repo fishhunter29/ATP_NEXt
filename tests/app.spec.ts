@@ -511,6 +511,7 @@ test('light mode: tabs, small labels, checkout and My trips on a wide screen', a
   await fillTravellers(page);
   await page.getByRole('button', { name: /^Pay ₹/ }).click();
   await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
+  await page.locator('.atp-vlist .atp-vday').nth(2).waitFor();
   const tops = await page.locator('.atp-vlist .atp-vday').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(tops.length).toBe(3); expect(new Set(tops).size).toBe(1);
   await page.close();
