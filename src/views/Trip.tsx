@@ -3,9 +3,9 @@
    Cabs are shown the way they run in the islands: one car, from the hotel round the stops and back.
    Ferries are boarding passes; a tap opens class and seats. Timings and prices come from the trip engine. */
 import { useRouter } from 'next/navigation';
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { commit, dispatch, useEngine, type Engine } from '@/engine/client';
+import { commit, dispatch, showToast, useEngine, type Engine } from '@/engine/client';
 import { Art, Loading, Raw } from '@/components/ui';
 import { TideIcon } from '@/components/Brand';
 import { DayTools, ExtendBtn, PairRail, StayCompare } from '@/components/trip/TripTools';
@@ -14,15 +14,35 @@ type Row = { at: number; key: string; node: ReactNode; t?: 'cab' | 'stop' | 'mea
 const TILE: Record<string, [string, string]> = { ferry: ['k-boat', 'boat'], cab: ['k-cab', 'car'], stay: ['k-stay', 'bed'], do: ['k-sight', 'sunset'], adv: ['k-adv', 'mask'], boat: ['k-boat', 'wave'], meal: ['', 'cup'], shop: ['', 'store'] };
 /* what a waiting cab costs an hour (the catalogue's "Cab rules"), for the note under a meal out */
 const waitRate = (E: Engine, z: string) => ((E.D.extras || []).find((x: any) => /^CR-WAIT/.test(x.id) && x.z === z) || (E.D.extras || []).find((x: any) => /^CR-WAIT/.test(x.id)) || { p: 150 }).p;
-const place = (s: string) => (/hotels?\b|resort|your stay/i.test(s) ? 'Hotel' : String(s).replace(/\s*\(.*?\)/g, '').trim());
+const place = (s: string, stays?: Set<string>) => ((stays && stays.has(s)) || /hotels?\b|resort|your stay/i.test(s) ? 'Hotel' : String(s).replace(/\s*\(.*?\)/g, '').trim());
 
 export default function Trip() {
   const E = useEngine();
   const router = useRouter();
   const [ferry, setFerry] = useState<string | null>(null);
+  const closeFerry = useCallback(() => setFerry(null), []);
+  const shape = E && E.S.trip ? `${E.S.trip.start}|${E.S.trip.end}` : '';
+  /* The day rail follows the day you are reading. Done on the page itself, not through React state: the photos
+     in the itinerary are the engine's, and redrawing the whole trip on every scroll would make them reload. */
+  const cur = useRef(0);
+  const mark = useCallback(() => {
+    document.querySelectorAll('.atp-rail .atp-day').forEach((d, i) => { d.classList.toggle('is-on', i === cur.current); if (i === cur.current) d.setAttribute('aria-current', 'true'); else d.removeAttribute('aria-current'); });
+  }, []);
+  useEffect(() => {
+    const days = [...document.querySelectorAll<HTMLElement>('section.atp-dsec')]; if (!days.length || typeof IntersectionObserver !== 'function') return;
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return; cur.current = days.indexOf(e.target as HTMLElement); mark();
+      const chip = document.querySelector<HTMLElement>('.atp-rail .is-on'); const rail = chip?.parentElement;
+      if (chip && rail && rail.scrollWidth > rail.clientWidth) rail.scrollTo({ left: chip.offsetLeft - rail.clientWidth / 2 + chip.clientWidth / 2 });
+    }), { rootMargin: '-25% 0px -70% 0px' });
+    days.forEach((d) => io.observe(d)); return () => io.disconnect();
+  }, [shape, mark]);
+  useEffect(mark); // after every redraw, the mark goes back on
   if (!E) return <Loading />;
   const { S } = E;
-  if (!S.cart.length && !S.win) return <EmptyTrip E={E} />;
+  /* the trip's dates are worked out from what is in it; after a reload that has not happened yet */
+  if (!S.trip && (S.cart.length || S.win)) { try { E.syncTrip(); } catch {} }
+  if (!S.trip || (!S.cart.length && !S.win)) return <EmptyTrip E={E} />;
 
   E.__resetIdeas();
   const R = E.run(S.cart); const evs = E.expand(S.cart); const pos = E.makePos(evs); const N = E.nDays();
@@ -44,6 +64,10 @@ export default function Trip() {
   /* the clashes themselves, named, so the panel says what is wrong before you open the fixes */
   const clashes: any[] = []; Object.values(R.by || {}).forEach((l: any) => l.forEach((a: any) => { if (a.sev === 'hard' && !clashes.some((c) => c.title === a.title)) clashes.push(a); }));
   const ferryIt = ferry ? S.cart.find((i: any) => i.uid === ferry) : null;
+  /* stops with no ride yet: the engine can book a cab for each in one go (the same first choice its tips offer) */
+  const noRide = Object.values(R.by || {}).flat().filter((a: any) => a.sev === 'soft' && a.fix && a.fix[0] && a.fix[0].act === 'quickadd' && a.fix[0].kind === 'cab').length;
+  const addCabs = () => { S.undo = JSON.parse(JSON.stringify(S.cart)); const before = E.total(); E.addCabs(); E.syncTrip(); commit(); showToast(`Cabs added for ${noRide} stop${noRide > 1 ? 's' : ''} · +${E.inr(E.total() - before)}`, () => dispatch('undo')); };
+  const tips = R.soft - noRide;
 
   return (
     <div className="atp-pg atp-trip">
@@ -82,7 +106,11 @@ export default function Trip() {
             <div className="atp-fix-f"><button type="button" className="atp-btn is-commit" onClick={fixAll}>Review the fixes</button><span>Nothing changes until you say so, and you can undo.</span></div>
           </div>
         ) : (
-          <div className="atp-fits"><span className="atp-tile k-ok"><TideIcon n="check" /></span><div><b>It all fits</b><span>Every ferry, check-in and plan lines up.{R.soft > 0 ? ` ${R.soft} tip${R.soft > 1 ? 's' : ''} below.` : ''}</span></div></div>
+          <div className="atp-fits"><span className="atp-tile k-ok"><TideIcon n="check" /></span><div><b>It all fits</b><span>Every ferry, check-in and plan lines up.{tips > 0 ? ` ${tips} tip${tips > 1 ? 's' : ''} in the days below.` : ''}</span></div></div>
+        )}
+        {noRide > 0 && (
+          <div className="atp-ride"><span className="atp-tile k-cab"><TideIcon n="car" /></span><div><b>{noRide} stop{noRide > 1 ? 's have' : ' has'} no ride yet</b><span>One cab from your hotel, there and back, for each.</span></div>
+            <button type="button" className="atp-btn is-commit" onClick={addCabs}>Add cabs</button></div>
         )}
 
         {segs.length > 0 && (
@@ -131,6 +159,7 @@ export default function Trip() {
             ); })}
           </nav>
         )}
+        {S.cart.length > 0 && <p className="atp-hint"><TideIcon n="swap" s={14} />Tap anything to change, move or remove it.</p>}
         <ExtendBtn E={E} dir="before" />
         {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} first={n === 0 || dmeta[n - 1].zz !== dmeta[n].zz} fi={fi} fo={fo} onFerry={setFerry} />)}
         <ExtendBtn E={E} dir="after" />
@@ -141,7 +170,7 @@ export default function Trip() {
         <button type="button" className="tot bd" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)} <TideIcon n="down" s={14} /></b><small>{req ? `+ ${req} on request · incl. GST` : 'incl. GST · breakdown'}</small></button>
         {!S.cart.length ? <button type="button" className="atp-btn is-action" disabled>Checkout</button> : hardN ? <button type="button" className="atp-btn is-action" onClick={fixAll}>Fix {hardN}</button> : <button type="button" className="atp-btn is-action" onClick={() => router.push('/checkout')}>Checkout</button>}
       </div>
-      {ferryIt && <FerrySheet E={E} it={ferryIt} onClose={() => setFerry(null)} />}
+      {ferryIt && <FerrySheet E={E} it={ferryIt} onClose={closeFerry} />}
     </div>
   );
 }
@@ -182,7 +211,7 @@ function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: nu
         <span><span className="atp-n">Check out of {e.I.title}</span><span className="atp-s">{at < E.CHECKOUT ? 'Before you leave' : `By ${E.hm(E.CHECKOUT)}, free till ${E.hm(E.CHECKOUT + E.GRACE)}`}{e.it.late ? ' · late check-out requested' : late ? ' · bags can stay at the hotel' : ''}</span></span></div></div>
     ) });
   });
-  (R.day[n] || []).filter((a: any) => a.kind === 'gap').forEach((a: any, i: number) => rows.push({ at: (a.at % 1440) + 0.5, key: 'gap' + i, node: <Gap E={E} a={a} date={date} /> }));
+  (R.day[n] || []).filter((a: any) => a.kind === 'gap').forEach((a: any, i: number) => rows.push({ at: (a.at % 1440) + 0.5, key: 'gap' + i, node: <Gap E={E} a={a} date={date} picks={a.skipped ? null : E.gapPicks(a, date)} /> }));
   if (fo && E.dayIdx(fo.date) === n) rows.push({ at: E.tm(fo.dep), key: 'fo', node: <Anchor E={E} time={fo.dep} b="Fly out of Port Blair" s={`${fo.no} ${fo.al} to ${fo.to}`} alerts={R.anchors.out} /> });
   rows.sort((a, b) => a.at - b.at);
 
@@ -218,9 +247,9 @@ function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: nu
       <DayTools E={E} date={date} zz={zz} />
       {out.length ? out : <p className="atp-fine atp-pad">Nothing planned yet.</p>}
       {mealOpts.length > 0 && (
-        <div className="atp-eat" role="group" aria-label={`Eat out on day ${n + 1}`}>
-          <span><TideIcon n="cup" s={16} />Eat out, if you like<small>We keep the time free; you pay at the table.</small></span>
-          <div>{mealOpts.map((k) => <button key={k} type="button" className="atp-eatc" onClick={() => E.addMeal(k, date)}>{E.MEALK[k].n}{(k === 'lunch' || k === 'dinner') && <small>cab waits ~{E.inr(Math.round(wait * (k === 'dinner' ? 1.25 : 1) / 10) * 10)}</small>}</button>)}</div>
+        <div className="atp-eat" role="group" aria-label={`Eating out on day ${n + 1}, optional`}>
+          <span><TideIcon n="cup" s={16} />Eat out?</span>
+          <div>{mealOpts.map((k) => <button key={k} type="button" className="atp-eatc" title="We keep the time free; you pay at the table" onClick={() => E.addMeal(k, date)}><TideIcon n="plus" s={14} />{E.MEALK[k].n}{(k === 'lunch' || k === 'dinner') && <small>cab waits ~{E.inr(Math.round(wait * (k === 'dinner' ? 1.25 : 1) / 10) * 10)}</small>}</button>)}</div>
         </div>
       )}
       {n < N - 1 && (st ? (
@@ -238,12 +267,14 @@ function Loop({ E, run, R, zz, date }: { E: Engine; run: Row[]; R: any; zz: stri
   const cabs = run.filter((r) => r.t === 'cab').map((r) => r.e); const stops = run.filter((r) => r.t === 'stop').map((r) => r.e);
   const names = [...new Set(stops.map((s) => { const a = E.ACT[s.it.ref]; return a && E.shortName ? E.shortName(a) : s.I.title; }))];
   const from = String(cabs[0].I.title).split(/\s*→\s*/)[0]; const last = cabs[cabs.length - 1]; const to = String(last.I.title).split(/\s*→\s*/)[1] || '';
-  const ends = run[run.length - 1].t === 'cab'; const back = ends && (from === to || (place(from) === 'Hotel' && place(to) === 'Hotel'));
+  const stays = new Set<string>(); E.S.cart.forEach((i: any) => { if (i.kind === 'stay' && E.HOT[i.ref]) stays.add(E.HOT[i.ref].n); });
+  const pl = (x: string) => place(x, stays);
+  const ends = run[run.length - 1].t === 'cab'; const back = ends && (from === to || (pl(from) === 'Hotel' && pl(to) === 'Hotel'));
   /* a return fare is one booking: the cab waits at the stop and brings you back */
   const waits = !ends && /return/i.test(String(last.I.sub || ''));
   const sum = cabs.reduce((s, c) => s + (c.I.price || 0), 0); const veh = String(cabs[0].I.sub || '').split(' · ')[0];
   const al = cabs.flatMap((c) => R.by[c.it.uid] || []); const hard = al.some((a: any) => a.sev === 'hard');
-  const route = [place(from), ...names, ends ? place(to) : waits ? place(from) : null].filter(Boolean).join(' → ');
+  const route = [pl(from), ...names, ends ? pl(to) : waits ? pl(from) : null].filter(Boolean).join(' → ');
   return (
     <div className={`atp-loop${hard ? ' is-clash' : ''}`}>
       <div className="atp-item">
@@ -260,7 +291,7 @@ function Loop({ E, run, R, zz, date }: { E: Engine; run: Row[]; R: any; zz: stri
       </div>
       {run.filter((r) => r.t !== 'cab').map((r) => <Fragment key={r.key}>{r.node}</Fragment>)}
       {(ends || waits) && (
-        <div className="atp-end"><span className="atp-t">{ends ? E.clock(last.e) : ''}</span><span className="atp-node" /><span>{waits ? 'The cab waits, then takes you back' : back ? 'Back at the hotel' : `Dropped at ${place(to)}`}</span>
+        <div className="atp-end"><span className="atp-t">{ends ? E.clock(last.e) : ''}</span><span className="atp-node" /><span>{waits ? 'The cab waits, then takes you back' : back ? 'Back at the hotel' : `Dropped at ${pl(to)}`}</span>
           <button type="button" className="atp-btn is-text" onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}>Add a stop</button></div>
       )}
     </div>
@@ -278,28 +309,46 @@ function Anchor({ E, time, b, s, alerts }: { E: Engine; time: string; b: string;
 function Alert({ a }: { a: any }) {
   const k = a.sev === 'hard' ? ['alert', 'Does not fit'] : a.sev === 'soft' ? ['bulb', 'Tip'] : ['clock', 'Idea'];
   const run = (fx: any) => { const d: Record<string, any> = {}; Object.entries(fx).forEach(([key, v]) => { if (key !== 'label' && v !== '' && v != null) d[key] = key === 'patch' ? JSON.stringify(v) : v; }); dispatch('fx', d); };
+  const acts = a.fix && a.fix.length > 0 && <div className="atp-acts">{a.fix.map((f: any, i: number) => <button key={i} type="button" className={`atp-btn ${i === 0 && f.act !== 'dismiss' ? 'is-commit' : 'is-text'}`} onClick={() => run(f)}>{f.label}</button>)}</div>;
+  /* a tip is one line until you open it; something that does not fit stays open */
+  if (a.sev !== 'hard') return (
+    <details className={`atp-alert is-${a.sev}`}>
+      <summary><span className="atp-why"><TideIcon n={k[0]} s={18} />{a.title}</span><TideIcon n="down" s={16} /></summary>
+      {a.msg && <span className="atp-s">{a.msg}</span>}
+      {acts}
+    </details>
+  );
   return (
-    <div className={`atp-alert is-${a.sev}`} role={a.sev === 'hard' ? 'alert' : 'note'}>
+    <div className="atp-alert is-hard" role="alert">
       <span className="atp-why"><TideIcon n={k[0]} s={18} />{k[1]}: {a.title}</span>
       {a.msg && <span className="atp-s">{a.msg}</span>}
-      {a.fix && a.fix.length > 0 && <div className="atp-acts">{a.fix.map((f: any, i: number) => <button key={i} type="button" className={`atp-btn ${i === 0 && f.act !== 'dismiss' ? 'is-commit' : 'is-text'}`} onClick={() => run(f)}>{f.label}</button>)}</div>}
+      {acts}
     </div>
   );
 }
 
 /* Free time: what fits in it, as day plans and single stops. */
-function Gap({ E, a, date }: { E: Engine; a: any; date: string }) {
-  const router = useRouter();
+/* The ideas are worked out once, while the whole trip is drawn (the engine keeps track of what it has already
+   suggested); opening and closing this row must not ask again, or the list would change under your finger. */
+function Gap({ E, a, date, picks }: { E: Engine; a: any; date: string; picks: any }) {
+  const router = useRouter(); const [open, setOpen] = useState(false);
   const len = Math.floor((a.end - a.at) / 30) * 30;
   const head = (extra: ReactNode) => (
     <div className="atp-gap-h"><span className="atp-t">{E.clock(a.at)}</span><span className="atp-node is-open" /><span><b>{E.durTxt(len)} free on {E.ZN[a.zone].name}</b><small>until {E.clock(a.end)}{extra}</small></span></div>
   );
   if (a.skipped) return <div className="atp-gap">{head(<> · <button type="button" className="atp-link" onClick={() => dispatch('fx', { act: 'undismiss', key: 'gapday' + date })}>Show ideas</button></>)}</div>;
-  const { pick, blocks, leaving, landing, fiArr } = E.gapPicks(a, date);
+  const { pick, blocks, leaving, landing, fiArr } = picks;
   if (!pick.length && !blocks.length) return null;
   /* the free window, so a day plan is timed inside it */
   const win = { date, from: a.at % 1440, to: a.end % 1440, eve: a.evening ? 1 : 0 };
-  const why = leaving ? 'short and close, so you make your connection' : landing ? (fiArr ? `timed for your ${fiArr} landing` : 'light plans for your first hours') : a.evening ? 'for the evening' : 'ideas that fit, already timed';
+  const why = leaving ? 'short and close, so you make your connection' : landing ? (fiArr ? `timed for your ${fiArr} landing` : 'light plans for your first hours') : a.evening ? 'for the evening' : 'already timed to fit';
+  const n = blocks.length + pick.length; const best = blocks[0] ? blocks[0].b.n : pick[0].x.n;
+  if (!open) return (
+    <div className="atp-gap is-shut">
+      <div className="atp-gap-h"><span className="atp-t">{E.clock(a.at)}</span><span className="atp-node is-open" /><span><b>{E.durTxt(len)} free on {E.ZN[a.zone].name}</b><small>{best}{n > 1 ? ` and ${n - 1} more fit` : ' fits'}</small></span>
+        <button type="button" className="atp-btn is-outline" aria-expanded="false" onClick={() => setOpen(true)}>See {n} idea{n > 1 ? 's' : ''}</button></div>
+    </div>
+  );
   return (
     <div className="atp-gap">
       {head(<> · {why}</>)}
@@ -324,7 +373,7 @@ function Gap({ E, a, date }: { E: Engine; a: any; date: string }) {
         ); })}
         <button type="button" className="atp-bc atp-more" onClick={() => router.push(`/islands/${String(a.zone).toLowerCase()}?date=${date}`)}><b>Everything on {E.ZN[a.zone].name}</b><TideIcon n="arrow" /></button>
       </div>
-      <button type="button" className="atp-btn is-text atp-skip" onClick={() => dispatch('fx', { act: 'dismiss', key: 'gapday' + date })}>Leave it free</button>
+      <div className="atp-gap-f"><button type="button" className="atp-btn is-text" onClick={() => setOpen(false)}>Hide ideas</button><button type="button" className="atp-btn is-text" onClick={() => dispatch('fx', { act: 'dismiss', key: 'gapday' + date })}>Leave it free</button></div>
     </div>
   );
 }
@@ -340,8 +389,10 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
   const meal = k === 'meal' || k === 'shop';
   const price = meal ? 'Pay there' : e.parts && e.part > 1 ? 'Included' : I.own ? 'Booked' : I.price != null ? E.inr(I.price) : E.t('onReq');
   const per = (e.parts && e.part > 1) || meal || I.own ? '' : I.perTxt ? I.perTxt : I.per > 1 ? `${I.per} × ${E.inr(I.unit)}` : '';
-  const status = <Raw html={E.bkTag(it) || ''} style={{ display: 'contents' }} />;
-  const open = () => dispatch('edit', { uid: it.uid });
+  const bk = E.bookStatus ? E.bookStatus(it) : null;
+  const status = bk && bk !== 'instant' ? <Raw html={E.bkTag(it) || ''} style={{ display: 'contents' }} /> : null;
+  /* a plan you can move opens the sheet with every way to change it (time, day, swap, remove, details); the rest open their page */
+  const open = () => { if (drag) { S.moveUid = it.uid; S.sheet = 'move'; commit(); } else dispatch('edit', { uid: it.uid }); };
   /* `ev` and data-uid are what the engine's drag-to-move looks for */
   const cls = `atp-item ev${hard ? ' is-clash' : ''}${S.flashUid === it.uid ? ' flash' : ''}${meal ? ' atp-mealrow' : ''}`;
   const extra = (
@@ -384,7 +435,7 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
     : [E.tcDur(e.e - e.s).toLowerCase(), String(I.sub || A.v || '').split(' · ')[0]].filter(Boolean).join(' · ');
   return (
     <div className={cls} data-uid={it.uid} data-k={e.kind} data-c={k}>
-      <button type="button" className="atp-row" onClick={open} aria-label={`${title}, ${t0}: details`}>
+      <button type="button" className="atp-row" onClick={open} aria-label={`${title}, ${t0}: ${drag ? 'change, move or remove' : 'details'}`}>
         {photo && <span className="atp-pano"><Art z={e.zone} icon={I.icon} seed={it.ref} big /></span>}
         <span className="atp-t">{t0}{endT && <small>{endT}</small>}</span>
         <span className={`atp-tile ${tile}`}><TideIcon n={icon} /></span>
@@ -403,7 +454,13 @@ function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => voi
   const fares: { n: string; f: number }[] = s.fares && s.fares.length ? s.fares : [{ n: it.cls || String(s.cls || '').split(',')[0].trim(), f: s.fare }];
   const [cls, setCls] = useState<string>(it.cls || fares[0].n);
   const [seats, setSeats] = useState<string[]>(it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: it.cls || fares[0].n, date: it.date }));
-  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; }; }, [onClose]);
+  const box = useRef<HTMLDivElement>(null);
+  /* Escape closes; the page behind does not scroll; focus goes into the sheet and back to where it was */
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; const from = document.activeElement as HTMLElement | null;
+    window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; box.current?.focus();
+    return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; from?.focus?.(); };
+  }, [onClose]);
   const st = E.seatState(s, cls, it.date); const cur = (fares.find((f) => f.n === (it.cls || fares[0].n)) || fares[0]).f;
   const mine = (id: string) => seats.includes(id); const free = (id: string) => st.free.has(id) || (cls === it.cls && (it.seats || []).includes(id));
   const pick = (c: string) => { setCls(c); setSeats(c === it.cls && it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: c, date: it.date })); };
@@ -413,7 +470,7 @@ function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => voi
   /* on the page body, so it sits above the header and the dock */
   return createPortal(
     <div className="atp-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Class and seats">
+      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Class and seats" tabIndex={-1} ref={box}>
         <div className="atp-sheet-h"><b>Class and seats</b><button type="button" className="atp-iconbtn" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button></div>
         <div className="atp-sheet-b">
           <p className="atp-lead">{s.gov ? 'Government ship' : s.op} · {E.ZN[s.f]?.name} to {E.ZN[s.to]?.name} · {E.fD(it.date)} · {s.dep}</p>

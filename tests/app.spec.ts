@@ -42,6 +42,8 @@ test('add one thing from its page, then change and remove it', async ({ page }) 
   await page.getByRole('button', { name: 'Add to trip' }).click();
   await expect(page).toHaveURL(/\/trip$/);
   await page.locator('.atp-item[data-c="boat"] .atp-row').first().click();
+  // a tap opens every way to change it; the full page is one step further
+  await page.getByRole('dialog', { name: 'Move or swap' }).getByRole('button', { name: 'Open details' }).click();
   await expect(page).toHaveURL(/trip\/edit/);
   await page.getByRole('button', { name: 'Remove' }).click();
   await expect(page).toHaveURL(/\/trip$/);
@@ -84,6 +86,13 @@ test('price breakdown and fix-for-me sheets open and close', async ({ page }) =>
 /* ---------- move & swap (the ⋮⋮ handle on a plan) ---------- */
 const cartItem = (page: import('@playwright/test').Page, uid: string) =>
   page.evaluate((u) => { const it = (window as any).__ATP__.S.cart.find((x: any) => x.uid === u); return it ? { date: it.date, t: it.t, ref: it.ref } : null; }, uid);
+
+/* free-time ideas are one line until asked for: open every one on the page */
+async function showIdeas(page: import('@playwright/test').Page) {
+  const more = page.getByRole('button', { name: /^See \d+ ideas?$/ });
+  await expect(more.first()).toBeVisible();
+  for (let n = await more.count(); n > 0; n--) await more.first().click();
+}
 
 async function openMove(page: import('@playwright/test').Page) {
   await page.goto('/');
@@ -193,6 +202,7 @@ test('day plan: open from a free slot, pick another day, add it', async ({ page 
   await page.goto('/');
   await page.getByText('Show me an example trip').click();
   await expect(page).toHaveURL(/\/trip$/);
+  await showIdeas(page);
   const card = page.locator('.atp-idea.is-plan').first();
   await expect(card).toBeVisible();
   const name = await card.locator('.atp-idea-b > b').innerText();
@@ -220,6 +230,7 @@ test('day plan: add straight from the free slot, then undo', async ({ page }) =>
   await page.goto('/');
   await page.getByText('Show me an example trip').click();
   const n0 = await page.evaluate(() => (window as any).__ATP__.S.cart.length);
+  await showIdeas(page);
   await page.locator('.atp-idea.is-plan').first().getByRole('button', { name: 'Add plan' }).click();
   await expect(page.locator('.toast')).toContainText('bookings added to');
   expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeGreaterThan(n0);
@@ -591,6 +602,9 @@ test('trip: ferry pass opens class and seats, and the total follows', async ({ p
   await pass.click();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  // the photos in the itinerary are still there after the sheet has come and gone
+  await page.locator('.atp-banner').first().scrollIntoViewIfNeeded();
+  await expect(page.locator('.atp-banner svg[data-on]').first()).toBeVisible();
 });
 
 test('trip: eating out is optional, timed into the day and paid there', async ({ page }) => {
@@ -598,7 +612,7 @@ test('trip: eating out is optional, timed into the day and paid there', async ({
   await page.getByText('Show me an example trip').click();
   await expect(page).toHaveURL(/\/trip$/);
   const day = page.locator('section.atp-dsec').nth(2);
-  await expect(day.locator('.atp-eat')).toContainText('Eat out, if you like');
+  await expect(day.locator('.atp-eat')).toContainText('Eat out?');
   await expect(day.locator('.atp-eatc', { hasText: 'Lunch' })).toContainText(/cab waits ~₹\d+/);
   const before = await page.evaluate(() => (window as any).__ATP__.total());
   await day.locator('.atp-eatc', { hasText: 'Lunch' }).click();
@@ -607,4 +621,32 @@ test('trip: eating out is optional, timed into the day and paid there', async ({
   await expect(day.locator('.atp-mealrow')).toContainText('if the cab waits, about ₹');
   await expect(day.locator('.atp-eatc', { hasText: 'Lunch' })).toHaveCount(0);
   expect(await page.evaluate(() => (window as any).__ATP__.total())).toBe(before); // a meal out adds nothing to what you pay us
+});
+
+test('trip: survives a reload, tips fold away, and one tap adds the missing cabs', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const days = await page.locator('section.atp-dsec').count();
+  await page.reload();
+  await expect(page.locator('section.atp-dsec')).toHaveCount(days); // the trip is still there after a refresh
+  // a tip is one line until opened; what does not fit is spelled out
+  const tip = page.locator('details.atp-alert').first();
+  await expect(tip.locator('.atp-acts')).toBeHidden();
+  await tip.locator('summary').click();
+  await expect(tip.locator('.atp-acts')).toBeVisible();
+  await expect(page.locator('.atp-alert.is-hard').first()).toContainText('Does not fit');
+  // stops with no ride: one button books a cab for each, and it can be undone
+  await expect(page.locator('.atp-loop')).toHaveCount(0);
+  await expect(page.locator('.atp-ride')).toContainText('no ride yet');
+  const total = () => page.evaluate(() => (window as any).__ATP__.total());
+  const before = await total();
+  await page.locator('.atp-ride').getByRole('button', { name: 'Add cabs' }).click();
+  await expect(page.locator('.toast')).toContainText('Cabs added for');
+  await expect(page.locator('.atp-ride')).toHaveCount(0);
+  expect(await page.locator('.atp-loop').count()).toBeGreaterThan(1);
+  expect(await total()).toBeGreaterThan(before);
+  // a tap on a plan opens every way to change it
+  await page.locator('.atp-item[data-c="do"] .atp-row').first().click();
+  await expect(page.getByRole('dialog', { name: 'Move or swap' })).toBeVisible();
 });
