@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import FerryList from '@/views/FerryList';
 import { ZN, ferryRoutes, inr, sailPhoto } from '@/lib/catalogue';
 import JsonLd from '@/components/seo/JsonLd';
+import { TideIcon } from '@/components/Brand';
 import { abs, crumbs, pageMeta } from '@/lib/seo';
 
 export function generateStaticParams() { return ferryRoutes().map((r) => ({ route: r.key })); }
@@ -20,10 +21,19 @@ export default async function Page({ params }: { params: Promise<{ route: string
     departureBoatTerminal: { '@type': 'BoatTerminal', name: s.fromPt }, arrivalBoatTerminal: { '@type': 'BoatTerminal', name: s.toPt }, departureTime: s.dep, arrivalTime: s.arr,
     offers: s.fare ? { '@type': 'Offer', price: s.fare, priceCurrency: 'INR', url: abs(`/ferries/${route}`) } : undefined }));
   return (
-    <div className="wrap">
-      <div className="pg-plain"><span className="eyebrow">Ferry</span><h1>{a} to {b} ferry</h1><p className="muted">{r.list.length} sailings. Report 45–60 minutes before departure at {r.list[0].fromPt}.</p></div>
+    <div className="atp-pg">
+      <header className="atp-ph">
+        <span className="atp-eyebrow">Ferry · {r.list.length} sailing{r.list.length > 1 ? 's' : ''}</span>
+        <h1>{a} to {b} ferry</h1>
+        <p>Be at {r.list[0].fromPt} 45 to 60 minutes before departure. Fares are a person, one way.</p>
+        {back && <a className="atp-btn is-outline atp-swap" href={`/ferries/${back.key}`}><TideIcon n="swap" s={18} />{b} to {a}</a>}
+      </header>
       <FerryList sails={r.list} />
-      <p className="note" style={{ marginTop: 14 }}>Fares are per person, one way. Government ship seats open about a week ahead; private ferries sell out first in peak season (15 Dec–15 Jan).{back && <> Coming back? See <a className="link" href={`/ferries/${back.key}`}>{b} to {a} ferries</a>.</>} More about <a className="link" href={`/islands/${r.to.toLowerCase()}`}>{b}</a>.</p>
+      <section className="atp-cs">
+        <h2>Good to know</h2>
+        <p className="atp-lead">Government ship seats open about a week ahead. Private ferries sell out first in peak season (15 Dec to 15 Jan). When you add a sailing, your cabs to and from the jetty are timed around it.</p>
+        <a className="atp-strip" href={`/islands/${r.to.toLowerCase()}`}><TideIcon n="pin" /><span><b>More about {b}</b><small>Things to do, stays and day plans</small></span><TideIcon n="chev" s={18} /></a>
+      </section>
       <JsonLd data={[...ld, crumbs([['Home', '/'], ['Ferries', '/ferries'], [`${a} to ${b}`, `/ferries/${route}`]])]} />
     </div>
   );

@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, type ReactNode } from 'react';
-import { lang, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
+import { commit, lang, registerNav, routeFor, syncStack, useEngine, useToast } from '@/engine/client';
 import { DPIIT_LINE } from '@/lib/company';
 import { Logo, TideIcon } from './Brand';
 import { Raw } from './ui';
@@ -46,7 +46,8 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
   const S = E?.S; const L = lang(E);
   useTheme(S?.theme, !!E);
   useEffect(() => { registerNav((v) => { const r = routeFor(v); if (r && r.split('?')[0] !== window.location.pathname) router.push(r); }); }, [router]);
-  useEffect(() => { document.documentElement.lang = S?.lang === 'hi' ? 'hi' : 'en'; }, [S?.lang]);
+  /* the site is in English; a phone that once chose Hindi is brought back, since the switch is gone */
+  useEffect(() => { if (S && S.lang !== 'en') { S.lang = 'en'; commit(); } }, [S, S?.lang]);
 
   const isRoot = TABS.some((t) => t.href === path);
   // a tab is active on its own page and the pages under it: /trip and /trip/edit, but not /trips

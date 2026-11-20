@@ -152,7 +152,7 @@ test('move sheet: open details goes to the edit page', async ({ page }) => {
 /* ---------- after adding a ferry ---------- */
 async function addFerry(page: import('@playwright/test').Page) {
   await page.goto('/ferries/pbl-hav');
-  await page.locator('.lrow').first().click();
+  await page.locator('button.atp-fr').first().click();
   await page.getByRole('button', { name: 'Add to trip' }).click();
   const dlg = page.getByRole('dialog', { name: 'Ferry added' });
   await expect(dlg).toBeVisible();
@@ -181,7 +181,7 @@ test('ferry added: find a stay and add the return ferry', async ({ page }) => {
   await dlg.getByRole('button', { name: /Add return ferry/ }).click();
   await expect(page).toHaveURL(/\/ferries\/hav-pbl/);
   await page.goto('/ferries/pbl-hav');
-  await page.locator('.lrow').first().click();
+  await page.locator('button.atp-fr').first().click();
   await page.getByRole('button', { name: 'Add to trip' }).click();
   await page.getByRole('dialog', { name: 'Ferry added' }).getByRole('button', { name: 'Keep browsing' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -367,42 +367,6 @@ test('home and island pages list day plans, and one opens its sheet', async ({ p
   await expect(page.getByRole('dialog').locator('.pkrow').first()).toBeVisible();
 });
 
-/* ---------- Hindi ---------- */
-for (const [w, h] of [[360, 780], [1440, 900]]) {
-  test(`Hindi: main screens switch language and fit at ${w}px`, async ({ browser }) => {
-    const page = await browser.newPage({ viewport: { width: w, height: h } });
-    const fits = async (where: string) => expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${where} at ${w}px`).toBeLessThanOrEqual(1);
-    // the language is chosen in Profile and remembered on the phone
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'हिंदी', exact: true }).click();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
-    await page.goto('/');
-    await expect(page.locator('h1')).toContainText('अंडमान');
-    await expect(page.getByRole('link', { name: /यात्रा/ }).first()).toBeVisible();
-    await expect(page.getByText('आधे दिन और पूरे दिन की योजनाएँ')).toBeVisible();
-    await fits('home');
-    await page.getByText('नमूना यात्रा देखें').click();
-    await expect(page).toHaveURL(/\/trip$/);
-    await expect(page.locator('section.day').first()).toContainText('दिन');
-    await expect(page.getByRole('button', { name: /यात्रा सेव करें/ })).toBeVisible();
-    await fits('trip');
-    await page.getByRole('button', { name: 'बदलें' }).first().click();
-    await expect(page.getByRole('dialog', { name: 'यात्रा की तारीखें' })).toBeVisible();
-    await fits('dates sheet');
-    await page.keyboard.press('Escape');
-    await page.goto('/checkout');
-    await expect(page.getByText('मुख्य यात्री')).toBeVisible();
-    await fits('checkout');
-    // and back to English
-    await page.goto('/profile');
-    await page.getByRole('button', { name: 'English', exact: true }).click();
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-    await page.goto('/checkout');
-    await expect(page.getByText('Lead traveller')).toBeVisible();
-    await page.close();
-  });
-}
-
 /* ---------- light mode ---------- */
 test('light mode: tabs, small labels and pass cards', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
@@ -477,4 +441,106 @@ test('shell: on a wide screen the tabs move into the header', async ({ browser }
   await expect(page.locator('.dnav a')).toHaveText(['Explore', 'Trip', 'My trips', 'Profile']);
   await expect(page.locator('.dnav [aria-current="page"]')).toHaveText('My trips');
   await page.close();
+});
+
+/* ---------- Home and browsing (rebuild R3) ---------- */
+test('home: everything is in the server HTML, and the plan box works', async ({ page, request }) => {
+  const html = await (await request.get('/')).text();
+  for (const t of ['Andaman, planned to the minute.', 'Book one thing', 'Ready-made trips', 'First Light in the Andamans', 'Most loved', 'Why trips hold together'])
+    expect(html, t).toContain(t);
+  expect((html.match(/class="atp-isl"/g) || []).length).toBe(10);
+  await page.goto('/');
+  await expect(page.locator('.atp-hhero .atp-eyebrow')).toContainText(/Port Blair now · \d\d:\d\d · sunset \d\d:\d\d/);
+  await expect(page.locator('.atp-today')).toContainText(/Sunrise\s*0[45]:\d\d/);
+  await page.getByRole('button', { name: /When/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Trip dates' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.locator('.atp-kb', { hasText: 'Stays' }).click();
+  await expect(page).toHaveURL(/\/stays$/);
+  // with a trip under way, Home offers to carry on with it
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/');
+  await expect(page.locator('.atp-cont')).toContainText('Your trip');
+  await expect(page.locator('.atp-cont')).toContainText('₹');
+});
+
+test('things to do: categories, a sorted list in the address, Back, and search', async ({ page, request }) => {
+  const html = await (await request.get('/things-to-do')).text();
+  expect((html.match(/class="atp-bc"/g) || []).length, 'cards in the server HTML').toBeGreaterThan(40);
+  await page.goto('/things-to-do');
+  await expect(page.locator('.atp-cat')).toHaveCount(8);
+  await page.getByRole('button', { name: /^Havelock/ }).click();
+  await expect(page).toHaveURL(/\?island=hav$/);
+  await expect(page.locator('.atp-bsec h2').first()).toHaveText('Most loved on Havelock');
+  await page.getByRole('button', { name: /^See all \d+: Scuba diving$/ }).click();
+  await expect(page).toHaveURL(/island=hav&cat=scuba/);
+  await expect(page.locator('.atp-foc h2')).toContainText('Scuba diving on Havelock');
+  expect(await page.locator('.atp-lrow').count()).toBeGreaterThan(10);
+  await page.getByRole('button', { name: 'Lowest price' }).click();
+  await expect(page).toHaveURL(/sort=price/);
+  const prices = await page.locator('.atp-lrow .atp-bc-p b').evaluateAll((els) => els.map((e) => Number((e.textContent || '').replace(/\D/g, ''))));
+  expect(prices).toEqual([...prices].sort((a, b) => a - b));
+  // a row opens the page for that thing
+  await page.locator('.atp-lrow').first().click();
+  await expect(page).toHaveURL(/\/things-to-do\/[a-z0-9-]+$/);
+  await page.goBack();
+  await expect(page.locator('.atp-foc')).toBeVisible();
+  await page.goBack();
+  await expect(page.locator('.atp-foc')).toHaveCount(0);
+  await expect(page.locator('.atp-cats')).toBeVisible();
+  await page.getByRole('searchbox').fill('kayak');
+  await expect(page.getByRole('status')).toContainText('on Havelock for “kayak”');
+  expect(await page.locator('.atp-lrow').count()).toBeGreaterThan(2);
+  await page.getByRole('button', { name: 'Clear search' }).click();
+  await expect(page.locator('.atp-cats')).toBeVisible();
+});
+
+test('stays and trips: island, date and length carry through', async ({ page }) => {
+  await page.goto('/stays?zone=NEI&date=2026-12-20');
+  await expect(page.locator('.atp-seg2 [aria-pressed="true"]')).toContainText('Neil');
+  await expect(page.locator('a.atp-bc').first()).toHaveAttribute('href', /\/stays\/htl-nei-[a-z0-9]+\?date=2026-12-20$/);
+  await page.getByRole('button', { name: /^Wandoor/ }).count().then((n) => expect(n).toBe(0)); // no stays there, so no button
+  await page.goto('/trips');
+  await expect(page.locator('.atp-bsec h2').first()).toContainText('Our picks');
+  await page.getByRole('button', { name: /^7\+ nights/ }).click();
+  await expect(page).toHaveURL(/len=long/);
+  await page.locator('.atp-cat').first().click();
+  const nights = await page.locator('.atp-lrow').evaluateAll((els) => els.map((e) => Number((e.textContent || '').match(/· (\d+) nights|(\d+) days/)?.[2] || 0)));
+  expect(nights.length).toBeGreaterThan(0);
+  expect(Math.min(...nights)).toBeGreaterThanOrEqual(8); // 7 nights is 8 days
+});
+
+test('ferries, cabs and island pages', async ({ page }) => {
+  await page.goto('/ferries');
+  await expect(page.locator('.atp-route')).toHaveCount(6);
+  await page.locator('.atp-route').first().click();
+  await expect(page).toHaveURL(/\/ferries\/pbl-hav$/);
+  const all = await page.locator('button.atp-fr').count();
+  await page.getByRole('button', { name: /^Midday/ }).click();
+  expect(await page.locator('button.atp-fr').count()).toBeLessThan(all);
+  await page.goto('/cabs?zone=HAV');
+  await expect(page.locator('.atp-seg2 [aria-pressed="true"]')).toContainText('Havelock');
+  await page.locator('#cab-rent button.atp-fr').first().click();
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/islands/hav');
+  await expect(page.locator('h1')).toHaveText('Havelock');
+  await expect(page.locator('.atp-facts')).toContainText('Best for');
+  await page.getByRole('link', { name: /^All \d+$/ }).first().click();
+  await expect(page).toHaveURL(/\/things-to-do\?island=hav$/);
+  await expect(page.locator('.atp-seg2 [aria-pressed="true"]')).toContainText('Havelock');
+});
+
+test('detail pages: what is included, rooms and the day-by-day plan', async ({ page }) => {
+  await page.goto('/things-to-do/acv-dsd-hav-shore');
+  await expect(page.getByRole('heading', { name: 'How the day goes' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Included', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add to trip' })).toBeVisible();
+  await page.goto('/stays/htl-hav-004');
+  await expect(page.locator('.atp-rooms li').first()).toContainText('a night');
+  await page.goto('/trips/p2');
+  await expect(page.locator('.atp-fits')).toContainText('0 clashes');
+  expect(await page.locator('.atp-dd-h').count()).toBe(6);
 });

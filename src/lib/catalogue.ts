@@ -2,8 +2,8 @@
 import data from '@/data/catalogue.json';
 import photomap from '@/data/photomap.json';
 
-export type Zone = { id: string; name: string; official: string; region: string; reach: string; notes: string; typN?: number };
-export type Act = { id: string; fam: string; n: string; v: string; z: string; site?: string; b: string; d?: number; slot?: string; t?: string; p?: number; age?: number; cond?: string; sea?: string; note?: string; g?: { k?: string; rt?: number; n?: number } };
+export type Zone = { id: string; name: string; official: string; region: string; reach: string; notes: string; typN?: number; minN?: number; maxN?: number; jetty?: string };
+export type Act = { id: string; fam: string; n: string; v: string; z: string; site?: string; b: string; d?: number; slot?: string; t?: string; p?: number; age?: number; cond?: string; sea?: string; note?: string; g?: { k?: string; rt?: number; rv?: number; n?: number }; steps?: [string, string][]; open?: string; close?: string; entry?: boolean; closed?: string[]; fixed?: boolean; slots?: string[] };
 export type Hotel = { id: string; z: string; n: string; rt: number | null; rv: number | null; t: string; rooms: { n: string; mp: string; ma: number; s_hi?: number; s_ln?: number; s_pk?: number }[]; a?: string | null };
 export type Sail = { id: string; op: string; f: string; to: string; dep: string; arr: string; gov: boolean; fare: number; cls: string; fromPt: string; toPt: string; rep: number };
 
