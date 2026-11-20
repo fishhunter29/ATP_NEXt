@@ -19,9 +19,9 @@ test('example trip loads and every day has a timeline', async ({ page }) => {
   await page.goto('/');
   await page.getByText('Show me an example trip').click();
   await expect(page).toHaveURL(/\/trip$/);
-  await expect(page.locator('section.day').first()).toBeVisible();
-  expect(await page.locator('.ev').count()).toBeGreaterThan(10);
-  await expect(page.locator('.tc-ferry').first()).toBeVisible();
+  await expect(page.locator('section.atp-dsec').first()).toBeVisible();
+  expect(await page.locator('.atp-item').count()).toBeGreaterThan(10);
+  await expect(page.locator('.atp-pass').first()).toBeVisible();
 });
 
 test('build a trip, pay, and get passes', async ({ page }) => {
@@ -41,7 +41,7 @@ test('add one thing from its page, then change and remove it', async ({ page }) 
   await page.goto('/things-to-do/acv-boat-eleph');
   await page.getByRole('button', { name: 'Add to trip' }).click();
   await expect(page).toHaveURL(/\/trip$/);
-  await page.locator('.tc-boat').first().click();
+  await page.locator('.atp-item[data-c="boat"] .atp-row').first().click();
   await expect(page).toHaveURL(/trip\/edit/);
   await page.getByRole('button', { name: 'Remove' }).click();
   await expect(page).toHaveURL(/\/trip$/);
@@ -65,8 +65,8 @@ test('dates sheet: add a night and a child, totals and travellers update', async
   await page.getByRole('button', { name: 'One more night' }).click();
   await page.getByRole('button', { name: 'More Children' }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
-  await expect(page.locator('.triphd .muted').first()).toContainText('1 child');
-  await expect(page.locator('.triphd .eyebrow').first()).toContainText('6 nights');
+  await expect(page.locator('.atp-thead .atp-pax')).toContainText('1 child');
+  await expect(page.locator('.atp-thead .atp-eyebrow')).toContainText('6 nights');
 });
 
 test('price breakdown and fix-for-me sheets open and close', async ({ page }) => {
@@ -76,7 +76,7 @@ test('price breakdown and fix-for-me sheets open and close', async ({ page }) =>
   await expect(page.getByRole('dialog', { name: 'Price breakdown' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.locator('button.health.bad').click();
+  await page.getByRole('button', { name: 'Review the fixes' }).click();
   await expect(page.getByRole('dialog', { name: 'Fixes' })).toBeVisible();
   await page.getByRole('button', { name: 'Undo' }).click();
 });
@@ -128,7 +128,7 @@ test('move sheet: swap for something similar, then undo', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.locator('.toast')).toContainText('Swapped for');
   expect((await cartItem(page, uid))!.ref).not.toBe(before.ref);
-  await expect(page.locator('.ev', { hasText: name }).first()).toBeVisible();
+  await expect(page.locator('.atp-item', { hasText: name }).first()).toBeVisible();
   await page.locator('.toast').getByRole('button', { name: 'Undo' }).click();
   expect((await cartItem(page, uid))!.ref).toBe(before.ref);
 });
@@ -169,7 +169,7 @@ test('ferry added: follow-up sheet offers stay, return and things to do', async 
   expect(kinds).toContain('ferry');
   await dlg.getByRole('button', { name: 'View my trip' }).click();
   await expect(page).toHaveURL(/\/trip$/);
-  await expect(page.locator('.tc-ferry').first()).toBeVisible();
+  await expect(page.locator('.atp-pass').first()).toBeVisible();
 });
 
 test('ferry added: find a stay and add the return ferry', async ({ page }) => {
@@ -193,10 +193,10 @@ test('day plan: open from a free slot, pick another day, add it', async ({ page 
   await page.goto('/');
   await page.getByText('Show me an example trip').click();
   await expect(page).toHaveURL(/\/trip$/);
-  const card = page.locator('.idc.blk').first();
+  const card = page.locator('.atp-idea.is-plan').first();
   await expect(card).toBeVisible();
-  const name = await card.locator('.idc-b b').innerText();
-  await card.locator('.idc-art').click();
+  const name = await card.locator('.atp-idea-b > b').innerText();
+  await card.locator('.atp-idea-ph').click();
   const dlg = page.getByRole('dialog', { name });
   await expect(dlg).toBeVisible();
   await expect(dlg.locator('.pkrow').first()).toBeVisible();
@@ -220,7 +220,7 @@ test('day plan: add straight from the free slot, then undo', async ({ page }) =>
   await page.goto('/');
   await page.getByText('Show me an example trip').click();
   const n0 = await page.evaluate(() => (window as any).__ATP__.S.cart.length);
-  await page.locator('.idc.blk').first().getByRole('button', { name: 'Add plan' }).click();
+  await page.locator('.atp-idea.is-plan').first().getByRole('button', { name: 'Add plan' }).click();
   await expect(page.locator('.toast')).toContainText('bookings added to');
   expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeGreaterThan(n0);
   // the suggestions that appear under the new booking must not push the page wider than the phone
@@ -253,7 +253,7 @@ test('planned trip: with an empty trip it loads straight away', async ({ page })
   await page.goto('/trips/p1');
   await page.getByRole('button', { name: /Use this trip/ }).click();
   await expect(page).toHaveURL(/\/trip$/);
-  await expect(page.locator('section.day').first()).toBeVisible();
+  await expect(page.locator('section.atp-dsec').first()).toBeVisible();
 });
 
 test('plan for me replaces the trip instead of stacking on it', async ({ page }) => {
@@ -305,13 +305,13 @@ test('scooter for the day replaces sightseeing cabs, and back to cabs', async ({
 
 test('add a day after and before the trip', async ({ page }) => {
   await example(page);
-  const n0 = await page.locator('section.day').count();
+  const n0 = await page.locator('section.atp-dsec').count();
   await page.getByRole('button', { name: /Add a day after/ }).click();
   await expect(page.locator('.toast')).toContainText('you now fly home');
-  await expect(page.locator('section.day')).toHaveCount(n0 + 1);
+  await expect(page.locator('section.atp-dsec')).toHaveCount(n0 + 1);
   await page.getByRole('button', { name: /Add a day before/ }).click();
   await expect(page.locator('.toast')).toContainText('you now arrive');
-  await expect(page.locator('section.day')).toHaveCount(n0 + 2);
+  await expect(page.locator('section.atp-dsec')).toHaveCount(n0 + 2);
 });
 
 test('quick compare stays and switch hotel', async ({ page }) => {
@@ -323,7 +323,7 @@ test('quick compare stays and switch hotel', async ({ page }) => {
   const name = await panel.locator('.lx-vopt b').first().innerText();
   await panel.locator('.lx-vopt').first().click();
   await expect(page.locator('.toast')).toContainText(`Now staying at ${name}`);
-  await expect(page.locator('.ev', { hasText: name }).first()).toBeVisible();
+  await expect(page.locator('.atp-item', { hasText: name }).first()).toBeVisible();
 });
 
 test('pairing rail appears after adding something, and hides', async ({ page }) => {
@@ -543,4 +543,68 @@ test('detail pages: what is included, rooms and the day-by-day plan', async ({ p
   await page.goto('/trips/p2');
   await expect(page.locator('.atp-fits')).toContainText('0 clashes');
   expect(await page.locator('.atp-dd-h').count()).toBe(6);
+});
+
+/* ---------- Trip page (rebuild R4) ---------- */
+test('trip: cab loops, photos in the itinerary and the day rail', async ({ page }) => {
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('.atp-fits')).toContainText('It all fits');
+  await expect(page.locator('.atp-rail .atp-day')).toHaveCount(6);
+  expect(await page.locator('.atp-banner').count()).toBeGreaterThanOrEqual(3); // one photo banner each time the island changes
+  expect(await page.locator('.atp-pano').count()).toBeGreaterThan(4);
+  // one cab's outing is one block: its stops inside, the rides on a tap, one price
+  const loop = page.locator('.atp-loop').first();
+  await expect(loop.locator('.atp-n').first()).toContainText(/One cab · \d stop/);
+  await expect(loop.locator('.atp-lroute')).toContainText('→');
+  await expect(loop.locator('.atp-p').first()).toContainText('₹');
+  await loop.locator('.atp-row[aria-expanded]').click();
+  await expect(loop.locator('.atp-legs button').first()).toBeVisible();
+  expect(await page.evaluate(() => { const a = document.querySelector('.app')!; return a.scrollWidth - a.clientWidth; })).toBeLessThanOrEqual(1);
+});
+
+test('trip: ferry pass opens class and seats, and the total follows', async ({ page }) => {
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const pass = page.locator('.atp-pass').first();
+  await expect(pass).toContainText('Be there by');
+  await expect(pass).toContainText('Seats');
+  const total = () => page.evaluate(() => (window as any).__ATP__.total());
+  const before = await total();
+  await pass.click();
+  const dlg = page.getByRole('dialog', { name: 'Class and seats' });
+  await expect(dlg).toBeVisible();
+  await dlg.getByRole('radio').nth(1).click();
+  const cls = await dlg.getByRole('radio').nth(1).locator('b').innerText();
+  // pick two other free seats: the first two picked drop off, never more than the travellers
+  const free = dlg.locator('.atp-seat:not(.is-taken)[aria-pressed="false"]');
+  await free.nth(0).click();
+  await free.nth(0).click();
+  await expect(dlg.locator('.atp-seat[aria-pressed="true"]')).toHaveCount(2);
+  await dlg.getByRole('button', { name: 'Use these seats' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(pass).toContainText(cls, { ignoreCase: true });
+  expect(await total()).toBeGreaterThan(before);
+  // Escape closes without changing anything
+  await pass.click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('trip: eating out is optional, timed into the day and paid there', async ({ page }) => {
+  await page.goto('/');
+  await page.getByText('Show me an example trip').click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const day = page.locator('section.atp-dsec').nth(2);
+  await expect(day.locator('.atp-eat')).toContainText('Eat out, if you like');
+  await expect(day.locator('.atp-eatc', { hasText: 'Lunch' })).toContainText(/cab waits ~₹\d+/);
+  const before = await page.evaluate(() => (window as any).__ATP__.total());
+  await day.locator('.atp-eatc', { hasText: 'Lunch' }).click();
+  await expect(page.locator('.toast')).toContainText('Lunch added at');
+  await expect(day.locator('.atp-mealrow')).toContainText('Pay there');
+  await expect(day.locator('.atp-mealrow')).toContainText('if the cab waits, about ₹');
+  await expect(day.locator('.atp-eatc', { hasText: 'Lunch' })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).__ATP__.total())).toBe(before); // a meal out adds nothing to what you pay us
 });

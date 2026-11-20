@@ -27,6 +27,14 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - Home (`src/app/page.tsx`) is a server page; only the plan box and "today" (`src/views/Home.tsx`) wait for the phone. `src/lib/sky.ts` works out sunrise, sunset and the moon for Port Blair from the date.
 - Styles for these pages are in `src/styles/tide-pages.css`.
 
+## The Trip page
+`src/views/Trip.tsx` draws the trip from the engine's events (`E.expand`, `E.run`): nothing about timing or price is worked out in React.
+- **Cab loops** are a way of showing, not new data: on each day, a run of rows that starts with a cab and takes in at least one stop is drawn as one outing (`Loop`). A return fare (one booking, the cab waits) counts as coming back.
+- **Class and seats** (`FerrySheet`) uses the engine's `seatState` and `autoSeats`, writes `cls` and `seats` on the ferry booking and lets the engine re-price. Seat availability is the engine's stand-in until the operators' live seats arrive (Stage 4).
+- **Meals out** use the engine's `addMeal`; the waiting-cab figure is the catalogue's "Cab rules" rate for the island, shown as an estimate and never added to the total.
+- **Drag to move** is still the v1 engine's: it finds rows by `.ev[data-uid]` and days by `section.day[data-date]`, so those class names stay on the new markup.
+- Styles are in `src/styles/tide-trip.css`.
+
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.
 - `useEngine()` gives a component the engine and re-renders it when the trip changes.

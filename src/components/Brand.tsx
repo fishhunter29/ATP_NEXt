@@ -52,6 +52,12 @@ const PATHS: Record<string, ReactNode> = {
   spark: <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16v4M17 18h4" />,
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   x: <path d="M6 6l12 12M18 6L6 18" />,
+  cup: <path d="M5 8h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM17 9h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2" />,
+  store: <path d="M4 9l1-5h14l1 5M5 9v11h14V9M4 9h16M9 20v-6h6v6" />,
+  grip: <path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />,
+  bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.500V15h8v-1.500A6 6 0 0 0 12 3z" />,
+  chat: <path d="M4 5h16v11H9l-5 4z" />,
+  down: <path d="M6 9l6 6 6-6" />,
 };
 
 export function TideIcon({ n, s = 20 }: { n: string; s?: number }) {

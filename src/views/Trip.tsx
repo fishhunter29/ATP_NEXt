@@ -1,17 +1,25 @@
 'use client';
-/* The trip: header (dates, flights, where you sleep, health), then each day as a photo banner and a timeline of cards.
-   Card designs follow the canvas "Trip, final": cab ride slip, kraft ferry pass, boat tag, stay key card, photo cards. */
+/* The Trip page (Tide): cover, what fits and what does not, where you sleep, then every day in time order.
+   Cabs are shown the way they run in the islands: one car, from the hotel round the stops and back.
+   Ferries are boarding passes; a tap opens class and seats. Timings and prices come from the trip engine. */
 import { useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { commit, dispatch, lang, useEngine, type Engine } from '@/engine/client';
-import { Art, Ic, Loading, Raw } from '@/components/ui';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { commit, dispatch, useEngine, type Engine } from '@/engine/client';
+import { Art, Loading, Raw } from '@/components/ui';
+import { TideIcon } from '@/components/Brand';
 import { DayTools, ExtendBtn, PairRail, StayCompare } from '@/components/trip/TripTools';
 
-type Row = { at: number; key: string; node: ReactNode };
+type Row = { at: number; key: string; node: ReactNode; t?: 'cab' | 'stop' | 'meal'; e?: any };
+const TILE: Record<string, [string, string]> = { ferry: ['k-boat', 'boat'], cab: ['k-cab', 'car'], stay: ['k-stay', 'bed'], do: ['k-sight', 'sunset'], adv: ['k-adv', 'mask'], boat: ['k-boat', 'wave'], meal: ['', 'cup'], shop: ['', 'store'] };
+/* what a waiting cab costs an hour (the catalogue's "Cab rules"), for the note under a meal out */
+const waitRate = (E: Engine, z: string) => ((E.D.extras || []).find((x: any) => /^CR-WAIT/.test(x.id) && x.z === z) || (E.D.extras || []).find((x: any) => /^CR-WAIT/.test(x.id)) || { p: 150 }).p;
+const place = (s: string) => (/hotels?\b|resort|your stay/i.test(s) ? 'Hotel' : String(s).replace(/\s*\(.*?\)/g, '').trim());
 
 export default function Trip() {
   const E = useEngine();
   const router = useRouter();
+  const [ferry, setFerry] = useState<string | null>(null);
   if (!E) return <Loading />;
   const { S } = E;
   if (!S.cart.length && !S.win) return <EmptyTrip E={E} />;
@@ -19,133 +27,150 @@ export default function Trip() {
   E.__resetIdeas();
   const R = E.run(S.cart); const evs = E.expand(S.cart); const pos = E.makePos(evs); const N = E.nDays();
   const fi = E.flightIn(), fo = E.flightOut();
-  const hardN = R.hard; const req = E.onReq(); const total = E.total(); const tr = lang(E);
+  const hardN = R.hard; const req = E.onReq(); const total = E.total();
 
   // where you sleep each night
   const segs: any[] = [];
   for (let n = 0; n < N - 1; n++) {
     const st = E.nightStay(evs, n); const z = st ? st.zone : null; const uid = st ? st.it.uid : null; const L = segs[segs.length - 1];
     if (L && L.z === z && L.uid === uid) L.n++;
-    else segs.push({ z, n: 1, uid, d: E.addD(S.trip.start, n), at: (() => { const p = pos(E.abs(n, 1380)); return p === 'transit' ? 'PBL' : p; })() });
+    else segs.push({ z, n: 1, uid, name: st ? st.I.title : '', d: E.addD(S.trip.start, n), at: (() => { const p = pos(E.abs(n, 1380)); return p === 'transit' ? 'PBL' : p; })() });
   }
   const dayZone = (n: number) => { const z0 = pos(E.abs(n, 720)), zE = pos(E.abs(n, 1380)); return z0 === 'transit' ? (zE === 'transit' ? 'PBL' : zE) : z0; };
   const dmeta = Array.from({ length: N }, (_, n) => ({ zz: dayZone(n), bad: evs.some((e: any) => E.dayOf(e.s) === n && (R.by[e.it.uid] || []).some((a: any) => a.sev === 'hard')) }));
-  const goCheckout = () => router.push('/checkout');
+  const cover = dmeta.map((m) => m.zz).find((z) => z !== 'PBL') || 'PBL';
+  const isles = [...new Set(dmeta.map((m) => m.zz))].map((z) => E.ZN[z].name).join(', ');
   const fixAll = () => dispatch('fixmenu');
+  /* the clashes themselves, named, so the panel says what is wrong before you open the fixes */
+  const clashes: any[] = []; Object.values(R.by || {}).forEach((l: any) => l.forEach((a: any) => { if (a.sev === 'hard' && !clashes.some((c) => c.title === a.title)) clashes.push(a); }));
+  const ferryIt = ferry ? S.cart.find((i: any) => i.uid === ferry) : null;
 
   return (
-    <>
-      <div className="tp wrap">
-        <aside className="tp-side" aria-label="Trip summary">
-          <div className="triphd">
-            <div className="r1">
-              <div><span className="eyebrow">{N} days · {Math.max(0, N - 1)} nights</span><h1>{E.fD(S.trip.start)} – {E.fD(S.trip.end)}</h1><div className="muted" style={{ fontSize: 14 }}>{E.paxTxt()}</div></div>
-              <button className="btn ghost sm" onClick={() => dispatch('dates')}>{tr('Change', 'बदलें')}</button>
-            </div>
-            <div className="flights">
-              {[[fi, tr('Arrive', 'पहुँचना'), fi && `${fi.arr} · ${fi.no}`, fi && `${fi.fr.split(' (')[0]} → Port Blair`], [fo, tr('Fly home', 'वापसी उड़ान'), fo && `${fo.dep} · ${fo.no}`, fo && `Port Blair → ${fo.to.split(' (')[0]}`]].map(([f, k, b, sub]: any, i) => (
-                <button key={k} className={`fl${f ? '' : ' add'}`} onClick={() => dispatch('dates')}>
-                  <span className="fi" style={i ? { transform: 'scaleX(-1)' } : undefined}><Ic n="plane" s={18} /></span>
-                  <span><small>{k}{f ? ' · ' + E.fD(f.date) : ''}</small><b>{f ? b : tr('Add your flight', 'अपनी उड़ान जोड़ें')}</b><small>{f ? sub : i ? tr('We keep your last day clear', 'आखिरी दिन हम खाली रखते हैं') : tr('We plan day 1 around it', 'पहला दिन हम इसके हिसाब से बनाते हैं')}</small></span>
-                </button>
+    <div className="atp-pg atp-trip">
+      <aside className="atp-tside" aria-label="Trip summary">
+        <div className="atp-thead">
+          <span className="atp-thead-ph"><Art z={cover} icon="beach" seed={'COVER:' + cover} big /></span>
+          <div className="atp-thead-b">
+            <span className="atp-eyebrow">{N} days · {Math.max(0, N - 1)} nights{isles ? ` · ${isles}` : ''}</span>
+            <h1>{E.fD(S.trip.start)} – {E.fD(S.trip.end)}</h1>
+            <span className="atp-pax">{E.paxTxt()}</span>
+          </div>
+          <button type="button" className="atp-btn atp-change" onClick={() => dispatch('dates')}>Change</button>
+        </div>
+
+        <div className="atp-flights">
+          {[[fi, 'Arrive', fi && `${fi.arr} · ${fi.no}`, fi && `${fi.fr.split(' (')[0]} → Port Blair`], [fo, 'Fly home', fo && `${fo.dep} · ${fo.no}`, fo && `Port Blair → ${fo.to.split(' (')[0]}`]].map(([f, k, b, sub]: any, i) => (
+            <button key={k} type="button" className={`atp-hf${f ? '' : ' is-add'}`} onClick={() => dispatch('dates')}>
+              <span style={i ? { transform: 'scaleX(-1)' } : undefined}><TideIcon n="plane" /></span>
+              <span><small>{k}{f ? ' · ' + E.fD(f.date) : ''}</small><b>{f ? b : 'Add your flight'}</b><small>{f ? sub : i ? 'We keep your last day clear' : 'We time your first day from it'}</small></span>
+            </button>
+          ))}
+        </div>
+
+        {(S.datesAssumed || !S.win) && !(S._nudgeOff || {}).trip && (
+          <div className="atp-nudge" role="note"><TideIcon n="cal" s={18} /><span>{S.datesAssumed ? 'These dates are a guess.' : 'Are these your dates?'}</span>
+            <button type="button" className="atp-btn is-text" onClick={() => dispatch('dates')}>Set dates</button>
+            <button type="button" className="atp-iconbtn" aria-label="Not now" onClick={() => dispatch('nudgeoff', { k: 'trip' })}><TideIcon n="x" s={16} /></button></div>
+        )}
+
+        {!S.cart.length ? (
+          <div className="atp-fits is-none"><span className="atp-tile"><TideIcon n="trip" /></span><div><b>Nothing here yet</b><span>Start with a ferry or a place to stay.</span></div></div>
+        ) : hardN ? (
+          <div className="atp-fix" role="alert">
+            <div className="atp-fix-h"><span className="atp-tile k-clash"><TideIcon n="alert" /></span>{hardN} thing{hardN > 1 ? 's do' : ' does'} not fit</div>
+            <ul>{clashes.slice(0, 3).map((a, i) => <li key={i}>{a.title}</li>)}{clashes.length > 3 && <li>and {clashes.length - 3} more</li>}</ul>
+            <div className="atp-fix-f"><button type="button" className="atp-btn is-commit" onClick={fixAll}>Review the fixes</button><span>Nothing changes until you say so, and you can undo.</span></div>
+          </div>
+        ) : (
+          <div className="atp-fits"><span className="atp-tile k-ok"><TideIcon n="check" /></span><div><b>It all fits</b><span>Every ferry, check-in and plan lines up.{R.soft > 0 ? ` ${R.soft} tip${R.soft > 1 ? 's' : ''} below.` : ''}</span></div></div>
+        )}
+
+        {segs.length > 0 && (
+          <div className="atp-nights" role="list" aria-label="Where you sleep each night">
+            {segs.map((s, i) => s.z ? (
+              <button key={i} type="button" role="listitem" style={{ flexGrow: s.n }} onClick={() => dispatch('edit', { uid: s.uid })} aria-label={`${s.name}, ${E.ZN[s.z].name}, ${s.n} night${s.n > 1 ? 's' : ''}: change`}>
+                <i style={{ background: `var(--z-${s.z})` }} /><b>{E.ZN[s.z].name}</b><small>{s.n} night{s.n > 1 ? 's' : ''}</small>
+              </button>
+            ) : (
+              <button key={i} type="button" role="listitem" className="is-gap" style={{ flexGrow: s.n }} onClick={() => router.push(`/stays?zone=${s.at}&date=${s.d}`)}><b>Add a stay</b><small>{s.n} night{s.n > 1 ? 's' : ''}</small></button>
+            ))}
+          </div>
+        )}
+
+        {S.cart.length > 0 && (
+          <details className="atp-ttools">
+            <summary><TideIcon n="sort" s={18} />Pace, saving and sharing<TideIcon n="down" s={18} /></summary>
+            <div className="atp-seg2 is-inline" role="radiogroup" aria-label="Pace">
+              {[['relaxed', 'Relaxed', 'One half-day plan a day'], ['balanced', 'Balanced', 'A plan for each free day'], ['packed', 'Packed', 'Fill every free slot']].map(([k, l, h]) => (
+                <button key={k} type="button" role="radio" aria-checked={(S.pace || 'balanced') === k} aria-pressed={(S.pace || 'balanced') === k} title={h} onClick={() => dispatch('pace', { k })}>{l}</button>
               ))}
             </div>
-            {segs.length > 0 && (
-              <div className="strip" role="list" aria-label="Where you sleep each night">
-                {segs.map((s, i) => s.z ? (
-                  <button key={i} role="listitem" style={{ flex: s.n, ['--zc' as any]: E.ZC(s.z) }} onClick={() => dispatch('edit', { uid: s.uid })} aria-label={`${E.ZN[s.z].name}, ${s.n} nights, change`}>
-                    <span className="sp-ph"><Art z={s.z} icon="beach" seed={'STRIP:' + s.z + i} /></span><b>{E.ZN[s.z].name}</b><small>{s.n}N</small>
-                  </button>
-                ) : (
-                  <button key={i} role="listitem" className="gap" style={{ flex: s.n }} onClick={() => router.push(`/stays?zone=${s.at}&date=${s.d}`)}><b><Ic n="plus" s={14} w={2.6} /> {tr('Add stay', 'होटल जोड़ें')}</b><small>{s.n}N</small></button>
-                ))}
-              </div>
-            )}
-            {(S.datesAssumed || !S.win) && !(S._nudgeOff || {}).trip && (
-              <div className="nudge slim" role="note"><Ic n="cal" s={16} /><span>{S.datesAssumed ? tr('Dates are a guess', 'तारीखें अनुमान हैं') : `${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}${tr(', are these your dates?', ', क्या यही आपकी तारीखें हैं?')}`}</span>
-                <button className="link" onClick={() => dispatch('dates')}>{tr('Set dates', 'तारीखें डालें')}</button>
-                <button className="x" aria-label="Not now" onClick={() => dispatch('nudgeoff', { k: 'trip' })}><Ic n="x" s={14} w={2.4} /></button></div>
-            )}
-            {!S.cart.length ? (
-              <div className="health none"><span className="hi"><Ic n="trip" s={18} /></span><span><b>{tr('Nothing here yet', 'अभी कुछ नहीं')}</b>{tr('Start with a ferry or a place to stay.', 'किसी फ़ेरी या होटल से शुरू करें।')}</span></div>
-            ) : hardN ? (
-              <button className="health bad" onClick={fixAll}><span className="hi"><Ic n="alert" s={18} w={2.2} /></span><span><b>{tr(`${hardN} thing${hardN > 1 ? 's' : ''} that ${hardN > 1 ? 'do' : 'does'} not fit to sort out`, `${hardN} चीज़ें ठीक नहीं बैठतीं`)}</b>{tr('We can fix it for you, and show you every change.', 'हम इन्हें ठीक कर सकते हैं, और हर बदलाव दिखाएँगे।')}</span><span className="go">{tr('Fix', 'ठीक करें')} <Ic n="arrow" s={16} w={2.4} /></span></button>
-            ) : (
-              <div className="health ok"><span className="hi"><Ic n="check" s={18} w={2.6} /></span><span><b>{tr('It all fits', 'सब ठीक बैठता है')}</b>{tr('Every ferry, check-in and plan lines up.', 'हर फ़ेरी, चेक-इन और योजना का समय मेल खाता है।')}</span></div>
-            )}
-            {S.cart.length > 0 && (
-              <>
-                <div className="lx-pace" role="radiogroup" aria-label={tr('Pace', 'रफ़्तार')}><span>{tr('Pace', 'रफ़्तार')}</span>
-                  {[['relaxed', tr('Relaxed', 'आराम से'), tr('One half-day plan a day', 'दिन में एक आधे दिन की योजना')], ['balanced', tr('Balanced', 'संतुलित'), tr('A plan for each free day', 'हर खाली दिन के लिए एक योजना')], ['packed', tr('Packed', 'भरपूर'), tr('Fill every free window', 'हर खाली समय भरें')]].map(([k, l, h]) => (
-                    <button key={k} aria-pressed={(S.pace || 'balanced') === k} title={h} onClick={() => dispatch('pace', { k })}>{l}</button>
-                  ))}
-                </div>
-                <div className="lx-tools">
-                  <button className="btn ghost sm" onClick={() => dispatch('trsave')}><Ic n="check" s={15} w={2.4} /> {S.tripId ? tr('Save changes', 'बदलाव सेव करें') : tr('Save itinerary', 'यात्रा सेव करें')}</button>
-                  <button className="btn ghost sm" onClick={() => router.push('/my-trips')}>My trips{S.trips.length ? ` (${S.trips.length})` : ''}</button>
-                  <button className="btn ghost sm" onClick={() => router.push('/plan')}>{tr('Other options', 'दूसरे विकल्प')}</button>
-                  <a className="btn ghost sm" href={`https://wa.me/?text=${encodeURIComponent(E.shareText())}`} target="_blank" rel="noopener"><Ic n="chat" s={15} /> {tr('Share on WhatsApp', 'WhatsApp पर भेजें')}</a>
-                </div>
-                <div className="lx-tools"><button className="btn ghost sm" onClick={() => dispatch('mealsall')}><Ic n="cup" s={15} /> {tr('Add lunch and dinner to every day', 'हर दिन दोपहर और रात का खाना जोड़ें')}</button></div>
-              </>
-            )}
-            <div className="sumrow">
-              {R.soft > 0 && <span className="tag warn">{R.soft} suggestion{R.soft > 1 ? 's' : ''}</span>}
-              {S.cart.length > 0 && <span className="tag">{S.cart.length} item{S.cart.length === 1 ? '' : 's'}</span>}
-              {req > 0 && <span className="tag">{req} rate on request</span>}
+            <div className="atp-tlinks">
+              <button type="button" onClick={() => dispatch('trsave')}><TideIcon n="check" s={18} />{S.tripId ? 'Save changes' : 'Save itinerary'}</button>
+              <button type="button" onClick={() => router.push('/my-trips')}><TideIcon n="ticket" s={18} />My trips{S.trips.length ? ` (${S.trips.length})` : ''}</button>
+              <button type="button" onClick={() => router.push('/plan')}><TideIcon n="spark" s={18} />Build it another way</button>
+              <a href={`https://wa.me/?text=${encodeURIComponent(E.shareText())}`} target="_blank" rel="noopener"><TideIcon n="chat" s={18} />Share on WhatsApp</a>
+              <button type="button" onClick={() => dispatch('mealsall')}><TideIcon n="cup" s={18} />Keep time for lunch and dinner every day</button>
             </div>
-            <div className="tp-buy">
-              <button className="tot" onClick={() => dispatch('breakdown')} aria-label={tr('See the price breakdown', 'कीमत का ब्योरा देखें')}><b>{E.inr(total)}</b><small>{req ? tr(`+ ${req} on request · `, `+ ${req} अनुरोध पर · `) : ''}{tr('incl. GST · breakdown', 'GST सहित · ब्योरा')}</small></button>
-              {!S.cart.length ? <button className="btn primary block" disabled>{tr('Checkout', 'चेकआउट')}</button> : hardN ? <button className="btn primary block" onClick={fixAll}><Ic n="spark" s={18} /> {tr('Fix it for me', 'मेरे लिए ठीक करें')}</button> : <button className="btn primary block" onClick={goCheckout}>{tr('Checkout', 'चेकआउट')} <Ic n="arrow" s={18} w={2.2} /></button>}
-            </div>
-          </div>
-        </aside>
-        <div className="tp-main">
-          {N > 1 && (
-            <nav className="daynav" aria-label="Jump to a day">
-              {dmeta.map((m, n) => <a key={n} href={`#day${n + 1}`} className={m.bad ? 'bad' : ''} style={{ ['--zc' as any]: E.ZC(m.zz) }}><i />{tr('Day', 'दिन')} {n + 1}<span className="faint" style={{ fontWeight: 600 }}>{(E.ZSHORT || {})[m.zz] || E.ZN[m.zz].name}</span></a>)}
-            </nav>
-          )}
-          <ExtendBtn E={E} dir="before" />
-          {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} fi={fi} fo={fo} />)}
-          <ExtendBtn E={E} dir="after" />
-          <div className="pad"><p className="note" style={{ paddingBlock: '12px 0' }}>{tr('Everything is in day and time order. Reporting times and the travel in between are already counted.', 'सब कुछ दिन और समय के क्रम में है। रिपोर्टिंग समय और बीच का सफ़र पहले से जोड़ा गया है।')}</p></div>
+          </details>
+        )}
+
+        <div className="atp-tbuy">
+          <button type="button" className="atp-total" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)}</b><small>{req ? `+ ${req} on request · ` : ''}incl. GST · {S.cart.length} booking{S.cart.length === 1 ? '' : 's'} · breakdown</small></button>
+          {!S.cart.length ? <button type="button" className="atp-btn is-action" disabled>Checkout</button> : hardN ? <button type="button" className="atp-btn is-action" onClick={fixAll}>Fix {hardN}</button> : <button type="button" className="atp-btn is-action" onClick={() => router.push('/checkout')}>Checkout</button>}
         </div>
+      </aside>
+
+      <div className="atp-tmain">
+        {N > 1 && (
+          <nav className="atp-rail" aria-label="Jump to a day" style={{ ['--n' as any]: Math.min(N, 7) }}>
+            {dmeta.map((m, n) => { const d = E.pDate(E.addD(S.trip.start, n)); return (
+              <a key={n} href={`#day${n + 1}`} className={`atp-day${m.bad ? ' has-clash' : ''}`} aria-label={`Day ${n + 1}, ${E.ZN[m.zz].name}${m.bad ? ', something does not fit' : ''}`}>
+                <i style={{ background: `var(--z-${m.zz})` }} /><small>{E.DOW[d.getUTCDay()]}</small>{d.getUTCDate()}
+              </a>
+            ); })}
+          </nav>
+        )}
+        <ExtendBtn E={E} dir="before" />
+        {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} first={n === 0 || dmeta[n - 1].zz !== dmeta[n].zz} fi={fi} fo={fo} onFerry={setFerry} />)}
+        <ExtendBtn E={E} dir="after" />
+        <p className="atp-fine atp-pad">Everything is in day and time order. Reporting times and the travel in between are already counted.</p>
       </div>
+
       <div className="cta wrap abovenav">
-        <button className="tot bd" onClick={() => dispatch('breakdown')} aria-label={tr('See the price breakdown', 'कीमत का ब्योरा देखें')}><b>{E.inr(total)} <span style={{ display: 'inline-block', transform: 'rotate(90deg)' }}><Ic n="back" s={14} w={2.4} /></span></b><small>{req ? tr(`+ ${req} on request · incl. GST`, `+ ${req} अनुरोध पर · GST सहित`) : tr('incl. GST', 'GST सहित')} · {tr('breakdown', 'ब्योरा')}</small></button>
-        {!S.cart.length ? <button className="btn primary" disabled>{tr('Checkout', 'चेकआउट')}</button> : hardN ? <button className="btn primary" onClick={fixAll}>{tr('Fix', 'ठीक करें')} {hardN}</button> : <button className="btn primary" onClick={goCheckout}>{tr('Checkout', 'चेकआउट')}</button>}
+        <button type="button" className="tot bd" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)} <TideIcon n="down" s={14} /></b><small>{req ? `+ ${req} on request · incl. GST` : 'incl. GST · breakdown'}</small></button>
+        {!S.cart.length ? <button type="button" className="atp-btn is-action" disabled>Checkout</button> : hardN ? <button type="button" className="atp-btn is-action" onClick={fixAll}>Fix {hardN}</button> : <button type="button" className="atp-btn is-action" onClick={() => router.push('/checkout')}>Checkout</button>}
       </div>
-    </>
+      {ferryIt && <FerrySheet E={E} it={ferryIt} onClose={() => setFerry(null)} />}
+    </div>
   );
 }
 
 function EmptyTrip({ E }: { E: Engine }) {
-  const router = useRouter(); const tr = lang(E);
+  const router = useRouter();
   return (
-    <div className="wrap"><div className="empty">
-      <span className="art"><Art z="HAV" icon="trip" seed="empty" /></span>
-      <h2>{tr('Your trip is empty', 'आपकी यात्रा खाली है')}</h2>
-      <p>{tr('Add a ferry, a room or something to do. We lay it out day by day and tell you straight away if something does not fit.', 'फ़ेरी, कमरा या घूमने की कोई चीज़ जोड़ें। हम उसे दिन-ब-दिन लगाते हैं और कुछ ठीक न बैठे तो तुरंत बताते हैं।')}</p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
-        <button className="btn primary" onClick={() => router.push('/')}>{tr('Start exploring', 'खोजना शुरू करें')}</button>
-        <button className="btn ghost" onClick={() => { E.sampleTrip(); E.S.booked = []; commit(); }}>Show me an example trip</button>
-      </div>
-    </div></div>
+    <div className="atp-pg atp-trip-empty">
+      <span className="atp-thead-ph"><Art z="HAV" icon="trip" seed="empty" big /></span>
+      <h1>Your trip is empty</h1>
+      <p className="atp-lead">Add a ferry, a room or something to do. We lay it out day by day and tell you straight away if something does not fit.</p>
+      <button type="button" className="atp-btn is-action atp-wide" onClick={() => router.push('/')}>Start exploring</button>
+      <button type="button" className="atp-btn is-outline atp-wide" onClick={() => { E.sampleTrip(); E.S.booked = []; commit(); }}>Show me an example trip</button>
+    </div>
   );
 }
 
-function Day({ E, n, N, R, evs, zz, fi, fo }: { E: Engine; n: number; N: number; R: any; evs: any[]; zz: string; fi: any; fo: any }) {
+function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: number; N: number; R: any; evs: any[]; zz: string; first: boolean; fi: any; fo: any; onFerry: (uid: string) => void }) {
   const router = useRouter();
   const { S } = E; const date = E.addD(S.trip.start, n); const nat = E.NAT[date];
   const rows: Row[] = [];
+  const ev = (e: any) => <Ev E={E} e={e} R={R} onFerry={onFerry} />;
   if (fi && E.dayIdx(fi.date) === n) rows.push({ at: E.tm(fi.arr), key: 'fi', node: <Anchor E={E} time={fi.arr} b="Land at Port Blair" s={`${fi.no} ${fi.al} from ${fi.fr}`} alerts={R.anchors.in} /> });
-  evs.filter((e) => E.dayOf(e.s) === n && e.kind !== 'stay').forEach((e) => rows.push({ at: e.s % 1440, key: e.it.uid + ':' + (e.part || 0), node: <Ev E={E} e={e} R={R} /> }));
+  evs.filter((e) => E.dayOf(e.s) === n && e.kind !== 'stay').forEach((e) => { const k = E.tcCat(e); rows.push({ at: e.s % 1440, key: e.it.uid + ':' + (e.part || 0), node: ev(e), e, t: k === 'cab' ? 'cab' : k === 'meal' || k === 'shop' ? 'meal' : k === 'ferry' ? undefined : 'stop' }); });
   evs.filter((e) => e.kind === 'stay' && E.dayIdx(e.it.date) === n).forEach((e) => {
     const arr = evs.filter((x) => E.dayOf(x.e) === n && x.e <= E.abs(n, 1080) && ((x.kind === 'ferry' && x.to === e.zone) || (x.kind === 'veh' && x.move === e.zone) || (x.kind === 'veh' && /Airport|Jetty|Wharf/.test(x.I.title.split(' → ')[0]) && x.zone === e.zone))).map((x) => x.e % 1440).sort((a, b) => b - a)[0];
     const fiA = fi && E.dayIdx(fi.date) === n && e.zone === 'PBL' ? E.tm(fi.arr) + 30 : null;
     e.ciAt = Math.max(E.CHECKIN, arr || fiA || E.CHECKIN);
-    rows.push({ at: e.ciAt, key: e.it.uid, node: <Ev E={E} e={e} R={R} /> });
+    rows.push({ at: e.ciAt, key: e.it.uid, node: ev(e) });
   });
   evs.filter((e) => e.kind === 'stay' && E.dayIdx(e.it.date) + e.it.nights === n).forEach((e) => {
     const lv = evs.filter((x) => E.dayOf(x.s) === n && (x.kind === 'ferry' || (x.kind === 'veh' && x.zone === e.zone))).sort((a, b) => a.s - b.s)[0];
@@ -153,215 +178,271 @@ function Day({ E, n, N, R, evs, zz, fi, fo }: { E: Engine; n: number; N: number;
     const at = lvAt != null && lvAt < E.CHECKOUT ? lvAt - 1 : E.CHECKOUT;
     const late = lvAt != null && lvAt > E.CHECKOUT + E.GRACE;
     rows.push({ at, key: 'co' + e.it.uid, node: (
-      <div className="ev"><span className="et">{E.hm(at)}</span><span className="er"><span className="nd" style={{ background: 'var(--faint)' }}><Ic n="bed" s={12} /></span></span>
-        <span className="ec"><div className="anchor">Check out{at < E.CHECKOUT ? ' before you leave' : ` by ${E.hm(E.CHECKOUT)} (free till ${E.hm(E.CHECKOUT + E.GRACE)})`}{e.it.late ? ' · late check-out requested' : late ? ' · bags can stay at the hotel' : ''} · <b>{e.I.title}</b></div></span></div>
+      <div className="atp-item is-quiet"><div className="atp-row"><span className="atp-t">{E.hm(at)}</span><span className="atp-tile"><TideIcon n="bed" /></span>
+        <span><span className="atp-n">Check out of {e.I.title}</span><span className="atp-s">{at < E.CHECKOUT ? 'Before you leave' : `By ${E.hm(E.CHECKOUT)}, free till ${E.hm(E.CHECKOUT + E.GRACE)}`}{e.it.late ? ' · late check-out requested' : late ? ' · bags can stay at the hotel' : ''}</span></span></div></div>
     ) });
   });
   (R.day[n] || []).filter((a: any) => a.kind === 'gap').forEach((a: any, i: number) => rows.push({ at: (a.at % 1440) + 0.5, key: 'gap' + i, node: <Gap E={E} a={a} date={date} /> }));
   if (fo && E.dayIdx(fo.date) === n) rows.push({ at: E.tm(fo.dep), key: 'fo', node: <Anchor E={E} time={fo.dep} b="Fly out of Port Blair" s={`${fo.no} ${fo.al} to ${fo.to}`} alerts={R.anchors.out} /> });
   rows.sort((a, b) => a.at - b.at);
-  const st = E.nightStay(evs, n); const miss = (R.day[n] || []).find((a: any) => a.kind === 'night'); const tr = lang(E);
-  const load = E.dayLoad ? E.dayLoad(date) : null;
+
+  /* cab loops: a run that starts with a cab and takes in at least one stop is one car's outing */
+  const out: ReactNode[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (rows[i].t === 'cab') {
+      let j = i; while (j + 1 < rows.length && rows[j + 1].t) j++;
+      while (j > i && rows[j].t === 'meal') j--; // a meal after the last ride is not part of the outing
+      const run = rows.slice(i, j + 1);
+      if (run.some((r) => r.t === 'stop')) { out.push(<Loop key={'loop' + rows[i].key} E={E} run={run} R={R} zz={zz} date={date} />); i = j; continue; }
+    }
+    out.push(<Fragment key={rows[i].key}>{rows[i].node}</Fragment>);
+  }
+
+  const st = E.nightStay(evs, n); const miss = (R.day[n] || []).find((a: any) => a.kind === 'night');
+  const load = E.dayLoad ? E.dayLoad(date) : null; const bars = load ? Math.max(1, Math.round(load.r * 5)) : 0;
   const meals: string[] = E.dayMeals(date);
-  const zm = zz === 'WAN' ? 'PBL' : zz;
+  const zm = zz === 'WAN' ? 'PBL' : zz; const wait = waitRate(E, zm);
   const mealOpts = S.cart.length ? ['bf', 'lunch', 'dinner', 'shop'].filter((k) => !meals.includes(k) && (E.ACT[E.MEALK[k].id + zm] || k !== 'shop')) : [];
+  const d = E.pDate(date);
 
   return (
-    <section className="day" id={`day${n + 1}`} aria-label={`Day ${n + 1}`} data-date={date}>
-      <div className="dayhd tc-dh">
-        <span className="dh-ph"><Art z={zz} icon="beach" seed={'DAYHD:' + zz + ':' + date} big /></span>
-        <span className="dn" style={{ ['--zc' as any]: E.ZC(zz) }}><small>{tr('Day', 'दिन')}</small><b>{n + 1}</b></span>
-        <div style={{ flex: 1, minWidth: 0 }}><h3>{E.fD(date)} · {E.ZN[zz].name}</h3>
-          <p>{nat && <><span><Ic n="sunrise" s={14} /> {nat.sr}</span><span><Ic n="sunset" s={14} /> {nat.ss}</span></>}{E.season(date) === 'pk' && <span>{tr('Peak season', 'पीक सीज़न')}</span>}</p></div>
-        <button className="iconbtn" aria-label={`Add to day ${n + 1}`} onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><Ic n="plus" s={20} /></button>
-        {load && <div className="lx-load"><span className="lx-load-b"><i style={{ width: `${Math.min(100, load.pct || 0)}%` }} /></span><b>{load.label}</b></div>}
+    <section className="atp-dsec day" id={`day${n + 1}`} aria-label={`Day ${n + 1}`} data-date={date}>
+      {first && <div className="atp-banner"><Art z={zz} icon="beach" seed={'DAYHD:' + zz + ':' + date} big /><span>{E.ZN[zz].name}</span></div>}
+      <div className="atp-dh">
+        <h2><b>Day {n + 1}</b><span>{E.DOW[d.getUTCDay()]} {d.getUTCDate()} {E.MON[d.getUTCMonth()]}</span></h2>
+        <span className="atp-zone"><i style={{ background: `var(--z-${zz})` }} />{E.ZN[zz].name}</span>
+        {load && <span className="atp-fit">{load.label.replace(' day', '')}<span className="atp-meter" role="img" aria-label={`${Math.round(load.r * 100)} percent of the day is planned`}>{[0, 1, 2, 3, 4].map((i) => <i key={i} className={i < bars ? 'on' : ''} />)}</span></span>}
+        <button type="button" className="atp-iconbtn" aria-label={`Add to day ${n + 1}`} onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><TideIcon n="plus" /></button>
       </div>
+      {(nat || E.season(date) === 'pk') && <p className="atp-sun">{nat && <><span><TideIcon n="sunrise" s={14} />{nat.sr}</span><span><TideIcon n="sunset" s={14} />{nat.ss}</span></>}{E.season(date) === 'pk' && <span>Peak season</span>}</p>}
       <DayTools E={E} date={date} zz={zz} />
+      {out.length ? out : <p className="atp-fine atp-pad">Nothing planned yet.</p>}
       {mealOpts.length > 0 && (
-        <div className="lx-meals"><small>{tr('ADD', 'जोड़ें')}</small>
-          {mealOpts.map((k) => <button key={k} className="lx-chip sm" data-k={k} onClick={() => E.addMeal(k, date)}><Ic n={k === 'shop' ? 'store' : 'cup'} s={14} /> {E.MEALK[k].n}</button>)}
+        <div className="atp-eat" role="group" aria-label={`Eat out on day ${n + 1}`}>
+          <span><TideIcon n="cup" s={16} />Eat out, if you like<small>We keep the time free; you pay at the table.</small></span>
+          <div>{mealOpts.map((k) => <button key={k} type="button" className="atp-eatc" onClick={() => E.addMeal(k, date)}>{E.MEALK[k].n}{(k === 'lunch' || k === 'dinner') && <small>cab waits ~{E.inr(Math.round(wait * (k === 'dinner' ? 1.25 : 1) / 10) * 10)}</small>}</button>)}</div>
         </div>
       )}
-      {rows.length ? rows.map((r) => <div key={r.key} style={{ display: 'contents' }}>{r.node}</div>) : <div className="anchor" style={{ paddingLeft: 54 }}>{tr('Nothing planned yet.', 'अभी कुछ तय नहीं।')}</div>}
       {n < N - 1 && (st ? (
-        <div className="night"><Ic n="moon" s={15} /><span>{tr('Night at', 'रात यहाँ')} <b>{st.I.title}</b> · {tr(`night ${n - E.dayIdx(st.it.date) + 1} of ${st.it.nights}`, `${st.it.nights} में से ${n - E.dayIdx(st.it.date) + 1}वीं रात`)}</span></div>
+        <div className="atp-night"><TideIcon n="moon" s={16} /><span>Night at <b>{st.I.title}</b> · night {n - E.dayIdx(st.it.date) + 1} of {st.it.nights}</span></div>
       ) : miss ? (
-        <div className="night missing"><Ic n="moon" s={15} /><span style={{ flex: 1 }}><b style={{ color: 'var(--warn)' }}>{miss.title}</b></span>
-          <button className="btn sm" onClick={() => router.push(`/stays?zone=${miss.zone}&date=${date}`)}>{tr('Find a stay', 'होटल खोजें')}</button></div>
+        <div className="atp-night is-missing"><TideIcon n="moon" s={16} /><span><b>{miss.title}</b></span><button type="button" className="atp-btn is-outline" onClick={() => router.push(`/stays?zone=${miss.zone}&date=${date}`)}>Find a stay</button></div>
       ) : null)}
     </section>
   );
 }
 
-function Anchor({ E, time, b, s, alerts }: { E: Engine; time: string; b: string; s: string; alerts: any[] }) {
+/* One cab's outing: from where it picks you up, round the stops, and back. The rides inside open on a tap. */
+function Loop({ E, run, R, zz, date }: { E: Engine; run: Row[]; R: any; zz: string; date: string }) {
+  const router = useRouter(); const [open, setOpen] = useState(false);
+  const cabs = run.filter((r) => r.t === 'cab').map((r) => r.e); const stops = run.filter((r) => r.t === 'stop').map((r) => r.e);
+  const names = [...new Set(stops.map((s) => { const a = E.ACT[s.it.ref]; return a && E.shortName ? E.shortName(a) : s.I.title; }))];
+  const from = String(cabs[0].I.title).split(/\s*→\s*/)[0]; const last = cabs[cabs.length - 1]; const to = String(last.I.title).split(/\s*→\s*/)[1] || '';
+  const ends = run[run.length - 1].t === 'cab'; const back = ends && (from === to || (place(from) === 'Hotel' && place(to) === 'Hotel'));
+  /* a return fare is one booking: the cab waits at the stop and brings you back */
+  const waits = !ends && /return/i.test(String(last.I.sub || ''));
+  const sum = cabs.reduce((s, c) => s + (c.I.price || 0), 0); const veh = String(cabs[0].I.sub || '').split(' · ')[0];
+  const al = cabs.flatMap((c) => R.by[c.it.uid] || []); const hard = al.some((a: any) => a.sev === 'hard');
+  const route = [place(from), ...names, ends ? place(to) : waits ? place(from) : null].filter(Boolean).join(' → ');
   return (
-    <div className="ev"><span className="et">{time}</span><span className="er"><span className="nd" style={{ background: 'var(--ink)' }}><Ic n="plane" s={12} /></span></span>
-      <span className="ec"><div className="anchor"><b>{b}</b>&nbsp;· {s}</div>{alerts.map((a, i) => <Alert key={i} E={E} a={a} />)}</span></div>
-  );
-}
-
-function Alert({ E, a }: { E: Engine; a: any }) {
-  const tr = lang(E); const k = a.sev === 'hard' ? ['x', tr('Does not fit', 'ठीक नहीं बैठता')] : a.sev === 'soft' ? ['bulb', tr('Tip', 'सुझाव')] : ['clock', tr('Idea', 'आइडिया')];
-  const run = (fx: any) => { const d: Record<string, any> = {}; Object.entries(fx).forEach(([key, v]) => { if (key !== 'label' && v !== '' && v != null) d[key] = key === 'patch' ? JSON.stringify(v) : v; }); dispatch('fx', d); };
-  return (
-    <div className={`alert ${a.sev}`} role={a.sev === 'hard' ? 'alert' : 'note'}>
-      <div className="ah"><Ic n={k[0]} s={18} w={2.2} /><div><span className="kind">{k[1]}</span><b>{a.title}</b>{a.msg && <span>{a.msg}</span>}</div></div>
-      {a.fix && a.fix.length > 0 && <div className="acts">{a.fix.map((f: any, i: number) => <button key={i} className={`btn sm ${f.act === 'edit' || f.act === 'dismiss' ? 'ghost' : 'quiet'}`} onClick={() => run(f)}>{f.label}</button>)}</div>}
+    <div className={`atp-loop${hard ? ' is-clash' : ''}`}>
+      <div className="atp-item">
+        <button type="button" className="atp-row" aria-expanded={open} onClick={() => setOpen(!open)}>
+          <span className="atp-t">{E.clock(cabs[0].s)}</span><span className="atp-tile k-cab"><TideIcon n="car" /></span>
+          <span><span className="atp-n">One cab · {names.length} stop{names.length > 1 ? 's' : ''}</span><span className="atp-s">{veh}{veh ? ' · ' : ''}{cabs.length} ride{cabs.length > 1 ? 's' : ''} <TideIcon n="down" s={12} /></span></span>
+          <span className="atp-p">{E.inr(sum)}</span>
+          <span className="atp-lroute">{route}</span>
+        </button>
+        {open && <div className="atp-legs">{cabs.map((c) => (
+          <button key={c.it.uid} type="button" onClick={() => dispatch('edit', { uid: c.it.uid })}><span className="atp-mono">{E.clock(c.s)}</span><span>{c.I.title}</span><b className="atp-mono">{c.I.price != null ? E.inr(c.I.price) : ''}</b></button>
+        ))}</div>}
+        {al.length > 0 && <div className="atp-issue">{al.map((a: any, i: number) => <Alert key={i} a={a} />)}</div>}
+      </div>
+      {run.filter((r) => r.t !== 'cab').map((r) => <Fragment key={r.key}>{r.node}</Fragment>)}
+      {(ends || waits) && (
+        <div className="atp-end"><span className="atp-t">{ends ? E.clock(last.e) : ''}</span><span className="atp-node" /><span>{waits ? 'The cab waits, then takes you back' : back ? 'Back at the hotel' : `Dropped at ${place(to)}`}</span>
+          <button type="button" className="atp-btn is-text" onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}>Add a stop</button></div>
+      )}
     </div>
   );
 }
 
-function Gap({ E, a, date }: { E: Engine; a: any; date: string }) {
-  const router = useRouter();
-  const len = Math.floor((a.end - a.at) / 30) * 30; const tr = lang(E);
-  const head = (extra: ReactNode) => (
-    <div className="ev"><span className="et faint">{E.clock(a.at)}</span><span className="er"><span className="nd" style={{ background: 'var(--sunk)', color: 'var(--ink)' }}><Ic n="clock" s={12} w={2.2} /></span></span>
-      <span className="ec"><div className="idhd"><b>{tr(`${E.durTxt(len)} free on ${E.ZN[a.zone].name}`, `${E.ZN[a.zone].name} पर ${E.durTxt(len)} खाली`)}</b><span>{E.clock(a.at)}–{E.clock(a.end)}{extra}</span></div></span></div>
-  );
-  if (a.skipped) return head(<> · <button className="link" onClick={() => dispatch('fx', { act: 'undismiss', key: 'gapday' + date })}>{tr('Show ideas', 'आइडिया दिखाएँ')}</button></>);
-  const { pick, blocks, leaving, landing, fiArr } = E.gapPicks(a, date);
-  if (!pick.length && !blocks.length) return null;
-  /* the free window, so a day plan is timed inside it (same as v1's data-from / data-to / data-eve) */
-  const win = { date, from: a.at % 1440, to: a.end % 1440, eve: a.evening ? 1 : 0 };
-  const why = leaving ? tr('short and close, so you make your connection', 'छोटा और पास, ताकि आगे का सफ़र न छूटे') : landing ? (fiArr ? tr(`timed for your ${fiArr} landing`, `आपके ${fiArr} पहुँचने के हिसाब से`) : tr('light plans for your first hours', 'पहले कुछ घंटों के लिए हल्की योजनाएँ')) : blocks.length ? tr('ideas that fit the time you have', 'आपके खाली समय में फिट आइडिया') : E.t('fitsHere');
-  const grp = (k: string, n: number) => <div className="idgrp" key={'g' + k}><b>{k}</b><small>{tr(`${n} that fit${n > 1 ? '' : 's'}`, `${n} फिट`)}</small></div>;
+function Anchor({ E, time, b, s, alerts }: { E: Engine; time: string; b: string; s: string; alerts: any[] }) {
   return (
-    <>
-      {head(<> · {why}</>)}
-      <div className="bleed" role="region" aria-label={`Ideas for ${E.clock(a.at)}–${E.clock(a.end)}`}><div className="idrail">
-        {blocks.map((p: any, i: number) => (
-          <div key={p.b.id} style={{ display: 'contents' }}>
-            {(i === 0 || blocks[i - 1].span !== p.span) && grp(p.span === 'full' ? tr('Full day', 'पूरा दिन') : tr('Half day', 'आधा दिन'), blocks.filter((q: any) => q.span === p.span).length)}
-            <div className="idc blk" style={{ ['--zc' as any]: E.ZC(p.b.z) }}>
-              <button className="idc-art" onClick={() => dispatch('blk', { id: p.b.id, ...win })} aria-label={`See what is inside: ${p.b.n}`}><Art z={p.b.z} seed={p.hero} /><span className="bk-n">{p.span === 'full' ? tr('Full day', 'पूरा दिन') : tr('Half day', 'आधा दिन')}</span><span className="why">★ {p.b.why}</span></button>
-              <div className="idc-b"><b>{p.b.n}</b><small>{p.items.filter((i: any) => !i.during).map((i: any) => E.shortName(i.x)).join(' → ')}</small>
-                <span className="idc-m"><Ic n="clock" s={14} /> {E.hm(p.start)}–{E.hm(p.end)} · {p.items.length} bookings</span>
-                <div className="idc-f"><span className="price">{E.inr(p.price)}<small>{tr(` for ${E.pax()}`, ` ${E.pax()} के लिए`)}</small></span>
-                  <button className="btn sm" onClick={() => dispatch('blkadd', { id: p.b.id, ...win })}><Ic n="plus" s={16} w={2.6} /> {tr('Add plan', 'योजना जोड़ें')}</button></div></div>
-            </div>
-          </div>
-        ))}
-        {pick.length > 0 && grp(tr('Single stops', 'एक-एक जगह'), pick.length)}
-        {pick.map(({ x, slot, why: w, where }: any) => { const u = E.actUnit(x, date); return (
-          <div key={x.id} className="idc" style={{ ['--zc' as any]: E.ZC(x.z) }}>
-            <button className="idc-art" onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${date}`)} aria-label={`Details: ${x.n}`}><Art z={x.z} seed={x.id} />{w && <span className="why">★ {w}</span>}</button>
-            <div className="idc-b"><b>{x.n}</b><small>{x.v}</small>
-              <span className="idc-m"><Ic n="clock" s={14} /> {slot} · {E.durTxt(x.d)}{where ? ` · ${where}` : ''}</span>
-              <div className="idc-f"><span className="price">{x.entry ? (u ? E.inr(u) : 'Free') : u ? E.inr(u) : 'On request'}<small>{x.b === 'per_pax' ? ' / person' : ''}</small></span>
-                <button className="btn sm" onClick={() => dispatch('fx', { act: 'quickadd', kind: 'act', ref: x.id, date, t: slot })}><Ic n="plus" s={16} w={2.6} /> Add</button></div></div>
-          </div>
-        ); })}
-        <button className="idc more" onClick={() => router.push(`/islands/${String(a.zone).toLowerCase()}?date=${date}`)}><Ic n="search" s={24} /><b>{tr(`Everything on ${E.ZN[a.zone].name}`, `${E.ZN[a.zone].name} पर सब कुछ`)}</b></button>
-      </div>
-      <div className="idskip"><button className="link" onClick={() => dispatch('fx', { act: 'dismiss', key: 'gapday' + date })}>{tr('Skip', 'छोड़ें')}</button></div></div>
-    </>
+    <div className="atp-item"><div className="atp-row"><span className="atp-t">{time}</span><span className="atp-tile"><TideIcon n="plane" /></span><span><span className="atp-n">{b}</span><span className="atp-s">{s}</span></span></div>
+      {alerts.length > 0 && <div className="atp-issue">{alerts.map((a, i) => <Alert key={i} a={a} />)}</div>}</div>
   );
 }
 
-/* one row on the timeline: time, coloured dot, and the card for its kind */
-function Ev({ E, e, R }: { E: Engine; e: any; R: any }) {
-  const { S } = E; const it = e.it; const I = e.I; const A = E.ACT[it.ref] || {}; const tr = lang(E);
+/* What does not fit (or a tip), in a sentence, with the ways out as buttons. */
+function Alert({ a }: { a: any }) {
+  const k = a.sev === 'hard' ? ['alert', 'Does not fit'] : a.sev === 'soft' ? ['bulb', 'Tip'] : ['clock', 'Idea'];
+  const run = (fx: any) => { const d: Record<string, any> = {}; Object.entries(fx).forEach(([key, v]) => { if (key !== 'label' && v !== '' && v != null) d[key] = key === 'patch' ? JSON.stringify(v) : v; }); dispatch('fx', d); };
+  return (
+    <div className={`atp-alert is-${a.sev}`} role={a.sev === 'hard' ? 'alert' : 'note'}>
+      <span className="atp-why"><TideIcon n={k[0]} s={18} />{k[1]}: {a.title}</span>
+      {a.msg && <span className="atp-s">{a.msg}</span>}
+      {a.fix && a.fix.length > 0 && <div className="atp-acts">{a.fix.map((f: any, i: number) => <button key={i} type="button" className={`atp-btn ${i === 0 && f.act !== 'dismiss' ? 'is-commit' : 'is-text'}`} onClick={() => run(f)}>{f.label}</button>)}</div>}
+    </div>
+  );
+}
+
+/* Free time: what fits in it, as day plans and single stops. */
+function Gap({ E, a, date }: { E: Engine; a: any; date: string }) {
+  const router = useRouter();
+  const len = Math.floor((a.end - a.at) / 30) * 30;
+  const head = (extra: ReactNode) => (
+    <div className="atp-gap-h"><span className="atp-t">{E.clock(a.at)}</span><span className="atp-node is-open" /><span><b>{E.durTxt(len)} free on {E.ZN[a.zone].name}</b><small>until {E.clock(a.end)}{extra}</small></span></div>
+  );
+  if (a.skipped) return <div className="atp-gap">{head(<> · <button type="button" className="atp-link" onClick={() => dispatch('fx', { act: 'undismiss', key: 'gapday' + date })}>Show ideas</button></>)}</div>;
+  const { pick, blocks, leaving, landing, fiArr } = E.gapPicks(a, date);
+  if (!pick.length && !blocks.length) return null;
+  /* the free window, so a day plan is timed inside it */
+  const win = { date, from: a.at % 1440, to: a.end % 1440, eve: a.evening ? 1 : 0 };
+  const why = leaving ? 'short and close, so you make your connection' : landing ? (fiArr ? `timed for your ${fiArr} landing` : 'light plans for your first hours') : a.evening ? 'for the evening' : 'ideas that fit, already timed';
+  return (
+    <div className="atp-gap">
+      {head(<> · {why}</>)}
+      <div className="atp-rail3" role="group" aria-label={`Ideas for ${E.clock(a.at)} to ${E.clock(a.end)}`}>
+        {blocks.map((p: any) => (
+          <div key={p.b.id} className="atp-idea is-plan">
+            <button type="button" className="atp-idea-ph" onClick={() => dispatch('blk', { id: p.b.id, ...win })} aria-label={`See what is inside: ${p.b.n}`}><Art z={p.b.z} seed={p.hero} /><span className="atp-pk-tag">{p.span === 'full' ? 'Full day' : 'Half day'} plan</span></button>
+            <div className="atp-idea-b"><b>{p.b.n}</b><small>{p.items.filter((i: any) => !i.during).map((i: any) => E.shortName(i.x)).join(' → ')}</small>
+              <small className="atp-mono">{E.hm(p.start)}–{E.hm(p.end)} · {p.items.length} bookings</small>
+              <div className="atp-idea-f"><span className="atp-bc-p"><b>{E.inr(p.price)}</b><small>for {E.pax()}</small></span>
+                <button type="button" className="atp-btn is-outline" onClick={() => dispatch('blkadd', { id: p.b.id, ...win })}><TideIcon n="plus" s={16} />Add plan</button></div></div>
+          </div>
+        ))}
+        {pick.map(({ x, slot, why: w, where }: any) => { const u = E.actUnit(x, date); return (
+          <div key={x.id} className="atp-idea">
+            <button type="button" className="atp-idea-ph" onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${date}`)} aria-label={`Details: ${x.n}`}><Art z={x.z} seed={x.id} />{w && <span className="atp-pk-tag">{w}</span>}</button>
+            <div className="atp-idea-b"><b>{x.n}</b><small>{x.v}</small>
+              <small className="atp-mono">{slot} · {E.durTxt(x.d)}{where ? ` · ${where}` : ''}</small>
+              <div className="atp-idea-f"><span className="atp-bc-p"><b>{x.entry ? (u ? E.inr(u) : 'Free') : u ? E.inr(u) : 'On request'}</b>{x.b === 'per_pax' && u ? <small>a person</small> : null}</span>
+                <button type="button" className="atp-btn is-outline" onClick={() => dispatch('fx', { act: 'quickadd', kind: 'act', ref: x.id, date, t: slot })}><TideIcon n="plus" s={16} />Add</button></div></div>
+          </div>
+        ); })}
+        <button type="button" className="atp-bc atp-more" onClick={() => router.push(`/islands/${String(a.zone).toLowerCase()}?date=${date}`)}><b>Everything on {E.ZN[a.zone].name}</b><TideIcon n="arrow" /></button>
+      </div>
+      <button type="button" className="atp-btn is-text atp-skip" onClick={() => dispatch('fx', { act: 'dismiss', key: 'gapday' + date })}>Leave it free</button>
+    </div>
+  );
+}
+
+/* One booking on the timeline. */
+function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: string) => void }) {
+  const { S } = E; const it = e.it; const I = e.I; const A = E.ACT[it.ref] || {};
   const al = R.by[it.uid] || []; const hard = al.some((a: any) => a.sev === 'hard'); const show = !e.parts || e.part === 1;
-  const k = E.tcCat(e);
+  const k: string = E.tcCat(e); const [tile, icon] = TILE[k] || ['', 'pin'];
   const t0 = e.kind === 'stay' ? E.hm(e.ciAt || E.CHECKIN) : E.clock(e.s);
-  const endT = e.kind !== 'stay' && e.e > e.s && k !== 'meal' && k !== 'shop' ? E.clock(e.e) : null;
-  const drag = e.kind === 'act' && show && !it.own && !A.seaRoute;
-  const price = A.meal || /^ACV-(MEAL|SHOP)/.test(it.ref) ? tr('Pay there', 'वहीं भुगतान') : e.parts && e.part > 1 ? tr('Included', 'शामिल') : I.own ? tr('Booked', 'बुक है') : I.price != null ? E.inr(I.price) : E.t('onReq');
-  const per = (e.parts && e.part > 1) || A.meal || I.own ? '' : I.perTxt ? I.perTxt : I.per > 1 ? `${I.per} × ${E.inr(I.unit)}` : '';
-  const pp = <span className="tc-pr"><b>{price}</b>{per && <small>{per}</small>}</span>;
+  const endT = e.kind !== 'stay' && e.e > e.s && k !== 'meal' && k !== 'shop' && k !== 'cab' ? E.clock(e.e) : null;
+  const drag = e.kind === 'act' && show && !it.own && !A.seaRoute && k !== 'meal' && k !== 'shop';
+  const meal = k === 'meal' || k === 'shop';
+  const price = meal ? 'Pay there' : e.parts && e.part > 1 ? 'Included' : I.own ? 'Booked' : I.price != null ? E.inr(I.price) : E.t('onReq');
+  const per = (e.parts && e.part > 1) || meal || I.own ? '' : I.perTxt ? I.perTxt : I.per > 1 ? `${I.per} × ${E.inr(I.unit)}` : '';
   const status = <Raw html={E.bkTag(it) || ''} style={{ display: 'contents' }} />;
   const open = () => dispatch('edit', { uid: it.uid });
-  const cls = `item tc tc-${k}${hard ? ' hard' : ''}${S.flashUid === it.uid ? ' flash' : ''}`;
-  const router = useRouter();
-  let card: ReactNode;
+  /* `ev` and data-uid are what the engine's drag-to-move looks for */
+  const cls = `atp-item ev${hard ? ' is-clash' : ''}${S.flashUid === it.uid ? ' flash' : ''}${meal ? ' atp-mealrow' : ''}`;
+  const extra = (
+    <>
+      {show && al.length > 0 && <div className="atp-issue">{al.map((a: any, i: number) => <Alert key={i} a={a} />)}</div>}
+      {e.kind === 'stay' && !it.own && <div className="atp-under"><StayCompare E={E} it={it} zone={e.zone} /></div>}
+      {e.kind === 'act' && show && S.justAdded === it.uid && <PairRail E={E} e={e} />}
+    </>
+  );
 
-  if (k === 'cab' && /→/.test(I.title)) {
-    const [fr, to] = I.title.split(/\s*→\s*/);
-    const sub = String(I.sub || '').split(' · ').filter((x) => !/^until /.test(x)).slice(0, 2).join(' · ');
-    card = (
-      <button className={cls} onClick={open} aria-label={'Cab ' + I.title}>
-        <span className="tc-bar" aria-hidden="true" />
-        <span className="tc-b">
-          <span className="tc-top"><Ic n="car" s={14} w={2.2} /><span className="tc-k">CAB · {sub.toUpperCase()}</span><span className="tc-d">{E.tcDur(e.e - e.s)}</span></span>
-          <span className="tc-rt"><i className="o" /><b>{fr}</b>{pp}<i className="l" /><span /><i className="f" /><b>{to}</b></span>
-          {status}
-        </span>
-      </button>
-    );
-  } else if (k === 'ferry' && E.SAIL[it.ref]) {
+  if (k === 'ferry' && E.SAIL[it.ref]) {
     const s = E.SAIL[it.ref]; const zf = E.ZN[s.f]?.name || s.f, zt = E.ZN[s.to]?.name || s.to;
-    const seats = it.seats && it.seats.length ? it.seats.join(' ') : '';
-    card = (
-      <button className={cls} onClick={open} aria-label={`Ferry ${zf} to ${zt}, ${E.clock(e.s)} to ${E.clock(e.e)}`}>
-        <span className="fp-stub"><Art z={e.to} icon="ship" seed={it.ref} /><em><Ic n="ferry" s={12} w={2.2} />FERRY</em></span>
-        <span className="fp-cut" aria-hidden="true" />
-        <span className="fp-b">
-          <span className="fp-top"><span className="tc-k">{s.op.replace(/ \d$/, '').toUpperCase()}{it.cls ? ' · ' + String(it.cls).toUpperCase() : ''}</span>{pp}</span>
-          <span className="fp-mid"><span className="fp-a"><b>{E.clock(e.s)}</b><small>{zf}</small></span><span className="fp-line"><i /><em>{E.tcDur(e.e - e.s)}</em><i /></span><span className="fp-a fp-r"><b>{E.clock(e.e)}</b><small>{zt}</small></span></span>
-          <span className="fp-bot"><span><small>REPORT</small><b className="m">{E.clock(e.s - (e.rep || s.rep || 45))}</b></span><span><small>JETTY</small><b>{E.tcShort(s.fromPt) || zf}</b></span>{seats && <span><small>SEATS</small><b className="m">{seats}</b></span>}</span>
-          {it.own ? <span className="tag bk">Booked elsewhere</span> : status}
-        </span>
-      </button>
-    );
-  } else if (k === 'boat' && show) {
-    const kind = /private/i.test(A.v || '') ? 'PRIVATE' : 'SHARED'; const from = String(A.site || '').split('->')[0].trim() || E.ZN[A.z]?.name || '';
-    card = (
-      <button className={cls} onClick={open} aria-label={'Boat trip ' + I.title}>
-        <span className="tc-ph"><Art z={e.zone} icon={I.icon} seed={it.ref} big /><em className="tc-badge"><Ic n="ferry" s={12} w={2.2} />BOAT TRIP · {kind}</em>
-          <svg className="tc-wave" viewBox="0 0 390 14" preserveAspectRatio="none" aria-hidden="true"><path d="M0 8 Q 24 0 48 8 T 96 8 T 144 8 T 192 8 T 240 8 T 288 8 T 336 8 T 384 8 T 432 8 V14 H0Z" /></svg>
-          <span className="tc-ttl"><b>{I.title}</b></span></span>
-        <span className="tc-b"><span className="tc-grid"><span><small>LEAVES</small><b className="m">{E.clock(e.s)}</b></span><span><small>BACK BY</small><b className="m">{E.clock(e.e)}</b></span><span className="w"><small>FROM</small><b>{from}</b></span>{pp}</span>{status}</span>
-      </button>
-    );
-  } else if (k === 'stay') {
-    const H = E.HOT[it.ref] || {};
-    card = (
-      <button className={cls} onClick={open}>
-        <span className="ks-key" aria-hidden="true"><span className="ks-card"><i /></span><b>{it.nights || 1}N</b></span>
-        <span className="tc-b">
-          <span className="tc-k">CHECK-IN {t0}{it.early ? ' · EARLY ASKED' : ''}</span>
-          <span className="tc-h"><b className="tc-t">{I.title}</b>{pp}</span>
-          <span className="tc-s">{I.sub}</span>
-          <span className="tc-f">{H.rt && <span className="tc-rate">★ {H.rt}</span>}{status}</span>
-        </span>
-      </button>
-    );
-  } else if (k === 'meal' || k === 'shop') {
-    card = (
-      <button className={cls} onClick={open}>
-        <Ic n={k === 'shop' ? 'store' : 'cup'} s={16} /><b>{I.title}</b><span className="tc-s">{String(I.sub || '').replace(/ · until \d\d:\d\d$/, '')}</span><span className="tc-pay">Pay there</span>
-      </button>
-    );
-  } else if ((k === 'do' || k === 'adv') && !I.own) {
-    const rt = A.g && A.g.rt; const sub = String(I.sub || A.v || '').split(' · ')[0];
-    const timing = `${E.clock(e.s)}–${E.clock(e.e)}${e.parts ? ` · DAY ${e.part} OF ${e.parts}` : ` · ${E.tcDur(e.e - e.s)}`}`;
-    card = (
-      <button className={cls} onClick={open}>
-        <span className="tc-ph"><Art z={e.zone} icon={I.icon} seed={it.ref} big /><em className="tc-badge"><Ic n={k === 'adv' ? 'mask' : 'camera'} s={12} w={2.2} />{(k === 'adv' ? A.fam || 'Adventure' : A.fam || 'Sight').toUpperCase()}</em><span className="tc-ttl"><b>{I.title}</b>{sub && <small>{sub}</small>}</span></span>
-        <span className="tc-b tc-row"><span className="tc-l"><span className="tc-tm">{timing}</span><span className="tc-f">{rt && <span className="tc-rate">★ {rt}</span>}{status}</span></span>{pp}</span>
-      </button>
-    );
-  } else {
-    card = (
-      <button className={`item${hard ? ' hard' : ''}`} onClick={open}>
-        <span className="ith"><Art z={e.zone} icon={I.icon} seed={it.ref} /></span>
-        <span className="ib"><b>{I.title}</b><small>{I.sub}</small>{status}</span>
-        <span className="ip">{price}{per && <small>{per}</small>}</span>
-      </button>
+    const seats: string[] = it.seats || []; const d = E.pDate(it.date);
+    return (
+      <div className={cls + ' is-pass'} data-uid={it.uid} data-k={e.kind} data-c={k}>
+        <button type="button" className="atp-pass" onClick={() => (it.own ? open() : onFerry(it.uid))} aria-label={`Ferry ${zf} to ${zt}, ${E.clock(e.s)} to ${E.clock(e.e)}: class and seats`}>
+          <span className="atp-pass-band"><span><TideIcon n="boat" s={16} /><b>{s.gov ? 'Government ship' : s.op.replace(/ \d$/, '')}</b></span><span>{it.own ? 'Booked elsewhere' : it.cls || ''}</span></span>
+          <span className="atp-pass-main">
+            <span className="atp-pass-r">
+              <span className="atp-pass-pt"><b>{E.clock(e.s)}</b><span>{zf}</span><small>{E.tcShort(s.fromPt) || s.fromPt}</small></span>
+              <span className="atp-pass-mid"><i /><em>{E.tcDur(e.e - e.s).toLowerCase()}</em><i /></span>
+              <span className="atp-pass-pt is-to"><b>{E.clock(e.e)}</b><span>{zt}</span><small>{E.tcShort(s.toPt) || s.toPt}</small></span>
+            </span>
+            <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(e.s - (e.rep || s.rep || 45))}</b></span><span><small>Date</small><b>{d.getUTCDate()} {E.MON[d.getUTCMonth()]}</b></span><span><small>Travellers</small><b>{E.pax()}</b></span></span>
+          </span>
+          <span className="atp-pass-stub"><span><small>Seats</small><b>{seats.length ? seats.join(' ') : 'At the jetty'}</b></span><span className="atp-pass-bar" aria-hidden="true">{Array.from(String(E.hash(it.uid + it.ref) % 1e9).padStart(9, '3')).map((c, i) => <i key={i} style={{ width: 1 + (Number(c) % 3) }} />)}</span><span className="atp-pass-p">{price}</span></span>
+        </button>
+        {!it.own && <div className="atp-under"><button type="button" className="atp-btn is-text" onClick={() => onFerry(it.uid)}>Class and seats</button><button type="button" className="atp-btn is-text" onClick={open}>Change sailing</button>{status}</div>}
+        {extra}
+      </div>
     );
   }
 
+  const photo = (k === 'do' || k === 'adv' || k === 'boat') && show && !I.own;
+  const title = k === 'cab' ? I.title : I.title;
+  const sub = k === 'stay' ? `Check in${it.early ? ' · early check-in asked' : ''} · ${I.sub || ''}`
+    : k === 'cab' ? [String(I.sub || '').split(' · ').filter((x: string) => !/^until /.test(x)).slice(0, 2).join(' · '), E.tcDur(e.e - e.s).toLowerCase()].filter(Boolean).join(' · ')
+    : meal ? `${String(I.sub || '').replace(/ · until \d\d:\d\d$/, '')}${k === 'meal' && A.meal !== 'bf' ? ` · if the cab waits, about ${E.inr(Math.round(waitRate(E, e.zone === 'WAN' ? 'PBL' : e.zone) * (A.d || 60) / 60 / 10) * 10)} to the driver` : ''}`
+    : e.parts ? `Day ${e.part} of ${e.parts} · ${String(I.sub || A.v || '').split(' · ')[0]}`
+    : [E.tcDur(e.e - e.s).toLowerCase(), String(I.sub || A.v || '').split(' · ')[0]].filter(Boolean).join(' · ');
   return (
-    <div className="ev" data-uid={it.uid} data-k={e.kind} data-c={k}>
-      <span className="et">{t0}{endT && <small>{endT}</small>}</span>
-      <span className="er"><span className="nd" /></span>
-      <span className="ec">
-        {drag && <button className="lx-grip" aria-label={`Move or swap ${I.title}`} data-drag={it.uid}><Ic n="grip" s={14} w={2.2} /><span>{tr('Move', 'बदलें')}</span></button>}
-        {card}
-        {show && al.map((a: any, i: number) => <Alert key={i} E={E} a={a} />)}
-        {e.kind === 'stay' && !it.own && <StayCompare E={E} it={it} zone={e.zone} />}
-        {e.kind === 'act' && show && E.S.justAdded === it.uid && <PairRail E={E} e={e} />}
-      </span>
+    <div className={cls} data-uid={it.uid} data-k={e.kind} data-c={k}>
+      <button type="button" className="atp-row" onClick={open} aria-label={`${title}, ${t0}: details`}>
+        {photo && <span className="atp-pano"><Art z={e.zone} icon={I.icon} seed={it.ref} big /></span>}
+        <span className="atp-t">{t0}{endT && <small>{endT}</small>}</span>
+        <span className={`atp-tile ${tile}`}><TideIcon n={icon} /></span>
+        <span><span className="atp-n">{title}</span><span className="atp-s">{sub}</span>{A.g && A.g.rt && photo ? <span className="atp-rate"><TideIcon n="starf" s={12} />{A.g.rt}</span> : null}{status}</span>
+        <span className="atp-p">{price}{per && <small>{per}</small>}</span>
+      </button>
+      {drag && <button type="button" className="lx-grip atp-grip" aria-label={`Move or swap ${I.title}`} data-drag={it.uid}><TideIcon n="swap" s={16} /><span>Move</span></button>}
+      {extra}
     </div>
+  );
+}
+
+/* Class and seats for a ferry: the classes with what each costs more or less, and the cabin as the engine lays it out. */
+function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => void }) {
+  const s = E.SAIL[it.ref]; const n: number = E.pax();
+  const fares: { n: string; f: number }[] = s.fares && s.fares.length ? s.fares : [{ n: it.cls || String(s.cls || '').split(',')[0].trim(), f: s.fare }];
+  const [cls, setCls] = useState<string>(it.cls || fares[0].n);
+  const [seats, setSeats] = useState<string[]>(it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: it.cls || fares[0].n, date: it.date }));
+  useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; }; }, [onClose]);
+  const st = E.seatState(s, cls, it.date); const cur = (fares.find((f) => f.n === (it.cls || fares[0].n)) || fares[0]).f;
+  const mine = (id: string) => seats.includes(id); const free = (id: string) => st.free.has(id) || (cls === it.cls && (it.seats || []).includes(id));
+  const pick = (c: string) => { setCls(c); setSeats(c === it.cls && it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: c, date: it.date })); };
+  const tap = (id: string) => setSeats(mine(id) ? seats.filter((x) => x !== id) : [...seats, id].slice(-n));
+  const fare = (fares.find((f) => f.n === cls) || fares[0]).f; const diff = (fare - cur) * n;
+  const apply = () => { it.cls = cls; it.seats = seats; E.S.flashUid = it.uid; E.syncTrip(); commit(); E.toast(`${cls} · seats ${seats.join(' ')}`); onClose(); };
+  /* on the page body, so it sits above the header and the dock */
+  return createPortal(
+    <div className="atp-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Class and seats">
+        <div className="atp-sheet-h"><b>Class and seats</b><button type="button" className="atp-iconbtn" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button></div>
+        <div className="atp-sheet-b">
+          <p className="atp-lead">{s.gov ? 'Government ship' : s.op} · {E.ZN[s.f]?.name} to {E.ZN[s.to]?.name} · {E.fD(it.date)} · {s.dep}</p>
+          <div role="radiogroup" aria-label="Class">
+            {fares.map((f) => { const d = (f.f - cur) * n; return (
+              <button key={f.n} type="button" className="atp-cls" role="radio" aria-checked={cls === f.n} onClick={() => pick(f.n)}>
+                <span className="atp-rd" /><span><b>{f.n}</b><small>{E.inr(f.f)} a person</small></span>
+                <span className="atp-delta">{f.n === it.cls ? 'Yours now' : d === 0 ? 'Same price' : `${d > 0 ? '+' : '−'}${E.inr(Math.abs(d))}`}</span>
+              </button>
+            ); })}
+          </div>
+          <div className="atp-sec">Pick {n} seat{n > 1 ? 's' : ''} · {seats.length} chosen</div>
+          <div className="atp-seatmap" role="group" aria-label="Seats">
+            <span className="atp-bow">Front of the boat</span>
+            {Array.from({ length: st.rows }, (_, r) => (
+              <div key={r} className="atp-srow"><span className="rn">{r + 1}</span>
+                {st.cols.map((c: string | null, i: number) => { if (!c) return <span key={i} className="atp-aisle" />; const id = r + 1 + c; const ok = free(id); return (
+                  <button key={i} type="button" className={`atp-seat${ok ? '' : ' is-taken'}`} disabled={!ok} aria-pressed={mine(id)} aria-label={`Seat ${id}${ok ? '' : ', taken'}`} onClick={() => tap(id)}>{c}</button>
+                ); })}
+              </div>
+            ))}
+            <div className="atp-legend"><span><i />Free</span><span><i className="t" />Taken</span><span><i className="s" />Yours</span></div>
+          </div>
+          <p className="atp-fine">Seats are held when you pay. If the operator moves a seat, you are kept together and told before you travel.</p>
+        </div>
+        <div className="atp-sheet-f"><span className="atp-total"><b>{diff === 0 ? 'No change' : `${diff > 0 ? '+' : '−'}${E.inr(Math.abs(diff))}`}</b><small>{cls} · {seats.join(' ') || 'no seats yet'}</small></span>
+          <button type="button" className="atp-btn is-action" disabled={seats.length !== Math.min(n, st.free.size + seats.length)} onClick={apply}>Use these seats</button></div>
+      </div>
+    </div>,
+    document.body,
   );
 }
