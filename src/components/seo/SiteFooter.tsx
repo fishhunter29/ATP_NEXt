@@ -2,6 +2,7 @@
    so every Google-facing page is a link or two from any other. */
 import { ZONES, ferryRoutes, slug } from '@/lib/catalogue';
 import PKGS from '@/data/packages.json';
+import { Logo } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
@@ -13,7 +14,7 @@ export default function SiteFooter() {
   return (
     <footer className="foot sitefoot wrap" aria-label="Site">
       <div className="sf-brand">
-        <span className="brand"><span>Andaman<small>Travel Planner</small></span></span>
+        <span className="atp-brandl"><Logo /><span className="atp-brandn"><b>Andaman Travel Planner</b></span></span>
         <span className="sf-dpiit">{DPIIT_LINE}</span>
         <span>Ferries, stays, transfers and experiences across the Andaman Islands, booked as one itinerary.</span>
       </div>
