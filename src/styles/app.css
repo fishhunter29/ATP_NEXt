@@ -695,13 +695,6 @@ details.clash .legs{padding-bottom:12px}
 .dayhd p{font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:2px}
 .dayhd p span{display:inline-flex;align-items:center;gap:4px}
 .dayhd .iconbtn{border:1.5px solid var(--line);background:var(--surface);color:var(--brand);border-radius:50%}
-.ev{display:grid;grid-template-columns:50px 26px minmax(0,1fr);gap:8px;align-items:stretch}
-.ev .et{font-family:var(--f-display);font-size:16px;font-weight:800;padding-top:16px;font-variant-numeric:tabular-nums;color:var(--ink);line-height:1.1}
-.ev .et small{display:block;font-size:12.5px;color:var(--muted);font-weight:700;margin-top:2px}
-.ev .er{position:relative;display:flex;justify-content:center}
-.ev .er::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--line)}
-.ev .er .nd{position:relative;z-index:1;margin-top:14px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;color:var(--on-zone);box-shadow:0 0 0 4px var(--bg)}
-.ev .ec{padding-block:7px;min-width:0;display:flex;flex-direction:column;gap:8px}
 .item{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:8px 14px 8px 8px;display:flex;gap:12px;align-items:center;text-align:left;width:100%;min-height:60px;box-shadow:var(--e-1);transition:transform .2s var(--ease),box-shadow .2s,border-color .2s}
 .item:hover{transform:translateY(-2px);box-shadow:var(--e-2);border-color:var(--line-strong)}
 .item .ith{width:58px;height:58px;border-radius:12px;overflow:hidden;flex:none}
@@ -778,7 +771,6 @@ details.clash .legs{padding-bottom:12px}
   .daynav{padding-inline:0;top:var(--top-h)}
   .tp-main .bleed{margin-inline:0}.tp-main .idrail{padding-inline:0;grid-auto-columns:284px}.tp-main .idskip{padding-inline:0}
   .day:first-of-type{padding-top:14px}
-  .ev{grid-template-columns:58px 26px minmax(0,1fr);gap:12px}
   .night{margin-left:108px}
 }
 @media (max-width:719.9px){.ev{grid-template-columns:42px 24px minmax(0,1fr);gap:6px}.ev .et{font-size:14.5px}.item{padding:8px 12px 8px 8px;gap:10px}.item .ith{width:46px;height:46px;border-radius:10px}.item .ib b{font-size:15.5px}.item .ip{font-size:16px}.night{margin-left:72px}}
@@ -1433,10 +1425,6 @@ h1,h2,h3,.hero h1,.sechd h2,.pd-title h1,.triphd h1,.empty h2,.banner h2,.storeh
 .ev[data-k="ferry"] .item{background:var(--lpass);color:var(--lpass-ink);border:0;box-shadow:none;
   -webkit-mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat;
   mask:radial-gradient(circle 9px at 0 50%,#0000 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 9px at 100% 50%,#0000 98%,#000) right/51% 100% no-repeat}
-.ev[data-k="ferry"] .item .ib b{font-family:var(--f-mono);font-weight:700;letter-spacing:-.01em}
-.ev[data-k="ferry"] .item small,.ev[data-k="ferry"] .item .ip small{color:var(--lpass-muted)}
-.ev[data-k="ferry"] .item .ip{color:var(--lpass-ink)}
-.ev[data-k="ferry"] .et small{display:block;color:var(--muted)}
 /* the total: one slim pass-coloured bar */
 .cta.abovenav,.cta{background:var(--bar);color:var(--bar-ink);border:0;border-radius:18px;box-shadow:var(--e-float)}
 .cta .tot b{color:var(--bar-ink);font-size:21px}
@@ -1530,16 +1518,7 @@ body.lx-co .cta .btn.primary{background:#fff;color:#062433;border-color:#fff;bor
 :root{--c-ferry:#5AB8F5;--c-boat:#3DD6D0;--c-cab:#FF8A65;--c-stay:#F5B841;--c-do:#5BD69A;--c-adv:#F48FB1;--c-meal:#F7E06B;--c-shop:#C8A2FF;--c-ok:#5BD69A;--c-wait:#F5B841;
   --fp:#E9E6DF;--fp-ink:#071A22;--fp-mut:#5A6A70;--fp-line:#B8BDB9}
 :root[data-theme="light"]{--c-ferry:#1F74B8;--c-boat:#0E8C88;--c-cab:#C4461F;--c-stay:#9A6A00;--c-do:#1B8656;--c-adv:#B23A66;--c-meal:#8A7300;--c-shop:#6E4BC2;--c-ok:#1B8656;--c-wait:#9A6A00;--fp:#E4E0D6}
-.ev[data-c="ferry"]{--c:var(--c-ferry)}.ev[data-c="boat"]{--c:var(--c-boat)}.ev[data-c="cab"]{--c:var(--c-cab)}.ev[data-c="stay"]{--c:var(--c-stay)}
-.ev[data-c="do"]{--c:var(--c-do)}.ev[data-c="adv"]{--c:var(--c-adv)}.ev[data-c="meal"]{--c:var(--c-meal)}.ev[data-c="shop"]{--c:var(--c-shop)}
 /* the time column: 38 px of time, a thin line and a coloured dot */
-.ev{grid-template-columns:38px 14px minmax(0,1fr)!important;gap:0!important}
-.ev .et{font:700 11.5px var(--f-mono)!important;padding-top:10px!important;color:var(--ink);letter-spacing:-.01em}
-.ev .et small{display:block;font:500 10.5px var(--f-mono)!important;color:var(--faint);margin-top:2px}
-.ev .er::before{width:2px;background:var(--line)}
-.ev .er .nd{width:8px!important;height:8px!important;margin-top:14px!important;background:var(--c,var(--faint))!important;box-shadow:0 0 0 3px var(--bg)!important}
-.ev .er .nd svg{display:none}
-.ev .ec{position:relative;padding-block:6px!important;padding-left:2px}
 .night{margin-left:54px!important;padding:6px 10px;font-size:13px;background:transparent}
 section.day>.anchor{padding-left:54px!important}
 /* the move handle now sits on the card */
@@ -1661,9 +1640,6 @@ section.day>.anchor{padding-left:54px!important}
 .lx-meals .lx-chip[data-k="shop"]{--k:var(--c-shop)}
 .lx-chip[data-k="veh"],.lx-chip[data-k="wheels"],.lx-meals .lx-chip{border-color:color-mix(in srgb,var(--k) 55%,transparent);background:color-mix(in srgb,var(--k) 15%,var(--surface))}
 .lx-chip[data-k="veh"] svg,.lx-chip[data-k="wheels"] svg,.lx-meals .lx-chip svg{color:var(--k)}
-.ev .ec{flex-direction:row!important;flex-wrap:wrap;align-items:flex-start;gap:6px!important}
-.ev .ec>*:not(.lx-chip):not(.lx-grip){flex-basis:100%}
-.ev .ec>.lx-chip{margin-top:0}
 .tc-ferry .fp-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .tc-ferry .fp-top .tc-pr b{font-size:15px}
 .tc-ferry .fp-mid{margin-top:-2px}
@@ -1693,8 +1669,6 @@ section.day>.anchor{padding-left:54px!important}
 .idc-art .why{background:rgba(220,207,182,.95)!important;color:#2B2418!important}
 
 /* ---- light mode: trip tiles are warm sand, so they stand apart from the linen background ---- */
-:root[data-theme="light"] .ev{--surface:#ECE2CE;--line:#D6C7AA}
-:root[data-theme="light"] .ev .er::before{background:#D6C7AA}
 
 /* ---- boat charters page ---- */
 .chhero{position:relative;height:240px;overflow:hidden;color:#fff;isolation:isolate}
@@ -1739,27 +1713,6 @@ section.day>.anchor{padding-left:54px!important}
 .chhero>img{position:absolute;inset:0;z-index:-2}
 /* ===== FRUIT PALETTE for trip tiles (canvas "Fruit palette"): OKLCH, same lightness per mode, hues 35°+ apart, away from pill hues.
    light tiles L 93.5% · dark tiles L 31% · text 12:1 (AAA) · labels 5:1+ (AA) ===== */
-.ev[data-c="stay"]{--tbg:#512A00;--tline:#915100;--tacc:#FFC898;--tbadge:#FFC898}
-:root[data-theme="light"] .ev[data-c="stay"]{--tbg:#FFE0C6;--tline:#FFA752;--tacc:#854A00}
-.ev[data-c="do"]{--tbg:#443300;--tline:#7B5F01;--tacc:#FDCE4E;--tbadge:#FDCE4E}
-:root[data-theme="light"] .ev[data-c="do"]{--tbg:#FFE4A2;--tline:#E6B731;--tacc:#715700}
-.ev[data-c="cab"]{--tbg:#283D00;--tline:#4D7000;--tacc:#B8E777;--tbadge:#B8E777}
-:root[data-theme="light"] .ev[data-c="cab"]{--tbg:#D5F2B2;--tline:#A2D060;--tacc:#466700}
-.ev[data-c="shop"]{--tbg:#213166;--tline:#415CB2;--tacc:#C3D4FE;--tbadge:#C3D4FE}
-:root[data-theme="light"] .ev[data-c="shop"]{--tbg:#DCE6FE;--tline:#A2BCFF;--tacc:#314DBE}
-.ev[data-c="boat"]{--tbg:#41265C;--tline:#764AA2;--tacc:#E0C8FE;--tbadge:#E0C8FE}
-:root[data-theme="light"] .ev[data-c="boat"]{--tbg:#EDDFFF;--tline:#D1A9FF;--tacc:#7334A9}
-.ev[data-c="adv"]{--tbg:#551D40;--tline:#983C75;--tacc:#FEBEE1;--tbadge:#FEBEE1}
-:root[data-theme="light"] .ev[data-c="adv"]{--tbg:#FFDAEE;--tline:#FF96D3;--tacc:#9A1B71}
-.ev[data-c="meal"]{--tbg:#5D1C20;--tline:#A43A41;--tacc:#FEC3C2;--tbadge:#FEC3C2}
-:root[data-theme="light"] .ev[data-c="meal"]{--tbg:#FFDDDC;--tline:#FF9F9F;--tacc:#A8112D}
-.ev .item.tc:not(.tc-ferry){background:var(--tbg)!important;border:1.5px solid var(--tline)!important;--c:var(--tacc);--c-cab:var(--tacc);--c-stay:var(--tacc);--c-boat:var(--tacc);--c-ok:var(--tacc)}
-.ev .item.tc-meal,.ev .item.tc-shop{border-style:solid!important}
-.ev .tc-boat .tc-wave path{fill:var(--tbg)}
-.ev .tc-stay .ks-key{background:color-mix(in srgb,var(--tacc) 14%,transparent);border-right-color:var(--tline)}
-.ev .tc .tc-badge{color:var(--tbadge)!important}
-.ev .item.tc:not(.tc-ferry) .tag.bk{color:var(--tacc)}
-.ev .er .nd{background:var(--tacc,var(--faint))!important}
 /* boat charters home tile: narrower, two tiles wide instead of the full row */
 .lx-chtile{width:calc((100% - 16px) / 3 * 2 + 8px);max-width:520px;height:140px}
 .lx-chtile-b{max-width:100%;padding:12px 14px}
@@ -1831,8 +1784,6 @@ section.day>.anchor{padding-left:54px!important}
 @media (max-height:700px) and (min-width:720px){.lx-hero .hero-in{padding-top:calc(var(--top-h, 64px) + 24px)}.lx-hero h1{font-size:clamp(46px,8.4vh,96px)}}
 
 /* ---- sharper: crisp tile edges, a clean top highlight, and less haze over photos ---- */
-.ev .item.tc:not(.tc-ferry){border-width:1.5px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 1px 2px rgba(0,0,0,.12)}
-:root[data-theme="light"] .ev .item.tc:not(.tc-ferry){box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 1px 2px rgba(42,36,26,.08)}
 .tc .tc-ph::after{background:linear-gradient(180deg,rgba(7,26,34,.22) 0,rgba(7,26,34,0) 26%,rgba(7,26,34,0) 50%,rgba(7,26,34,.82) 100%)!important}
 .lx-hero::after{background:linear-gradient(180deg,rgba(4,20,26,.45) 0%,rgba(4,20,26,0) 30%,rgba(4,20,26,.12) 55%,rgba(4,20,26,.8) 100%)!important}
 svg.ph image,.lx-hero image{image-rendering:auto}

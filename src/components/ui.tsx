@@ -1,6 +1,6 @@
 'use client';
 /* Small building blocks shared by every screen. Icons and photo art come from the engine as SVG text. */
-import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 import { useEngine } from '@/engine/client';
 
 type RawProps = { html: string; as?: 'span' | 'div'; className?: string; style?: CSSProperties; 'aria-hidden'?: boolean };
@@ -42,7 +42,10 @@ export function Art({ z, icon, seed, big, className }: { z: string; icon?: strin
   let html: string = E ? E.art(z, icon, seed) || '' : '';
   if (big) html = html.replace(/img\/t\//g, 'img/f/');
   useEffect(() => { ref.current?.querySelectorAll('svg.ph,svg[data-k]').forEach(observe); }, [html]);
-  return <span ref={ref} className={className} style={{ display: 'contents' }} dangerouslySetInnerHTML={{ __html: html }} />;
+  /* The same object while the markup is the same: React 19 writes innerHTML again whenever this object is new,
+     which threw away the loaded photo on every redraw and left the box empty. */
+  const inner = useMemo(() => ({ __html: html }), [html]);
+  return <span ref={ref} className={className} style={{ display: 'contents' }} dangerouslySetInnerHTML={inner} />;
 }
 
 export function Photo({ id, alt = '', className, full = true }: { id: string; alt?: string; className?: string; full?: boolean }) {

@@ -4,6 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { commit, dispatch, lang, type Engine } from '@/engine/client';
 import { Art, Ic } from '@/components/ui';
+import { TideIcon } from '@/components/Brand';
 
 /* ---------- per day: which car the cab rides use (Sedan ▾), or a scooter / bike for the day ---------- */
 export function DayTools({ E, date, zz }: { E: Engine; date: string; zz: string }) {
@@ -101,16 +102,16 @@ export function PairRail({ E, e }: { E: Engine; e: any }) {
   const router = useRouter(); const it = e.it; const a = E.ACT[it.ref]; const L = lang(E);
   const out: any[] = E.pairPicks(e); if (!a || !out.length) return null;
   return (
-    <div className="lx-pair">
-      <div className="lx-pair-h"><b><Ic n="spark" s={14} /> {L(`Goes well with ${E.shortName(a)}`, `${E.shortName(a)} के साथ अच्छा`)}</b><button className="link" aria-label={L('Hide', 'छिपाएँ')} onClick={() => dispatch('pairx')}>{L('Hide', 'छिपाएँ')}</button></div>
-      <div className="bleed"><div className="idrail">{out.map(({ x, s, why }) => { const u = E.actUnit(x, it.date); return (
-        <div key={x.id} className="idc" style={{ ['--zc' as any]: E.ZC(x.z) }}>
-          <button className="idc-art" aria-label={`Details: ${x.n}`} onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${it.date}`)}><Art z={x.z} seed={x.id} /><span className="why">★ {why}</span></button>
-          <div className="idc-b"><b>{x.n}</b><small>{x.v || ''}</small><span className="idc-m"><Ic n="clock" s={14} /> {s} · {E.durOf(x)}</span>
-            <div className="idc-f"><span className="price">{x.entry ? (u ? E.inr(u) : 'Free') : E.inr(u)}<small> {x.b === 'per_pax' ? '/ person' : ''}</small></span>
-              <button className="btn sm" onClick={() => dispatch('fx', { act: 'quickadd', kind: 'act', ref: x.id, date: it.date, t: s })}><Ic n="plus" s={16} w={2.6} /> {L('Add', 'जोड़ें')}</button></div></div>
+    <div className="lx-pair atp-pair">
+      <div className="atp-pair-h"><b><TideIcon n="spark" s={16} />Goes well with {E.shortName(a)}</b><button type="button" className="atp-btn is-text" aria-label="Hide" onClick={() => dispatch('pairx')}>Hide</button></div>
+      <div className="atp-rail3">{out.map(({ x, s, why }) => { const u = E.actUnit(x, it.date); return (
+        <div key={x.id} className="atp-idea">
+          <button type="button" className="atp-idea-ph" aria-label={`Details: ${x.n}`} onClick={() => router.push(`/things-to-do/${x.id.toLowerCase()}?date=${it.date}`)}><Art z={x.z} seed={x.id} /><span className="atp-pk-tag">{why}</span></button>
+          <div className="atp-idea-b"><b>{x.n}</b><small>{x.v || ''}</small><small className="atp-mono">{s} · {E.durOf(x)}</small>
+            <div className="atp-idea-f"><span className="atp-bc-p"><b>{x.entry ? (u ? E.inr(u) : 'Free') : E.inr(u)}</b>{x.b === 'per_pax' ? <small>a person</small> : null}</span>
+              <button type="button" className="atp-btn is-outline" onClick={() => dispatch('fx', { act: 'quickadd', kind: 'act', ref: x.id, date: it.date, t: s })}><TideIcon n="plus" s={16} />Add</button></div></div>
         </div>
-      ); })}</div></div>
+      ); })}</div>
     </div>
   );
 }
