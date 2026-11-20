@@ -17,12 +17,13 @@ const TABS = [
   { href: '/profile', label: 'Profile', hi: 'प्रोफ़ाइल', icon: 'user' },
 ];
 
-/* Day is the default. Night, or following the phone, is a choice made in Profile. */
+/* Day is the default. Night ('dark'), or following the phone ('auto'), is a choice made in Profile.
+   The engine's own starting value, 'system', was never a choice, so it counts as Day. */
 function useTheme(theme: string | undefined, ready: boolean) {
   useEffect(() => {
     if (!ready) return; // until the saved choice is known, keep what the page started with
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const apply = () => { document.documentElement.dataset.theme = theme === 'dark' || (theme === 'system' && mq.matches) ? 'dark' : 'light'; };
+    const apply = () => { document.documentElement.dataset.theme = theme === 'dark' || (theme === 'auto' && mq.matches) ? 'dark' : 'light'; };
     apply();
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);

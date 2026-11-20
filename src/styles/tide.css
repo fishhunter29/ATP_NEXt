@@ -118,9 +118,10 @@ main.tall{padding-bottom:calc(var(--dock-h) + 104px + env(safe-area-inset-bottom
 }
 
 /* toast: charcoal block, no dot, no shadow */
-.toast{background:var(--ink);color:var(--on-ink);border-radius:var(--radius-md);box-shadow:none;min-height:44px;padding:12px 14px;font:600 14px/20px var(--font-sans);bottom:calc(var(--dock-h) + 12px + env(safe-area-inset-bottom,0px))}
+.toast{background:var(--ink);color:var(--on-ink);border-radius:var(--radius-md);box-shadow:none;min-height:44px;padding:4px 14px;font:600 14px/20px var(--font-sans);bottom:calc(var(--dock-h) + 12px + env(safe-area-inset-bottom,0px))}
 .toast::before{content:none}
-.toast button{color:inherit;font-weight:700;min-height:20px;padding:0 4px;text-decoration-thickness:2px;text-underline-offset:4px}
+.toast:has(button){padding-right:4px}
+.toast button{flex:none;color:inherit;font-weight:700;min-height:var(--tap);padding:0 10px;text-decoration-thickness:2px;text-underline-offset:4px}
 body:has(.cta) .toast{bottom:calc(var(--dock-h) + 84px + env(safe-area-inset-bottom,0px))}
 @media (min-width:1024px){.toast,body:has(.cta) .toast{bottom:120px}}
 

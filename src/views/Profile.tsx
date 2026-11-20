@@ -17,7 +17,7 @@ export default function Profile() {
       <div className="eyebrow">Appearance</div>
       <div className="menu"><div><div><b>Theme</b><small>Day is the standard look</small></div></div>
         <div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Theme">
-          {[['light', 'Day'], ['dark', 'Night'], ['system', 'Phone setting']].map(([k, l]) => <button key={k} aria-pressed={(S.theme || 'light') === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
+          {[['light', 'Day'], ['dark', 'Night'], ['auto', 'Phone setting']].map(([k, l]) => <button key={k} aria-pressed={(S.theme === 'dark' || S.theme === 'auto' ? S.theme : 'light') === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
         </div></div>
         <div><div><b>Language</b><small>The main screens are also in Hindi</small></div></div>
         <div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Language" style={{ gridTemplateColumns: 'repeat(2,1fr)' }}>

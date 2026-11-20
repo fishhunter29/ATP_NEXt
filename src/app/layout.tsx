@@ -14,7 +14,7 @@ const GSC = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 const BING = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
 const GA4 = process.env.NEXT_PUBLIC_GA4_ID;
 
-const THEME_BOOT = `try{var t=JSON.parse(localStorage.getItem('atp_v6')||'{}').theme;if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}`;
+const THEME_BOOT = `try{var t=JSON.parse(localStorage.getItem('atp_v6')||'{}').theme;if(t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

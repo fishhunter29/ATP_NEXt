@@ -18,7 +18,7 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 ## Design tokens and shell (Tide)
 `src/styles/tide.css` holds the approved design: colours for day and night, type, spacing, corners, and the shell (header, dock, toast). It loads after `src/styles/app.css` and wins. New screens use the Tide names (`--ink`, `--ink-2`, `--line`, `--action`, `--clash`, `--ok`, `--tip`, `--k-*`, `--space-*`, `--radius-*`, `--font-sans`, `--font-mono`). The old names in `app.css` (`--brand`, `--cta`, `--muted`, `--r-l`…) point at them and go away as each screen is rebuilt. No shadows, gradients or translucency in new work: edges are borders.
 - The header and dock are in `src/components/Shell.tsx`; the logo and the shell icons are plain SVG in `src/components/Brand.tsx`, so they are in the server HTML.
-- Theme: `<html data-theme>` is `light` unless the traveller chose Night (or "Phone setting") in Profile. A one-line script in the layout applies a saved Night before the first paint.
+- Theme: `<html data-theme>` is `light` unless the traveller chose Night (`dark`) or "Phone setting" (`auto`) in Profile. The engine's own starting value, `system`, counts as Day. A one-line script in the layout applies a saved Night before the first paint.
 
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.
