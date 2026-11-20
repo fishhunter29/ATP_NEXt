@@ -6,12 +6,15 @@ import SiteFooter from '@/components/seo/SiteFooter';
 import { SITE, SITE_NAME, abs } from '@/lib/seo';
 import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
+import '@/styles/tide.css';
 
 const DESC = 'Plan and book an Andaman trip as one itinerary. Ferries, hotels, cabs and things to do on Havelock, Neil, Port Blair and beyond, with every connection checked before you pay.';
 /* Search Console / Bing Webmaster ownership checks and Google Analytics: set these in Vercel when you have them. */
 const GSC = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION;
 const BING = process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION;
 const GA4 = process.env.NEXT_PUBLIC_GA4_ID;
+
+const THEME_BOOT = `try{var t=JSON.parse(localStorage.getItem('atp_v6')||'{}').theme;if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.dataset.theme='dark'}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
@@ -26,7 +29,7 @@ export const metadata: Metadata = {
   verification: { ...(GSC ? { google: GSC } : {}), ...(BING ? { other: { 'msvalidate.01': BING } } : {}) },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#071A22' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#FFFFFF' };
 
 const ORG = [
   { '@context': 'https://schema.org', '@type': 'TravelAgency', '@id': abs('/#org'), name: SITE_NAME, url: SITE, logo: abs('/icons/icon-512.png'), description: DESC,
@@ -37,12 +40,14 @@ const ORG = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning>
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@400;600;700&family=Inter+Tight:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@400;600;700&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" />
+        {/* night theme, if chosen, before the first paint */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <JsonLd data={ORG} />
       </head>
       <body>

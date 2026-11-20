@@ -14,9 +14,9 @@
 
 The new design (phone-first, categorised browsing, boarding-pass ferry tiles, optional meals out, one checkout) was approved on a clickable prototype. The app is being rebuilt to it in small pull requests, each one safe to ship on its own.
 
-**R1 · Trust, photos and names (this change).** Company details (CIN, GSTIN, DPIIT number, registered office, email) and the six recognition logos in the site footer and schema.org data; booking terms, refunds and privacy pages (`/terms`, `/refunds`, `/privacy`, drafts for a lawyer to check); hotels' own photos on stay pages and in the stays list (57 of 178 so far; the rest show one labelled sample photo); our own heading on all 96 itineraries.
+**R1 · Trust, photos and names · done.** Company details (CIN, GSTIN, DPIIT number, registered office, email) and the six recognition logos in the site footer and schema.org data; booking terms, refunds and privacy pages (`/terms`, `/refunds`, `/privacy`, drafts for a lawyer to check); hotels' own photos on stay pages and in the stays list (57 of 178 so far; the rest show one labelled sample photo); our own heading on all 96 itineraries.
 
-**R2 · Design tokens and shell.** The approved colours, type and spacing as the app's tokens; header with the DPIIT line; four-tab dock (Explore, Trip, My trips, Profile).
+**R2 · Design tokens and shell (this change).** The approved colours, type, spacing and corners are the app's tokens (`src/styles/tide.css`, loaded after `app.css`); the screens not yet rebuilt read them through their old names, so the whole app is already in the approved colours. Header with the logo, name and DPIIT line; four-tab dock (Explore, Trip, My trips, Profile) on the bottom edge, with the total-and-action bar joined to it; on wide screens the tabs sit in the header. Day is the default theme; Night and the language are chosen in Profile. New app icon. Left for later: the header's Sign in (comes with phone login, Stage 3) and the island colours (change with the Trip page, R4).
 
 **R3 · Home and browsing.** Home; categorised lists for trips, things to do, stays, ferries and cabs (category tiles, a "most loved" rail, one rail per category, focused list, detail page); island pages.
 

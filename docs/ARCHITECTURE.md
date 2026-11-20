@@ -15,6 +15,11 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - **Photos in `.art` boxes** must be an `<svg>` (app.css hides an `.art` box without one). Use `PhotoArt` for catalogue photos on server pages.
 - **Instruments.** Search Console and Bing ownership tags and Google Analytics 4 switch on from environment variables (see `.env.example`). After going live: verify the site in Search Console and Bing, submit `/sitemap.xml` in both.
 
+## Design tokens and shell (Tide)
+`src/styles/tide.css` holds the approved design: colours for day and night, type, spacing, corners, and the shell (header, dock, toast). It loads after `src/styles/app.css` and wins. New screens use the Tide names (`--ink`, `--ink-2`, `--line`, `--action`, `--clash`, `--ok`, `--tip`, `--k-*`, `--space-*`, `--radius-*`, `--font-sans`, `--font-mono`). The old names in `app.css` (`--brand`, `--cta`, `--muted`, `--r-l`…) point at them and go away as each screen is rebuilt. No shadows, gradients or translucency in new work: edges are borders.
+- The header and dock are in `src/components/Shell.tsx`; the logo and the shell icons are plain SVG in `src/components/Brand.tsx`, so they are in the server HTML.
+- Theme: `<html data-theme>` is `light` unless the traveller chose Night (or "Phone setting") in Profile. A one-line script in the layout applies a saved Night before the first paint.
+
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.
 - `useEngine()` gives a component the engine and re-renders it when the trip changes.

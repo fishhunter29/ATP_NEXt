@@ -1,0 +1,136 @@
+/* ATP Tide: the approved design (Nov 2026). Loaded after app.css, so these tokens run the whole interface.
+   Rules of the design: no shadows, no gradients, no translucency. Edges are borders. Charcoal carries text and
+   every selected state; coral is the one action colour; other colour means the kind of thing (stay, cab, boat…).
+
+   1. Tokens      the approved colours, type, spacing and radius, under the names the design uses
+   2. Old names   the names the screens not yet rebuilt still read (R3–R5 remove them screen by screen)
+   3. Base        type and focus
+   4. Shell       header with the DPIIT line, four-tab dock, toast */
+
+/* ---------- 1. tokens ---------- */
+:root{
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px;
+  --radius-sm:4px; --radius-md:8px; --radius-lg:12px; --radius-pill:999px;
+  --tap:44px; --tap-action:48px; --row:56px; --tile:32px;
+  --font-sans:"Inter Tight",Inter,"Anek Devanagari",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --dock-h:54px;
+}
+/* Day is the default. Night is one switch away, in Profile. */
+:root:not([data-theme="dark"]){
+  color-scheme:light;
+  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F3F4F5; --ink:#212529; --ink-2:#495057; --line:#DEE2E6; --on-ink:#FFFFFF;
+  --action:#F75940; --action-press:#F86E58; --action-ink:#212529;
+  --clash:#C2213D; --on-clash:#FFFFFF; --tip:#8A5200; --ok:#0B7F52; --on-ok:#FFFFFF;
+  --pass:#EAF2FB; --pass-ink-2:#3D4A5C; --pass-band:#2C365D; --on-pass-band:#FFFFFF; --pass-line:#7D90A8;
+  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#3F52E3; --k-adv:#7045AF; --k-hold:#DEE2E6;
+  --k-ink:#212529; --k-ink-inverse:#FFFFFF;
+  /* soft backgrounds for notes; text on them is --ok, --clash or --tip */
+  --ok-soft:#E7F4EE; --clash-soft:#FBE9EC; --tip-soft:#FFF4DC;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#16181B; --surface:#212529; --sunk:#1B1E21; --ink:#F8F9FA; --ink-2:#CED4DA; --line:#495057; --on-ink:#212529;
+  --action:#F75940; --action-press:#F98672; --action-ink:#212529;
+  --clash:#FFA3B2; --on-clash:#212529; --tip:#F0B45F; --ok:#3DDC9A; --on-ok:#212529;
+  --pass:#1E2A3A; --pass-ink-2:#B8C7DA; --pass-band:#2C365D; --on-pass-band:#FFFFFF; --pass-line:#5E7290;
+  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#5568F0; --k-adv:#8A5FCB; --k-hold:#495057;
+  --k-ink:#212529; --k-ink-inverse:#FFFFFF;
+  --ok-soft:#10291F; --clash-soft:#3A1820; --tip-soft:#2E2410;
+}
+/* The island colours (--z-*) stay as they are until the Trip page is rebuilt (R4): the old screens print text on
+   them, the new design uses them only as small dots. */
+
+/* ---------- 2. old names, pointed at the approved tokens ---------- */
+:root:not([data-theme="dark"]),:root[data-theme="dark"]{
+  --raise:var(--surface); --muted:var(--ink-2); --faint:var(--ink-2); --line-strong:var(--ink-2);
+  --brand:var(--ink); --brand-deep:var(--ink); --brand-soft:var(--sunk); --aqua:var(--action); --sun:var(--k-stay); --sun-soft:var(--tip-soft);
+  --cta:var(--action); --cta-ink:var(--action-ink); --cta-press:var(--action-press); --cta-soft:var(--sunk); --cta-glow:transparent;
+  --sel:var(--sunk); --sel-ink:var(--ink); --sel-line:var(--ink); --sel-soft:var(--sunk);
+  --bad:var(--clash); --bad-soft:var(--clash-soft); --attn:var(--tip); --attn-soft:var(--tip-soft);
+  --accent:var(--ink); --accent-ink:var(--on-ink); --accent-soft:var(--sunk); --warn:var(--tip); --warn-soft:var(--tip-soft); --marigold-soft:var(--tip-soft);
+  --bar:var(--surface); --bar-ink:var(--ink); --bar-btn:var(--action); --bar-btn-ink:var(--action-ink);
+  --f-display:var(--font-sans); --f-body:var(--font-sans); --f-serif:var(--font-sans); --f-mono:var(--font-mono);
+  --r-xs:var(--radius-sm); --r-s:var(--radius-md); --r-m:var(--radius-md); --r-l:var(--radius-lg); --r-pill:var(--radius-pill);
+  --e-1:none; --e-2:0 0 0 1px var(--line); --e-float:0 0 0 1px var(--ink-2); --e-bar:0 -2px 0 var(--ink);
+  --top-h:57px;
+}
+@media (min-width:1024px){:root:not([data-theme="dark"]),:root[data-theme="dark"]{--top-h:65px}}
+
+/* ---------- 3. base ---------- */
+body{font-family:var(--font-sans);letter-spacing:-.005em;background:var(--bg);color:var(--ink)}
+h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em}
+:lang(hi) h1,:lang(hi) h2,:lang(hi) h3{letter-spacing:0}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px;border-radius:var(--radius-sm)}
+.atp-mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.atp-eyebrow{font:600 12px/16px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+
+/* ---------- 4. shell ---------- */
+/* header: logo, name, DPIIT line. Solid, with a line under it. */
+.atp-brandbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink)}
+.atp-brandin{display:flex;align-items:center;gap:10px;min-height:56px;width:100%;max-width:var(--maxw);margin-inline:auto;padding:0 max(8px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.atp-brandl{display:flex;align-items:center;gap:10px;flex:1;min-width:0;min-height:44px;text-decoration:none;color:inherit}
+.atp-logo{width:32px;height:32px;border-radius:var(--radius-md);background:var(--action);color:var(--action-ink);display:grid;place-items:center;flex:none}
+.atp-logo svg{display:block}
+.atp-brandn{display:flex;flex-direction:column;min-width:0}
+.atp-brandn b{font-size:16px;line-height:20px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atp-dpiit{display:block;font:600 10px/12px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.atp-iconbtn{width:44px;height:44px;display:grid;place-items:center;border-radius:var(--radius-md);flex:none;color:inherit}
+.atp-iconbtn svg{display:block}
+.atp-iconbtn:hover{background:var(--sunk)}
+/* on a phone, inner pages show Back where the logo tile sits */
+.atp-brandin.has-back{padding-left:max(8px,env(safe-area-inset-left,0px));gap:4px}
+.atp-brandin.has-back .atp-logo{display:none}
+.dnav{display:none}
+@media (min-width:1024px){
+  .atp-brandin{min-height:64px;padding-inline:32px;gap:12px}
+  .atp-brandin.has-back{padding-left:32px;gap:12px}
+  .atp-brandin .atp-back{display:none}
+  .atp-brandin.has-back .atp-logo{display:grid}
+  .atp-brandl{flex:0 1 auto}
+  .dnav{display:flex;align-self:stretch;margin-left:auto}
+  .dnav a{position:relative;display:flex;align-items:center;gap:8px;padding:0 16px;font:600 15px/20px var(--font-sans);color:var(--ink-2);text-decoration:none}
+  .dnav a:hover{color:var(--ink);background:var(--sunk)}
+  .dnav a[aria-current="page"]{color:var(--ink);box-shadow:inset 0 -3px 0 var(--ink)}
+}
+
+/* dock: four tabs across the bottom of the phone, a 2px charcoal line on top */
+.atp-dock{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--surface);border-top:2px solid var(--ink);padding-bottom:env(safe-area-inset-bottom,0px)}
+.atp-tabs{display:grid;grid-template-columns:repeat(4,1fr);max-width:560px;margin-inline:auto}
+.atp-tab{position:relative;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:600 12px/16px var(--font-sans);color:var(--ink-2);text-decoration:none}
+.atp-tab svg{display:block}
+.atp-tab[aria-current="page"]{color:var(--ink);box-shadow:inset 0 3px 0 var(--ink)}
+:lang(hi) .atp-tab{font-size:12.5px;line-height:18px}
+.atp-count{min-width:18px;height:18px;padding:0 5px;border-radius:var(--radius-pill);background:var(--ink);color:var(--on-ink);font:700 11px/18px var(--font-mono);text-align:center;letter-spacing:-.02em}
+.atp-tab .atp-count{position:absolute;top:5px;left:calc(50% + 8px)}
+@media (min-width:1024px){.atp-dock{display:none}}
+
+/* what sits above the dock on a phone */
+main{padding-bottom:calc(var(--dock-h) + 32px + env(safe-area-inset-bottom,0px))}
+main.tall{padding-bottom:calc(var(--dock-h) + 104px + env(safe-area-inset-bottom,0px))}
+.sitefoot{padding-bottom:calc(var(--dock-h) + 24px + env(safe-area-inset-bottom,0px))}
+@media (min-width:1024px){main{padding-bottom:72px}main.tall{padding-bottom:140px}.sitefoot{padding-bottom:28px}}
+@media (max-width:1023.9px){
+  /* the total-and-action bar joins the dock: one block, as in the approved design */
+  .cta.abovenav{left:0;right:0;bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));width:auto;max-width:none;margin:0;border:0;border-top:2px solid var(--ink);border-radius:0;box-shadow:none;background:var(--surface);padding:8px 16px}
+  body:has(.cta.abovenav) .atp-dock{border-top:1px solid var(--line)}
+  .fab{bottom:calc(var(--dock-h) + 16px + env(safe-area-inset-bottom,0px))}
+}
+
+/* toast: charcoal block, no dot, no shadow */
+.toast{background:var(--ink);color:var(--on-ink);border-radius:var(--radius-md);box-shadow:none;min-height:44px;padding:12px 14px;font:600 14px/20px var(--font-sans);bottom:calc(var(--dock-h) + 12px + env(safe-area-inset-bottom,0px))}
+.toast::before{content:none}
+.toast button{color:inherit;font-weight:700;min-height:20px;padding:0 4px;text-decoration-thickness:2px;text-underline-offset:4px}
+body:has(.cta) .toast{bottom:calc(var(--dock-h) + 84px + env(safe-area-inset-bottom,0px))}
+@media (min-width:1024px){.toast,body:has(.cta) .toast{bottom:120px}}
+
+/* footer brand line */
+.sitefoot .atp-brandl{flex:none;color:var(--ink)}
+
+/* the building blocks the old screens share take the approved corners until those screens are rebuilt */
+.btn,.btn.primary{border-radius:var(--radius-md)}
+.btn.primary,.btn.primary:hover{box-shadow:none}
+.card{border-radius:var(--radius-lg)}
+.segm{border-radius:var(--radius-md);border-width:1px;padding:2px;gap:2px}
+.segm button{border-radius:6px}
+.segm button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}

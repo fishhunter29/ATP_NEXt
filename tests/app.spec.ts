@@ -369,10 +369,12 @@ for (const [w, h] of [[360, 780], [1440, 900]]) {
   test(`Hindi: main screens switch language and fit at ${w}px`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     const fits = async (where: string) => expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `${where} at ${w}px`).toBeLessThanOrEqual(1);
-    await page.goto('/');
-    await page.getByRole('button', { name: 'हिं', exact: true }).click();
-    await expect(page.locator('h1')).toContainText('अंडमान');
+    // the language is chosen in Profile and remembered on the phone
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'हिंदी', exact: true }).click();
     await expect(page.locator('html')).toHaveAttribute('lang', 'hi');
+    await page.goto('/');
+    await expect(page.locator('h1')).toContainText('अंडमान');
     await expect(page.getByRole('link', { name: /यात्रा/ }).first()).toBeVisible();
     await expect(page.getByText('आधे दिन और पूरे दिन की योजनाएँ')).toBeVisible();
     await fits('home');
@@ -389,7 +391,10 @@ for (const [w, h] of [[360, 780], [1440, 900]]) {
     await expect(page.getByText('मुख्य यात्री')).toBeVisible();
     await fits('checkout');
     // and back to English
-    await page.getByRole('button', { name: 'EN', exact: true }).click();
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'English', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await page.goto('/checkout');
     await expect(page.getByText('Lead traveller')).toBeVisible();
     await page.close();
   });
@@ -420,5 +425,53 @@ test('light mode: tabs, small labels and pass cards', async ({ browser }) => {
   await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
   const tops = await page.locator('.passgrid').first().locator('.pass').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round((e.firstElementChild as HTMLElement).getBoundingClientRect().top)));
   expect(new Set(tops).size).toBe(1);
+  await page.close();
+});
+
+/* ---------- shell (Tide): header, dock, day and night ---------- */
+test('shell: header with the DPIIT line and a four-tab dock on the phone', async ({ page }) => {
+  await page.goto('/');
+  const head = page.locator('header.atp-brandbar');
+  await expect(head).toContainText('Andaman Travel Planner');
+  await expect(head).toContainText('DPIIT Recognised Startup · DIPP222255');
+  await expect(head.getByRole('button', { name: 'Back' })).toHaveCount(0);
+  const tabs = page.locator('.atp-dock .atp-tab');
+  await expect(tabs).toHaveText(['Explore', 'Trip', 'My trips', 'Profile']);
+  await expect(page.locator('.atp-dock [aria-current="page"]')).toHaveText('Explore');
+  // the dock sits on the bottom edge, full width, and the header is solid
+  const box = await page.locator('.atp-dock').boundingBox();
+  const vp = page.viewportSize()!;
+  expect(Math.abs(box!.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(box!.width - vp.width)).toBeLessThanOrEqual(1);
+  expect(Math.abs(box!.y + box!.height - vp.height)).toBeLessThanOrEqual(1);
+  // pages outside the four tabs get Back, and no tab is marked
+  await page.goto('/stays');
+  await expect(page.locator('header.atp-brandbar').getByRole('button', { name: 'Back' })).toBeVisible();
+  await expect(page.locator('.atp-dock [aria-current="page"]')).toHaveCount(0);
+});
+
+test('shell: day is the default, night is chosen in Profile and remembered', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 390, height: 800 }, colorScheme: 'dark' });
+  await page.goto('/profile');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await page.getByRole('button', { name: 'Night', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(22, 24, 27)');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Phone setting', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByRole('button', { name: 'Day', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.close();
+});
+
+test('shell: on a wide screen the tabs move into the header', async ({ browser }) => {
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto('/my-trips');
+  await expect(page.locator('.atp-dock')).toBeHidden();
+  await expect(page.locator('.dnav a')).toHaveText(['Explore', 'Trip', 'My trips', 'Profile']);
+  await expect(page.locator('.dnav [aria-current="page"]')).toHaveText('My trips');
   await page.close();
 });

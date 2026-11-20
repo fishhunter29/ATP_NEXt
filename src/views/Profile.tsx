@@ -15,9 +15,13 @@ export default function Profile() {
         <div style={{ flex: 1 }}><b>{S.lead.name || 'Guest traveller'}</b><div className="muted" style={{ fontSize: 13 }}>{S.lead.phone || 'Sign in with your WhatsApp number (coming soon)'}</div></div>
       </div>
       <div className="eyebrow">Appearance</div>
-      <div className="menu"><div><div><b>Theme</b><small>Follows your phone unless you choose</small></div></div>
+      <div className="menu"><div><div><b>Theme</b><small>Day is the standard look</small></div></div>
         <div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Theme">
-          {[['system', 'Phone setting'], ['light', 'Light'], ['dark', 'Dark']].map(([k, l]) => <button key={k} aria-pressed={(S.theme || 'system') === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
+          {[['light', 'Day'], ['dark', 'Night'], ['system', 'Phone setting']].map(([k, l]) => <button key={k} aria-pressed={(S.theme || 'light') === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
+        </div></div>
+        <div><div><b>Language</b><small>The main screens are also in Hindi</small></div></div>
+        <div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Language" style={{ gridTemplateColumns: 'repeat(2,1fr)' }}>
+          {[['en', 'English'], ['hi', 'हिंदी']].map(([k, l]) => <button key={k} aria-pressed={(S.lang === 'hi' ? 'hi' : 'en') === k} onClick={() => { S.lang = k; commit(); }}>{l}</button>)}
         </div></div></div>
       <div className="eyebrow">Try it out</div>
       <div className="menu">
