@@ -2,22 +2,27 @@
 /* Bottom sheets in React: dates & travellers & flights, price breakdown, fix menu, fix report, help, move & swap,
    ferry added, day plans and the planned-trip loader.
    They read the trip from the engine and call its functions; nothing here is HTML text any more. */
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { commit, dispatch, lang, useEngine, type Engine } from '@/engine/client';
 import { Ic, Raw } from '../ui';
+import { TideIcon } from '../Brand';
 
 export function close(E: Engine) { E.S.sheet = null; commit(); }
 
 export function Sheet({ label, onClose, children }: { label: string; onClose: () => void; children: ReactNode }) {
+  const box = useRef<HTMLDivElement>(null);
+  /* Escape closes; the page behind does not scroll; focus goes into the sheet and back to where it was */
   useEffect(() => {
+    const from = document.activeElement as HTMLElement | null;
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', k); document.body.style.overflow = 'hidden';
-    return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; };
-  }, [onClose]);
+    window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; box.current?.focus({ preventScroll: true });
+    return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; if (from && document.contains(from)) from.focus({ preventScroll: true }); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
-    <div className="scrim" onClick={onClose}>
-      <div className="sheet wrap" role="dialog" aria-modal="true" aria-label={label} onClick={(e) => e.stopPropagation()}>
-        <div className="grab" />
+    <div className="scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="sheet wrap" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} ref={box}>
+        <button type="button" className="atp-iconbtn atp-sheet-x" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button>
         <div className="form">{children}</div>
       </div>
     </div>

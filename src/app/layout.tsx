@@ -9,6 +9,7 @@ import '@/styles/app.css';
 import '@/styles/tide.css';
 import '@/styles/tide-pages.css';
 import '@/styles/tide-trip.css';
+import '@/styles/tide-flow.css';
 
 const DESC = 'Plan and book an Andaman trip as one itinerary. Ferries, hotels, cabs and things to do on Havelock, Neil, Port Blair and beyond, with every connection checked before you pay.';
 /* Search Console / Bing Webmaster ownership checks and Google Analytics: set these in Vercel when you have them. */
