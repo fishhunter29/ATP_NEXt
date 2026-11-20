@@ -1,0 +1,81 @@
+{
+ "terms": {
+  "title": "Booking terms",
+  "sections": [
+   [
+    "Who you are booking with",
+    "Andaman Travel Planner Private Limited (CIN U52291AN2025PTC006133, GSTIN 35ABCCA3774B1Z0, DPIIT Recognised Startup DIPP222255), registered office at Bargat Line, Chakargaon, Sri Vijaya Puram (Port Blair), South Andaman, Andaman & Nicobar Islands – 744112, books each part of your trip with the partner who provides it: the hotel, the ferry operator, the cab partner or the activity partner. We take one payment and pay each partner their share."
+   ],
+   [
+    "Prices",
+    "Prices are in rupees. GST is shown separately before you pay. We check every price again at the moment you pay; if a price has changed, we show you before taking money."
+   ],
+   [
+    "Confirmation",
+    "Each booking is confirmed by its partner after payment. If a partner cannot confirm, that part is refunded in full to your original payment method, and we offer a similar option."
+   ],
+   [
+    "Travellers and ID",
+    "Ferry operators need each traveller’s name, age and gender. Every traveller must carry the photo ID given at checkout."
+   ],
+   [
+    "Changes",
+    "You can change dates, people or items before travel. Each change follows that booking’s rules, shown on the booking."
+   ],
+   [
+    "Weather and sea conditions",
+    "Ferries and water activities can be cancelled by the operator or the port authority for weather. You then get a full refund for that booking, or a new time where one is free."
+   ]
+  ]
+ },
+ "refunds": {
+  "title": "Refunds and cancellation",
+  "sections": [
+   [
+    "Flexible bookings (cabs and most activities)",
+    "Full refund until 24 hours before the start. No refund after that."
+   ],
+   [
+    "Hotels",
+    "Full refund until 72 hours before check-in. Half until 24 hours before. No refund in the last 24 hours."
+   ],
+   [
+    "Ferries",
+    "Each operator’s own published rules apply, shown on the ticket before you pay."
+   ],
+   [
+    "Government entry fees",
+    "Refunded only if the authority refunds them."
+   ],
+   [
+    "How refunds are paid",
+    "To the original payment method within 5–7 working days of cancellation. You can see each refund in Profile → Payments and refunds."
+   ]
+  ]
+ },
+ "privacy": {
+  "title": "Privacy",
+  "sections": [
+   [
+    "What we collect",
+    "Names, ages, gender and ID details of travellers (needed by ferry operators), your WhatsApp number and email, and your bookings."
+   ],
+   [
+    "Why",
+    "To make and manage your bookings, send tickets and updates on WhatsApp, and issue GST invoices."
+   ],
+   [
+    "Who sees it",
+    "Only the partner who provides each booking gets the details it needs. We do not sell your data."
+   ],
+   [
+    "Payments",
+    "Card and bank details are handled by Razorpay. We never see or store them."
+   ],
+   [
+    "Your choices",
+    "You can ask for a copy of your data or for it to be deleted, except what tax law requires us to keep, by writing to info@andamantravelplanner.com."
+   ]
+  ]
+ }
+}

@@ -243,7 +243,7 @@ test('planned trip: replace my trip asks first, keep or replace', async ({ page 
   dlg = page.getByRole('dialog', { name: 'Replace your current trip?' });
   await dlg.getByRole('button', { name: 'Replace with this plan' }).click();
   await expect(page).toHaveURL(/\/trip$/);
-  await expect(page.locator('.toast')).toContainText('Honeymoon by the lagoon');
+  await expect(page.locator('.toast')).toContainText('Two Hearts, Three Islands');
 });
 
 test('planned trip: with an empty trip it loads straight away', async ({ page }) => {

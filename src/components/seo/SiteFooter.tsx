@@ -2,6 +2,7 @@
    so every Google-facing page is a link or two from any other. */
 import { ZONES, ferryRoutes, slug } from '@/lib/catalogue';
 import PKGS from '@/data/packages.json';
+import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
 
@@ -13,6 +14,7 @@ export default function SiteFooter() {
     <footer className="foot sitefoot wrap" aria-label="Site">
       <div className="sf-brand">
         <span className="brand"><span>Andaman<small>Travel Planner</small></span></span>
+        <span className="sf-dpiit">{DPIIT_LINE}</span>
         <span>Ferries, stays, transfers and experiences across the Andaman Islands, booked as one itinerary.</span>
       </div>
       <nav className="sf-cols" aria-label="Browse">
@@ -21,7 +23,23 @@ export default function SiteFooter() {
         <div><b>Planned trips</b>{trips.map((p) => <a key={p.id} href={`/trips/${slug(p.id)}`}>{p.n}</a>)}<a href="/trips">All {(PKGS as any[]).length} trips</a></div>
         <div><b>Plan</b><a href="/things-to-do">Things to do</a><a href="/stays">Stays</a><a href="/cabs">Cabs and scooters</a><a href="/charters">Boat charters</a><a href="/plan">Build my itinerary</a></div>
       </nav>
-      <span className="sf-legal">© 2026 Andaman Travel Planner Private Limited · Sri Vijaya Puram (Port Blair)</span>
+      <div className="sf-trust">
+        <b className="sf-h">Recognitions and memberships</b>
+        <div className="sf-logos">{RECOGNITIONS.map((r) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <span key={r.file} className="sf-lg"><img src={`/img/logos/${r.file}`} alt={r.name} width={160} height={44} loading="lazy" decoding="async" /></span>
+        ))}</div>
+        <address className="sf-co">
+          <b>{COMPANY.name}</b>
+          <span>CIN {COMPANY.cin}</span>
+          <span>GSTIN {COMPANY.gstin}</span>
+          <span>{DPIIT_LINE}</span>
+          <span>Registered office: {COMPANY.address}</span>
+          <span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
+        </address>
+        <nav className="sf-pol" aria-label="Terms and policies"><a href="/terms">Booking terms</a><a href="/refunds">Refunds and cancellation</a><a href="/privacy">Privacy</a></nav>
+      </div>
+      <span className="sf-legal">© 2026 {COMPANY.name} · Prices in ₹, GST shown before you pay.</span>
     </footer>
   );
 }
