@@ -223,6 +223,10 @@ test('day plan: add straight from the free slot, then undo', async ({ page }) =>
   await page.locator('.idc.blk').first().getByRole('button', { name: 'Add plan' }).click();
   await expect(page.locator('.toast')).toContainText('bookings added to');
   expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBeGreaterThan(n0);
+  for (const y of [0, 400, 1200]) { // DEBUG
+    await page.evaluate((yy) => window.scrollTo(0, yy), y); await page.waitForTimeout(600);
+    console.log('DEBUG', JSON.stringify(await page.evaluate(() => { const t = document.querySelector('.toast') as HTMLElement; if (!t) return 'no toast'; const b = t.querySelector('button')!; const r = (e: Element) => { const q = e.getBoundingClientRect(); return [q.x, q.y, q.width, q.height].map(Math.round); }; const br = b.getBoundingClientRect(); const hit = document.elementFromPoint(br.x + br.width / 2, br.y + br.height / 2) as HTMLElement; const cs = getComputedStyle(t); const chain: string[] = []; for (let e: HTMLElement | null = t.parentElement; e; e = e.parentElement) { const c = getComputedStyle(e); chain.push(e.tagName + '.' + e.className + ':' + [c.transform, c.filter, c.backdropFilter, c.contain, c.willChange, c.overflow].join('/')); } return { toast: r(t), btn: r(b), hit: hit && hit.tagName + '.' + hit.className, hitText: hit && hit.textContent!.slice(0, 40), pos: cs.position, z: cs.zIndex, bottom: cs.bottom, anim: cs.animationName, text: t.textContent, inner: [innerWidth, innerHeight], vv: [visualViewport!.width, visualViewport!.height, visualViewport!.offsetLeft, visualViewport!.offsetTop, visualViewport!.scale], sw: document.documentElement.scrollWidth, sy: scrollY, chain, cta: [...document.querySelectorAll('.cta')].map((e) => r(e) + ' ' + getComputedStyle(e).zIndex), dock: r(document.querySelector('.atp-dock')!) }; })));
+  }
   await page.locator('.toast').getByRole('button', { name: 'Undo' }).click();
   expect(await page.evaluate(() => (window as any).__ATP__.S.cart.length)).toBe(n0);
 });
