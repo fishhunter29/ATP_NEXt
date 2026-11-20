@@ -3,6 +3,11 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import AddPanel from '@/components/AddPanel';
 import { ACTS, ZN, actPhoto, durTxt, inr, per, slug, unslug } from '@/lib/catalogue';
+import { actCat, actItems } from '@/lib/browse';
+import Rail from '@/components/browse/Rail';
+import { Card, Rate } from '@/components/browse/cards';
+import { TideIcon } from '@/components/Brand';
+import INC from '@/data/included.json';
 import JsonLd from '@/components/seo/JsonLd';
 import { abs, crumbs, pageMeta } from '@/lib/seo';
 
@@ -19,24 +24,38 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const z = ZN[a.z];
   const facts = [['Island', z?.name], ['How long', durTxt(a.d)], ['When', a.slot || a.t], ['Where', a.site], ['Age', a.age ? `${a.age}+` : ''], ['Season', a.sea], ['Rating', a.g?.rt ? `★ ${a.g.rt} on Google${a.g.n ? ` (${a.g.n.toLocaleString('en-IN')})` : ''}` : '']].filter(([, v]) => v);
   const ld = { '@context': 'https://schema.org', '@type': 'TouristTrip', name: a.n, description: a.v, url: abs(`/things-to-do/${id}`), image: abs(`/img/f/${actPhoto(a.id)}.webp`), touristType: a.fam, provider: { '@id': abs('/#org') }, offers: a.p ? { '@type': 'Offer', price: a.p, priceCurrency: 'INR', url: abs(`/things-to-do/${id}`), availability: 'https://schema.org/InStock' } : undefined, itinerary: { '@type': 'Place', name: `${a.site || z?.name}, Andaman and Nicobar Islands` } };
+  const cat = actCat(a); const fi = (INC as Record<string, { inc: string[]; not: string[]; bring: string[] }>)[a.fam];
+  const hours = a.open && a.close ? `Open ${a.open} to ${a.close}` : '';
+  const meta = [durTxt(a.d) && ['clock', durTxt(a.d)], (hours || a.slot) && ['cal', hours || `${a.slot}${a.t ? ` · from ${a.t}` : ''}`], a.age && ['kid', `Age ${a.age}+`], a.sea && ['sunrise', a.sea], a.cond && ['wave', a.cond]].filter(Boolean) as [string, string][];
+  const more = actItems().filter((x) => x.z === a.z && x.id !== a.id && cat && x.cs.includes(cat.k)).slice(0, 8);
   return (
-    <>
-      <section className="pg-hero">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={`/img/f/${actPhoto(a.id)}.webp`} alt={`${a.n}, ${z?.name}`} />
-        <div className="wrap"><span className="eyebrow">{a.fam} · {z?.name}</span><h1>{a.n}</h1><p>{a.v}</p></div>
-      </section>
-      <div className="wrap"><div className="pg-grid">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className="facts">{facts.map(([k, v]) => <div key={k}><small>{k}</small><b>{v}</b></div>)}</div>
-          {a.note && <p>{a.note}</p>}
-          {a.cond && <p className="note">Runs when: {a.cond}. Sea and weather permitting; we confirm the slot before you pay.</p>}
-          <p className="note">{a.p ? `From ${inr(a.p)} ${per(a.b)}, before GST.` : 'Price on request.'} Your plan places it where it fits: after ferries land, inside opening hours and in daylight.</p>
-          <p><a className="link" href={`/islands/${slug(a.z)}`}>More on {z?.name} →</a></p>
+    <div className="atp-pg atp-detail">
+      <div className="atp-dmain">
+        <div className="atp-dhero">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/img/f/${actPhoto(a.id)}.webp`} alt={`${a.n}, ${z?.name}`} width={1280} height={853} fetchPriority="high" decoding="async" />
         </div>
-        <aside><Suspense><AddPanel kind="act" id={a.id} /></Suspense></aside>
-      </div></div>
+        <section className="atp-cs is-first">
+          <span className="atp-eyebrow"><a href={`/things-to-do?island=${slug(a.z)}${cat ? `&cat=${cat.k}` : ''}`}>{cat?.n || a.fam}</a> · <a href={`/islands/${slug(a.z)}`}>{z?.name}</a></span>
+          <h1 className="atp-h1">{a.n}</h1>
+          <p className="atp-lead">{a.v}</p>
+          {a.g?.rt ? <p className="atp-rateline"><Rate rt={a.g.rt} rv={a.g.rv ?? null} /><small>on Google{a.site ? ` · ${a.site}` : ''}</small></p> : null}
+          <div className="atp-meta">{meta.map(([ic, t]) => <span key={t}><TideIcon n={ic} s={16} />{t}</span>)}</div>
+        </section>
+        <section className="atp-cs atp-dbuy" aria-label="Add to your trip"><Suspense><AddPanel kind="act" id={a.id} /></Suspense>
+          <p className="atp-fine">{a.p ? `From ${inr(a.p)} ${per(a.b)}, before GST.` : a.p === 0 ? 'Free to visit.' : 'Price on request.'} When you add it, the time is checked against your ferries, cabs and stay.</p></section>
+        {a.steps && a.steps.length > 0 && <section className="atp-cs"><h2>How the day goes</h2><ol className="atp-steps2">{a.steps.map(([t, x], i) => <li key={i}><b>{t}</b>{x}</li>)}</ol></section>}
+        {fi && fi.inc.length > 0 && (
+          <section className="atp-cs"><h2>Included</h2>
+            <ul className="atp-ul is-ok">{fi.inc.map((x) => <li key={x}><TideIcon n="check" s={18} /><span>{x}</span></li>)}</ul>
+            {fi.not.length > 0 && <><div className="atp-sec">Not included</div><ul className="atp-ul is-no">{fi.not.map((x) => <li key={x}><TideIcon n="x" s={18} /><span>{x}</span></li>)}</ul></>}
+            {fi.bring.length > 0 && <><div className="atp-sec">Bring</div><ul className="atp-ul">{fi.bring.map((x) => <li key={x}><TideIcon n="check" s={18} /><span>{x}</span></li>)}</ul></>}
+          </section>
+        )}
+        {(a.note || a.cond) && <section className="atp-cs"><h2>Good to know</h2>{a.note && <p className="atp-lead">{a.note}</p>}{a.cond && <p className="atp-lead">Runs when: {a.cond}. Sea and weather permitting; we confirm the slot before you pay.</p>}</section>}
+        {more.length > 2 && <section className="atp-cs"><div className="atp-hs-h"><h2>More like this on {z?.name}</h2></div><Rail label="More like this" className="atp-rail2">{more.map((x) => <Card key={x.id} it={x} />)}</Rail></section>}
+      </div>
       <JsonLd data={[ld, crumbs([['Home', '/'], ['Things to do', '/things-to-do'], [z?.name || 'Island', `/islands/${slug(a.z)}`], [a.n, `/things-to-do/${id}`]])]} />
-    </>
+    </div>
   );
 }

@@ -1,0 +1,215 @@
+{
+"Scuba - Try dive": {
+"inc": [
+"PADI-certified instructor with you for the whole dive",
+"All gear: mask, fins, wetsuit, buoyancy jacket, regulator and tank",
+"Briefing and shallow-water practice before the dive",
+"Drinking water and a freshwater shower"
+],
+"not": [
+"Underwater photos and video, unless your option includes them",
+"Cab to the dive centre, unless you add one"
+],
+"bring": [
+"Swimwear and a towel",
+"Reef-safe sunscreen",
+"A change of clothes"
+]
+},
+"Scuba - Certified dives": {
+"inc": [
+"Dive guide, tanks and weights",
+"Boat to the dive site where the option says so",
+"Drinking water"
+],
+"not": [
+"Full gear rental unless included in your option",
+"Nitrox, unless requested"
+],
+"bring": [
+"Certification card and logbook",
+"Your own mask or computer if you prefer",
+"Swimwear, towel, reef-safe sunscreen"
+]
+},
+"Scuba - Courses": {
+"inc": [
+"Instructor-led theory, confined-water and open-water dives",
+"All gear for the course",
+"Certification processing on completion"
+],
+"not": [
+"Accommodation and meals",
+"Extra fun dives after the course"
+],
+"bring": [
+"Swimwear, towel, reef-safe sunscreen",
+"Photo ID and two passport photos if asked",
+"Any medication you take, declared on the medical form"
+]
+},
+"Snorkelling": {
+"inc": [
+"Mask, snorkel and life jacket",
+"Guide where your option says guided"
+],
+"not": [
+"The boat to the beach, if it is booked separately",
+"Underwater photos unless included"
+],
+"bring": [
+"Swimwear and a towel",
+"Reef-safe sunscreen",
+"Water to drink"
+]
+},
+"Sea walk": {
+"inc": [
+"Helmet with air pumped from the boat",
+"Guide in the water with you",
+"Photos where your option says so"
+],
+"not": [
+"Boat to the island if booked separately"
+],
+"bring": [
+"Swimwear and a towel",
+"Contact lenses rather than glasses"
+]
+},
+"Glass bottom & semi-sub": {
+"inc": [
+"Seat on the boat",
+"Life jacket and the operator’s commentary"
+],
+"not": [
+"Cab to the jetty unless booked"
+],
+"bring": [
+"Hat and sunscreen",
+"Something for motion sickness if you need it"
+]
+},
+"Motor water sports": {
+"inc": [
+"Ride time with an operator",
+"Life jacket"
+],
+"not": [
+"Photos and video unless included",
+"Boat to the beach if booked separately"
+],
+"bring": [
+"Clothes that can get wet",
+"A dry bag for your phone"
+]
+},
+"Kayaking": {
+"inc": [
+"Kayak, paddle and life jacket",
+"Guide throughout",
+"Head torch on night trips"
+],
+"not": [
+"Cab to the start point unless booked"
+],
+"bring": [
+"Quick-dry clothes and sandals",
+"Insect repellent for the mangroves",
+"Water to drink"
+]
+},
+"Boat trips": {
+"inc": [
+"Return boat ticket",
+"Life jacket"
+],
+"not": [
+"Island entry fees unless stated",
+"Water sports on the island",
+"Cab to the jetty unless booked"
+],
+"bring": [
+"Original photo ID for every traveller (checked at the jetty)",
+"Hat, sunscreen and water",
+"Cash for snacks on the island"
+]
+},
+"Cruises & charters": {
+"inc": [
+"Boat and crew",
+"Fuel and life jackets"
+],
+"not": [
+"Meals unless stated",
+"Snorkel gear unless stated"
+],
+"bring": [
+"Photo ID",
+"Hat, sunscreen, a light jacket for the wind"
+]
+},
+"Fishing": {
+"inc": [
+"Boat and crew",
+"Rods, tackle and bait"
+],
+"not": [
+"Fishing permit from the Fisheries Department (added separately)",
+"Food and drinks"
+],
+"bring": [
+"Hat, sunscreen, water",
+"Photo ID for the permit"
+]
+},
+"Walks & nature": {
+"inc": [
+"Guide where the option says guided",
+"Entry or forest permit where stated"
+],
+"not": [
+"Cab to the start point unless booked"
+],
+"bring": [
+"Walking shoes with grip",
+"Two litres of water per person",
+"Insect repellent and a rain jacket"
+]
+},
+"Places to visit": {
+"inc": [
+"Entry ticket where one is needed"
+],
+"not": [
+"Cab to the place unless you add one",
+"Camera fee where charged"
+],
+"bring": [
+"Photo ID",
+"Water and a hat"
+]
+},
+"Sightseeing tours": {
+"inc": [
+"Private cab with driver for the tour",
+"Fuel, parking and the driver’s waiting time"
+],
+"not": [
+"Entry tickets and boat fares unless stated",
+"Meals"
+],
+"bring": [
+"Photo ID",
+"Water, hat, sunscreen",
+"Cash for small entry and camera fees"
+]
+},
+"Meals & shopping": {
+"inc": [
+"As described in the option"
+],
+"not": [],
+"bring": []
+}
+}

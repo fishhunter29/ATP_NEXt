@@ -7,7 +7,7 @@
 ## Search engines (SEO)
 Every Google-facing page must be complete in the HTML the server sends, before any JavaScript runs. `tests/seo.spec.ts` checks this on every change:
 - **Server HTML.** Nothing in the root layout may read the query string (`useSearchParams`) outside its own small `<Suspense>`, or Next.js renders the whole page in the browser only and Google gets an empty page. The Shell keeps it in `StackSync`.
-- **Lists that need the engine** (things to do, stays, planned trips) get a server-rendered `fallback` list in the same markup (`src/components/seo/Indexes.tsx`), so the HTML has the full list and nothing jumps when the live list takes over. Page headings (`<h1>` and intro) are rendered by the page file, not the client view.
+- **Browse screens** (things to do, stays, ready-made trips) read the address in the browser, so the server sends their first view as the Suspense fallback in the same markup: the HTML has the lists and nothing jumps when the phone takes over. Island pages and `/trips` also carry a plain index of links to every item.
 - **Links, not buttons.** Anything that goes to another page is a `<Link>`/`<a>`, so Google can follow it. The site footer (`SiteFooter`) links every island, the main ferry routes, planned trips and lists.
 - **Metadata.** Use `pageMeta()` from `src/lib/seo.ts`: title, description, canonical, Open Graph and Twitter card all point at the same address. Personal pages (`/trip`, `/checkout`, `/my-trips`, `/profile`, `/search`) are `noindex` and have no canonical.
 - **Structured data** (`<JsonLd>`): TravelAgency + WebSite on every page; BreadcrumbList on lists and details; TouristDestination (islands), TouristTrip (activities and planned trips), BoatTrip (each sailing), LodgingBusiness (stays). Google ratings are shown on the page but never put in rating markup: Google does not allow ratings collected by another site there.
@@ -19,6 +19,13 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 `src/styles/tide.css` holds the approved design: colours for day and night, type, spacing, corners, and the shell (header, dock, toast). It loads after `src/styles/app.css` and wins. New screens use the Tide names (`--ink`, `--ink-2`, `--line`, `--action`, `--clash`, `--ok`, `--tip`, `--k-*`, `--space-*`, `--radius-*`, `--font-sans`, `--font-mono`). The old names in `app.css` (`--brand`, `--cta`, `--muted`, `--r-l`…) point at them and go away as each screen is rebuilt. No shadows, gradients or translucency in new work: edges are borders.
 - The header and dock are in `src/components/Shell.tsx`; the logo and the shell icons are plain SVG in `src/components/Brand.tsx`, so they are in the server HTML.
 - Theme: `<html data-theme>` is `light` unless the traveller chose Night (`dark`) or "Phone setting" (`auto`) in Profile. The engine's own starting value, `system`, counts as Day. A one-line script in the layout applies a saved Night before the first paint.
+
+## Home and browsing
+- `src/lib/browse.ts` shapes the catalogue for browsing on the server: one small record (`Item`) per thing to do, stay or ready-made trip, plus the categories and island lines. Client components import only its types, so the catalogue is not sent to the phone twice.
+- `src/components/browse/Browse.tsx` is the browse screen for all three. Its state is the address (`?island=hav&cat=scuba&sort=price&q=…&len=long`; `zone=` and `date=` from older links still work, and `date` is passed on to every link). The server sends the first view through `BrowseStatic`, the same markup, as the Suspense fallback.
+- `cards.tsx` (cards and rows) has no hooks and is used by server pages too; `Rail.tsx` adds the arrows a mouse needs.
+- Home (`src/app/page.tsx`) is a server page; only the plan box and "today" (`src/views/Home.tsx`) wait for the phone. `src/lib/sky.ts` works out sunrise, sunset and the moon for Port Blair from the date.
+- Styles for these pages are in `src/styles/tide-pages.css`.
 
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.

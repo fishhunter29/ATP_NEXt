@@ -7,6 +7,7 @@ import { SITE, SITE_NAME, abs } from '@/lib/seo';
 import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
 import '@/styles/tide.css';
+import '@/styles/tide-pages.css';
 
 const DESC = 'Plan and book an Andaman trip as one itinerary. Ferries, hotels, cabs and things to do on Havelock, Neil, Port Blair and beyond, with every connection checked before you pay.';
 /* Search Console / Bing Webmaster ownership checks and Google Analytics: set these in Vercel when you have them. */
@@ -35,7 +36,7 @@ const ORG = [
   { '@context': 'https://schema.org', '@type': 'TravelAgency', '@id': abs('/#org'), name: SITE_NAME, url: SITE, logo: abs('/icons/icon-512.png'), description: DESC,
     legalName: COMPANY.name, email: COMPANY.email, taxID: COMPANY.gstin,
     address: { '@type': 'PostalAddress', streetAddress: COMPANY.street, addressLocality: COMPANY.locality, addressRegion: 'Andaman and Nicobar Islands', postalCode: COMPANY.postalCode, addressCountry: 'IN' }, areaServed: { '@type': 'Place', name: 'Andaman and Nicobar Islands' } },
-  { '@context': 'https://schema.org', '@type': 'WebSite', '@id': abs('/#site'), name: SITE_NAME, url: SITE, inLanguage: ['en-IN', 'hi-IN'], publisher: { '@id': abs('/#org') } },
+  { '@context': 'https://schema.org', '@type': 'WebSite', '@id': abs('/#site'), name: SITE_NAME, url: SITE, inLanguage: 'en-IN', publisher: { '@id': abs('/#org') } },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -45,7 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Devanagari:wght@400;600;700&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" />
         {/* night theme, if chosen, before the first paint */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
         <JsonLd data={ORG} />
