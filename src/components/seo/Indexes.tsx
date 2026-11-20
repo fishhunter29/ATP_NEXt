@@ -1,6 +1,7 @@
 /* Server-rendered lists shown until the trip engine loads in the browser (and what Google reads first).
    Same markup as the live lists, so nothing jumps when they swap. */
 import { ACTS, HOTELS, ZN, actPhoto, hotelFrom, inr, slug } from '@/lib/catalogue';
+import { HotelThumb, hotelPhotoCount } from '@/components/HotelPhoto';
 import PKGS from '@/data/packages.json';
 import PhotoArt from './PhotoArt';
 
@@ -21,11 +22,12 @@ export function ActsIndex() {
 }
 
 export function StaysIndex() {
-  const list = HOTELS.slice().sort((a, b) => score(b.rt, b.rv) - score(a.rt, a.rv));
+  const list = HOTELS.slice().sort((a, b) => (hotelPhotoCount(b.id) ? 1 : 0) - (hotelPhotoCount(a.id) ? 1 : 0) || score(b.rt, b.rv) - score(a.rt, a.rv));
   return (
     <div className="wrap"><p className="note">{list.length} stays · prices per night before GST</p>
       <div className="lst">{list.map((h) => (
-        <a key={h.id} className="lrow noimg" href={`/stays/${slug(h.id)}`}>
+        <a key={h.id} className="lrow" href={`/stays/${slug(h.id)}`}>
+          <HotelThumb id={h.id} />
           <span className="lb"><b>{h.n}</b><small>{ZN[h.z]?.name} · {h.t}{h.rt ? ` · ★ ${h.rt} Google` : ''}{h.rv ? ` (${h.rv.toLocaleString('en-IN')})` : ''}</small><span className="price">from {inr(hotelFrom(h))}</span></span>
         </a>
       ))}</div>

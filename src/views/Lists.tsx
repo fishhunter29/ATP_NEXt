@@ -6,6 +6,7 @@ import { Suspense, useState, type ReactNode } from 'react';
 import AddPanel from '@/components/AddPanel';
 import { useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
+import { HotelThumb, hotelPhotoCount } from '@/components/HotelPhoto';
 
 const ISLES = ['all', 'PBL', 'HAV', 'NEI', 'WAN', 'BAR', 'RAN', 'LON', 'MAY', 'DIG', 'LIT'];
 
@@ -43,13 +44,16 @@ export function Stays({ fallback }: { fallback?: ReactNode }) {
   const [z, setZ] = useState(params.get('zone') || 'all');
   const date = params.get('date') || '';
   if (!E) return <>{fallback ?? <Loading />}</>;
-  const list = E.D.hotels.filter((h: any) => z === 'all' || h.z === z).sort((a: any, b: any) => (b.rt || 0) * Math.log10((b.rv || 1) + 1) - (a.rt || 0) * Math.log10((a.rv || 1) + 1));
+  const list = E.D.hotels.filter((h: any) => z === 'all' || h.z === z)
+    /* hotels that have sent their photos come first, then by rating */
+    .sort((a: any, b: any) => (hotelPhotoCount(b.id) ? 1 : 0) - (hotelPhotoCount(a.id) ? 1 : 0) || (b.rt || 0) * Math.log10((b.rv || 1) + 1) - (a.rt || 0) * Math.log10((a.rv || 1) + 1));
   return (
     <div className="wrap">
       <IsleFilter E={E} z={z} set={setZ} />
       <p className="note">{list.length} stays · prices per night before GST</p>
       <div className="lst">{list.map((h: any) => (
-        <Link key={h.id} className="lrow noimg" href={`/stays/${h.id.toLowerCase()}${date ? `?date=${date}` : ''}`} prefetch={false}>
+        <Link key={h.id} className="lrow" href={`/stays/${h.id.toLowerCase()}${date ? `?date=${date}` : ''}`} prefetch={false}>
+          <HotelThumb id={h.id} />
           <span className="lb"><b>{h.n}</b><small>{E.ZN[h.z].name} · {h.t}{h.rt ? ` · ★ ${h.rt} Google` : ''}{h.rv ? ` (${h.rv.toLocaleString('en-IN')})` : ''}</small><span className="price">from {E.inr(E.hotelFrom(h, date || undefined))}</span></span>
         </Link>
       ))}</div>

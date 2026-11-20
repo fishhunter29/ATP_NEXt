@@ -9,3 +9,19 @@
 **Stage 4 · Live data.** Ferry operator APIs through `/api/ferries/availability`, hotel allotments, partner inbox and gate scanner as real staff screens.
 
 **Stage 5 · Launch.** Domain, verify in Google Search Console and Bing and submit the sitemap, Sentry error alerts, uptime checks, privacy policy (DPDP Act), test round with real phones.
+
+## Rebuild to the approved design (started 20 Nov 2026)
+
+The new design (phone-first, categorised browsing, boarding-pass ferry tiles, optional meals out, one checkout) was approved on a clickable prototype. The app is being rebuilt to it in small pull requests, each one safe to ship on its own.
+
+**R1 · Trust, photos and names (this change).** Company details (CIN, GSTIN, DPIIT number, registered office, email) and the six recognition logos in the site footer and schema.org data; booking terms, refunds and privacy pages (`/terms`, `/refunds`, `/privacy`, drafts for a lawyer to check); hotels' own photos on stay pages and in the stays list (40 of 178 so far; the rest show one labelled sample photo); our own heading on all 96 itineraries.
+
+**R2 · Design tokens and shell.** The approved colours, type and spacing as the app's tokens; header with the DPIIT line; four-tab dock (Explore, Trip, My trips, Profile).
+
+**R3 · Home and browsing.** Home; categorised lists for trips, things to do, stays, ferries and cabs (category tiles, a "most loved" rail, one rail per category, focused list, detail page); island pages.
+
+**R4 · Trip.** Day view with cab loops from the hotel and back, the ferry boarding-pass tile, ferry class and seat picker, optional meals out with cab waiting charges.
+
+**R5 · Checkout and after.** Checkout with the price breakdown per partner, "if plans change", payment method, confirming and confirmed screens, My trips.
+
+Adding hotel photos: put `<hotel id in lower case>-0.webp` … (720×480) and `-t.webp` (224×168) in `public/img/h` and set the count in `src/data/hotelphotos.json`.

@@ -1890,3 +1890,39 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 .idrail .idc{flex:0 0 min(78%,300px)}
 .idgrp{scroll-snap-align:start;min-width:0;width:auto;max-width:120px}
 @media (min-width:1024px){.tp-main .idrail .idc{flex-basis:296px}}
+
+/* ---------- company details, recognitions, legal pages, hotel photos (rebuild stage 1) ---------- */
+.sitefoot{flex-wrap:wrap}
+.sitefoot .sf-dpiit{font:600 11.5px/1.3 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sitefoot .sf-trust{display:flex;flex-direction:column;gap:12px;min-width:0}
+.sitefoot .sf-h{color:var(--ink);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.sf-logos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:560px}
+/* logo tiles stay white in dark mode: the marks are drawn for a white ground */
+.sf-lg{display:grid;place-items:center;height:60px;padding:6px 8px;border-radius:10px;background:#FFFFFF;border:1px solid #DEE2E6;min-width:0}
+.sf-lg img{max-width:100%;max-height:46px;width:auto;height:auto;object-fit:contain;display:block}
+.sf-co{font-style:normal;display:flex;flex-direction:column;gap:3px;font-size:13.5px;line-height:1.45;color:var(--muted);overflow-wrap:anywhere}
+.sf-co b{color:var(--ink);font-size:15px}
+.sf-co a{color:inherit;text-underline-offset:2px}
+.sitefoot .sf-pol{display:flex;flex-wrap:wrap;gap:4px 20px}
+.sitefoot .sf-pol a{color:var(--ink);font-weight:600;min-height:32px;display:flex;align-items:center;text-underline-offset:3px}
+@media (min-width:1024px){.sitefoot .sf-trust,.sitefoot .sf-legal{flex:1 1 100%}.sf-logos{grid-template-columns:repeat(6,minmax(0,1fr));max-width:none}}
+
+.lgl{display:flex;flex-direction:column;gap:18px;max-width:760px;padding-bottom:24px}
+.lgl-tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:calc(var(--gut) * -1);padding-inline:var(--gut)}
+.lgl-tabs::-webkit-scrollbar{display:none}
+.lgl-tabs a{flex:none;min-height:44px;display:flex;align-items:center;padding:0 16px;border-radius:999px;border:1px solid var(--line-strong);text-decoration:none;font-weight:600;font-size:14.5px;white-space:nowrap}
+.lgl-tabs a[aria-current="page"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lgl section{display:flex;flex-direction:column;gap:6px}
+.lgl h2{font-size:18px;letter-spacing:-.01em;line-height:1.25}
+.lgl p{color:var(--muted);line-height:1.6}
+.lgl .sf-co{border-top:1px solid var(--line);padding-top:16px}
+
+.lrow .lph{position:relative;display:block;height:96px;border-radius:12px;overflow:hidden;background:var(--sunk)}
+.lrow .lph img{width:100%;height:100%;object-fit:cover;display:block}
+.lrow .lph i{position:absolute;right:4px;bottom:4px;padding:1px 5px;border-radius:4px;background:rgba(0,0,0,.72);color:#FFFFFF;font:600 10px/14px var(--f-mono);font-style:normal;letter-spacing:.04em;text-transform:uppercase}
+.hgal-w{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hgal{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;border-radius:16px;-webkit-overflow-scrolling:touch}
+.hgal::-webkit-scrollbar{display:none}
+.hgal img{flex:none;width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;scroll-snap-align:start;border-radius:16px;display:block;background:var(--sunk)}
+.hgal-n{font-size:13px;color:var(--muted)}
+@media (min-width:1024px){.hgal img{width:calc(50% - 4px)}}

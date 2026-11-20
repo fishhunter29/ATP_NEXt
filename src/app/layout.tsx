@@ -4,6 +4,7 @@ import Shell from '@/components/Shell';
 import JsonLd from '@/components/seo/JsonLd';
 import SiteFooter from '@/components/seo/SiteFooter';
 import { SITE, SITE_NAME, abs } from '@/lib/seo';
+import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
 
 const DESC = 'Plan and book an Andaman trip as one itinerary. Ferries, hotels, cabs and things to do on Havelock, Neil, Port Blair and beyond, with every connection checked before you pay.';
@@ -29,7 +30,8 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 
 const ORG = [
   { '@context': 'https://schema.org', '@type': 'TravelAgency', '@id': abs('/#org'), name: SITE_NAME, url: SITE, logo: abs('/icons/icon-512.png'), description: DESC,
-    address: { '@type': 'PostalAddress', addressLocality: 'Sri Vijaya Puram (Port Blair)', addressRegion: 'Andaman and Nicobar Islands', addressCountry: 'IN' }, areaServed: { '@type': 'Place', name: 'Andaman and Nicobar Islands' } },
+    legalName: COMPANY.name, email: COMPANY.email, taxID: COMPANY.gstin,
+    address: { '@type': 'PostalAddress', streetAddress: COMPANY.street, addressLocality: COMPANY.locality, addressRegion: 'Andaman and Nicobar Islands', postalCode: COMPANY.postalCode, addressCountry: 'IN' }, areaServed: { '@type': 'Place', name: 'Andaman and Nicobar Islands' } },
   { '@context': 'https://schema.org', '@type': 'WebSite', '@id': abs('/#site'), name: SITE_NAME, url: SITE, inLanguage: ['en-IN', 'hi-IN'], publisher: { '@id': abs('/#org') } },
 ];
 
