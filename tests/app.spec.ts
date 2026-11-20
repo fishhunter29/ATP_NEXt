@@ -78,6 +78,14 @@ test('checkout: missing details are marked, the price opens by kind, and one con
   await expect(page).toHaveURL(/\/trip$/);
   await page.goto('/checkout');
   await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
+  // the Pay bar sits on the screen, joined to the dock, not at the end of the page (same on the Trip page)
+  const joined = async () => { await page.waitForTimeout(400); const bar = await page.locator('.cta').boundingBox(); const dock = await page.locator('.atp-dock').boundingBox(); return Math.abs(bar!.y + bar!.height - dock!.y); };
+  expect(await joined()).toBeLessThanOrEqual(2);
+  await page.goto('/trip');
+  await expect(page.locator('.cta')).toBeVisible();
+  expect(await joined()).toBeLessThanOrEqual(2);
+  await page.goto('/checkout');
+  await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
   expect(await page.locator('.atp-trav').count()).toBeGreaterThan(1);
   // nothing filled: every missing detail is named, and nothing is booked
   await page.getByRole('button', { name: /^Pay ₹/ }).click();
