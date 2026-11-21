@@ -50,6 +50,10 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - `src/lib/whatsapp.ts` and `src/components/AskWhatsApp.tsx`: one number (`COMPANY.whatsapp`), one message shape. The server writes the basic message; on the phone it adds the page address, dates and travellers.
 - `src/lib/maps.ts` and `src/components/MapFrame.tsx`: Google Maps by place name and place id. The map is an iframe added only on tap; "Open in Google Maps" uses the documented Maps URLs and works without it.
 - `src/components/seo/Faq.tsx`: answers are computed from the catalogue on the page, and the same list feeds the FAQPage data.
+- Moving a plan: nothing on the Trip page carries `data-drag`, so the engine's drag-to-move never starts. `MoveSheet` (in `src/components/sheets/Sheets.tsx`) lists each day (offered when any time on it passes `E.fitOf`), every time from `E.slotCands`, and a typed time for flexible plans; `mvto` runs only from its Move button.
+- Fee: `fee()` and `feeGst()` in the engine (`FEE_RATE`, `FEE_GST`); `total()` includes both. Checkout sends `fee` with the booking and the server checks subtotal + fee + GST = total. `src/data/packages.json` totals were raised by the same share per trip; `scripts/pkg-index.mjs` now writes fee-inclusive totals on its own.
+- Ferries: `bookStatus` returns `ferry` for every sailing ("Booked by us within 15 min of your confirmation"). No view reads or writes seat numbers.
+- `moreLike` and `signatureItems` are in `src/lib/browse.ts`.
 - Colours: the day and night tokens in `src/styles/tide.css` are warm (paper and warm charcoal). Nothing else names a page colour.
 
 ## The engine

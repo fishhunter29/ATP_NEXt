@@ -27,9 +27,7 @@ export default function SharedTrip() {
 
   const v = withShared(E, t, () => {
     const lines: Line[] = t.cart.map((it) => { const I = E.info(it); return { it, I, at: it.kind === 'ferry' ? E.SAIL[it.ref].dep : it.kind === 'stay' ? '' : (it.t || '') }; });
-    const sub = lines.reduce((n, x) => n + (x.I.own ? 0 : x.I.price || 0), 0);
-    const gst = lines.reduce((n, x) => n + (x.I.own ? 0 : Math.round((x.I.price || 0) * (x.I.gst || 0) / 100)), 0);
-    return { lines, total: sub + gst, route: E.tripRoute(t.cart) as [string, number][], paxTxt: E.paxTxt() as string, n: E.pax() as number };
+    return { lines, total: E.total() as number, route: E.tripRoute(t.cart) as [string, number][], paxTxt: E.paxTxt() as string, n: E.pax() as number };
   });
   const dates = [...new Set(v.lines.map((x) => x.it.date))].sort();
   const start = t.win ? t.win.start : dates[0]; const end = t.win ? t.win.end : dates[dates.length - 1];
@@ -55,7 +53,7 @@ export default function SharedTrip() {
           <h1 className="atp-h1">{t.name || 'An Andaman plan'}</h1>
           <p className="atp-lead">{range} · {v.paxTxt}{t.guess ? ' · dates are a guess' : ''}</p>
           {routeTxt && <p className="atp-sh-route">{routeTxt}</p>}
-          <div className="atp-tl is-total"><span>Total<small>{E.inr(Math.round(v.total / v.n))} a person, GST included</small></span><b>{E.inr(v.total)}</b></div>
+          <div className="atp-tl is-total"><span>Total<small>{E.inr(Math.round(v.total / v.n))} a person, GST and fee included</small></span><b>{E.inr(v.total)}</b></div>
           <div className="atp-sh-acts">
             <button type="button" className="atp-btn is-action" onClick={use}>Open it in my planner</button>
             <a className="atp-btn is-outline" href={say(`About the Andaman plan (${range}): `)} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Reply on WhatsApp</a>

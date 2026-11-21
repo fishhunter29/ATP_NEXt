@@ -7,7 +7,7 @@ import Rail from '@/components/browse/Rail';
 import { Card, inr } from '@/components/browse/cards';
 import { TideIcon } from '@/components/Brand';
 import { HOTELS, SAILS, zonePhoto } from '@/lib/catalogue';
-import { COUNTS, ISLES, actItems, isleName, tripItems } from '@/lib/browse';
+import { COUNTS, ISLES, actItems, isleName, signatureItems, tripItems } from '@/lib/browse';
 import { RECOGNITIONS } from '@/lib/company';
 import data from '@/data/catalogue.json';
 import { pageMeta } from '@/lib/seo';
@@ -41,7 +41,12 @@ export default function Page() {
         <div className="atp-kgrid">
           {KINDS.map((x) => <Link key={x.href} className={`atp-kb k-${x.k}`} href={x.href} prefetch={false}><TideIcon n={x.icon} s={24} /><b>{x.n}</b><small>{x.sub}</small></Link>)}
         </div>
-        <Link className="atp-strip" href="/charters" prefetch={false}><TideIcon n="wave" /><span><b>Hire a whole boat</b><small>Private boats, fishing and sunset cruises</small></span><TideIcon n="chev" s={18} /></Link>
+        <Link className="atp-boat" href="/charters" prefetch={false}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/img/f/i149.webp" alt="A private boat on open blue water, seen from above" width={1280} height={720} loading="lazy" decoding="async" />
+          <span className="atp-boat-b"><span><small>Private charters</small><b>Hire a whole boat</b><span>Game fishing, sunset cruises and island hops, for your group alone</span></span>
+            <span className="atp-boat-go" aria-hidden="true"><TideIcon n="arrow" /></span></span>
+        </Link>
       </section>
 
       <section className="atp-hs">
@@ -57,6 +62,11 @@ export default function Page() {
         </Rail>
       </section>
 
+      <section className="atp-hs" id="signature">
+        <div className="atp-hs-h"><h2>Signature experiences</h2><span className="atp-hs-d">Only in the Andamans</span></div>
+        <Rail label="Signature experiences" className="atp-rail2">{signatureItems().map((a) => <Card key={a.id} it={a} isle={isleName(a.z)} />)}</Rail>
+      </section>
+
       <section className="atp-hs" id="trips">
         <div className="atp-hs-h"><h2>Ready-made trips</h2><Link className="atp-btn is-text" href="/trips" prefetch={false}>All {COUNTS.trips}</Link></div>
         <p className="atp-lead">Whole trips, already checked for ferry times, closed days and check-in times. Change anything after.</p>
@@ -68,7 +78,7 @@ export default function Page() {
                 <img src={t.ph} alt="" width={520} height={293} loading="lazy" decoding="async" /><span className="atp-pk-tag">{t.tag}</span>
               </span>
               <span className="atp-pk-b"><b>{t.n}</b><small>{t.l2}</small><small>{t.l1.split(' · ')[1]}</small>
-                <span className="atp-pk-p"><b>{inr(t.p || 0)}</b><small>a person, incl. GST · checked as one trip</small></span></span>
+                <span className="atp-pk-p"><b>{inr(t.p || 0)}</b><small>a person, incl. GST and fee · checked as one trip</small></span></span>
             </Link>
           ))}
         </Rail>

@@ -17,7 +17,7 @@ export function PlannedTripBuy({ id }: { id: string }) {
   const use = () => dispatch('usepkg', { id: p.id });
   return (
     <div className="atp-buy">
-      <span className="atp-total"><b>{E.inr(pr.pp)}</b><small>a person · {E.inr(pr.total)} for {E.paxLabel(p)} · incl. GST · from {E.fD(pr.start)}</small></span>
+      <span className="atp-total"><b>{E.inr(pr.pp)}</b><small>a person · {E.inr(pr.total)} for {E.paxLabel(p)} · incl. GST and fee · from {E.fD(pr.start)}</small></span>
       <button className="atp-btn is-action" onClick={use}>Use this trip</button>
       <p className="atp-fine">You can change dates, hotels and every plan after loading it.</p>
     </div>

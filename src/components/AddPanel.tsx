@@ -31,7 +31,7 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
   const save = () => {
     if (!editing) return;
     Object.assign(editing, c);
-    if (kind === 'ferry' && !editing.own) editing.seats = E.autoSeats({ sid: editing.ref, cls: editing.cls, date: editing.date });
+    if (kind === 'ferry') editing.seats = [];   // seats are asked for by our team when it books
     E.S.flashUid = editing.uid; E.syncTrip(); commit(); E.toast(L('Changes saved', 'बदलाव सेव हो गए')); router.push('/trip');
   };
   const remove = () => { if (!editing) return; E.removeItem(editing.uid); commit(); E.toast(L('Removed from your trip', 'आपकी यात्रा से हटाया गया')); router.push('/trip'); };
@@ -40,7 +40,7 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
     if (kind === 'ferry') {
       /* same as the engine's addFerry: seats, the cab from the jetty, trim stays that no longer fit, then "what next?" */
       const s = E.SAIL[it.ref];
-      it.seats = it.own ? [] : E.autoSeats({ sid: it.ref, cls: it.cls, date: it.date });
+      it.seats = [];   // seats are asked for by our team when it books
       const f = E.addItem(it, true);
       if (!it.own) { const L = E.jettyLegs(s, it.date); if (L.post) E.addItem({ kind: 'cab', ref: L.post.r.id, date: it.date, t: s.arr, for: f.uid, leg: 'post', ...(L.post.rev ? { rev: true } : {}) }, true); }
       const tr: string[] = E.trimStays() || [];

@@ -41,7 +41,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <div className="atp-meta">{h.a && <span><TideIcon n="pin" s={16} />{h.a}</span>}<span><TideIcon n="clock" s={16} />Check-in 12:00 · out 10:00</span><span><TideIcon n="bed" s={16} />{h.rooms.length} room type{h.rooms.length > 1 ? 's' : ''}</span></div>
         </section>
         <section className="atp-cs atp-dbuy" aria-label="Add to your trip"><Suspense><AddPanel kind="stay" id={h.id} /></Suspense>
-          <p className="atp-fine">Prices change with the season (peak 15 Dec to 15 Jan). Your cabs to and from the jetty follow this hotel automatically.</p>
+          <p className="atp-fine">Prices change with the season (peak 15 Dec to 15 Jan). Your cabs to and from the jetty follow this hotel automatically. The trip total adds GST and a convenience fee, both shown before you pay.</p>
           <AskWhatsApp about={`I have a question about staying at ${h.n}, ${z?.name || 'Andaman'}.`} path={`/stays/${id}`} hint="Ask about rooms, meal plans or dates. We reply with the price for your group." /></section>
         <section className="atp-cs"><h2>Rooms</h2>
           <ul className="atp-rooms">{h.rooms.map((r) => <li key={r.n}><span><b>{r.n}</b><small>{MEAL[r.mp] || r.mp} · sleeps {r.ma}</small></span><span className="atp-fr-p"><b>{inr(r.s_hi || r.s_ln)}</b><small>a night</small></span></li>)}</ul>

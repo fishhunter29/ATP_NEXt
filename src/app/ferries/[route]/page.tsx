@@ -36,6 +36,7 @@ export default async function Page({ params }: { params: Promise<{ route: string
     [`How much is the ${a} to ${b} ferry ticket?`, fares.length ? `Fares start at ${inr(fares[0])} a person${fares[fares.length - 1] > fares[0] ? `; the highest starting fare on this route is ${inr(fares[fares.length - 1])}` : ''}. Higher classes cost more and are shown when you pick a sailing.` : ''],
     [`Which ferries run between ${a} and ${b}?`, opsAll.length ? `${listOf(opsAll).replace(/^t/, 'T')}.` : ''],
     [`Where does the ferry leave from, and where does it arrive?`, fromPts.length && toPts.length ? `It leaves from ${listOf(fromPts)} and arrives at ${listOf(toPts)}.` : ''],
+    [`How is the ${a} to ${b} ferry ticket booked?`, 'Add the sailing to your trip and confirm. Our team books the ticket with the operator within 15 minutes of your confirmation, asks you directly which seats you would like, and sends the ticket on WhatsApp.'],
     [`How early should I reach the jetty?`, reps.length ? `Be there ${reps.length > 1 ? `${reps[0]} to ${reps[reps.length - 1]}` : reps[0]} minutes before departure, depending on the boat, with the photo ID you booked with. When you add a sailing to a trip, the cab to the jetty is timed for this.` : ''],
   ];
   return (
@@ -49,7 +50,7 @@ export default async function Page({ params }: { params: Promise<{ route: string
       <FerryList sails={r.list} />
       <section className="atp-cs">
         <h2>Good to know</h2>
-        <p className="atp-lead">Government ship seats open about a week ahead. Private ferries sell out first in peak season (15 Dec to 15 Jan). When you add a sailing, your cabs to and from the jetty are timed around it.</p>
+        <p className="atp-lead">Government ship seats open about a week ahead. Private ferries sell out first in peak season (15 Dec to 15 Jan). When you add a sailing, your cabs to and from the jetty are timed around it. For now every ticket is booked by our team: within 15 minutes of your confirmation we book it with the operator, ask you which seats you would like, and send the ticket on WhatsApp.</p>
         <AskWhatsApp about={`I have a question about the ferry from ${a} to ${b}.`} path={`/ferries/${r.key}`} hint="Ask about seats, timings or which sailing fits your flight." />
         <a className="atp-strip" href={`/islands/${r.to.toLowerCase()}`}><TideIcon n="pin" /><span><b>More about {b}</b><small>Things to do, stays and day plans</small></span><TideIcon n="chev" s={18} /></a>
       </section>

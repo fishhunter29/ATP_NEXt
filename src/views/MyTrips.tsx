@@ -66,7 +66,7 @@ export default function MyTrips() {
                 <span className="atp-pass-mid"><i /><em>{E.tcDur(E.tm(s.arr) - E.tm(s.dep)).toLowerCase()}</em><i /></span>
                 <span className="atp-pass-pt is-to"><b>{E.clock(E.tm(s.arr))}</b><span>{zt}</span><small>{s.toPt}</small></span>
               </span>
-              <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(E.tm(s.dep) - (s.rep || 45))}</b></span><span><small>Seats</small><b>{p.seats || 'At the counter'}</b></span><span><small>Travellers</small><b>{p.pax}</b></span></span>
+              <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(E.tm(s.dep) - (s.rep || 45))}</b></span><span><small>Seats</small><b>We ask you</b></span><span><small>Travellers</small><b>{p.pax}</b></span></span>
             </span>
             <span className="atp-pass-stub"><span><small>Ticket</small><b>{p.code}</b></span><span className="atp-pass-bar" aria-hidden="true">{Array.from(p.code as string).map((c, i) => <i key={i} style={{ width: 1 + (c.charCodeAt(0) % 3) }} />)}</span><span className="atp-pass-p">{on ? 'Hide' : 'Show code'}</span></span>
           </button>
@@ -88,6 +88,7 @@ export default function MyTrips() {
                 <div><dt>Be ready</dt><dd>{p.report}</dd></div>
                 <div><dt>Travellers</dt><dd>{p.pax}</dd></div>
                 {p.vendor && <div><dt>Partner</dt><dd>{p.vendor}</dd></div>}
+                {p.kind === 'ferry' && <div><dt>Ticket</dt><dd>Booked by our team within 15 minutes of your confirmation, then sent on WhatsApp. We ask you for seats.</dd></div>}
               </dl>
               <p className="atp-fine"><TideIcon n="check" s={14} /> Saved on this phone. It opens without network; turn the brightness up at the gate.</p>
               <a className="atp-link atp-wa-text" href={waLink(waText(`I need help with this booking: ${p.title}.`, [`${short(p.date)}${/^\d\d:\d\d$/.test(p.time) ? ` · ${E.clock(E.tm(p.time))}` : ''} · ${p.pax} traveller${p.pax > 1 ? 's' : ''}`, `Code: ${p.code}`, S.bookingCode ? `Booking: ${S.bookingCode}` : '']))} target="_blank" rel="noopener noreferrer">Ask about this booking on WhatsApp</a>
@@ -136,6 +137,7 @@ export default function MyTrips() {
               {rec && <div><dt>With</dt><dd>{PAYN[rec.method] || 'UPI'}</dd></div>}
             </dl>
             {rec && rec.test && <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test booking.</b> No money was taken and the partners were not contacted.</span></p>}
+            {list.some((p) => p.kind === 'ferry') && <p className="atp-checked atp-ferrynote"><TideIcon n="boat" s={16} /><span>Ferry tickets: our team books them within 15 minutes and sends them on WhatsApp. We ask you directly which seats you would like.</span></p>}
             <div className="atp-first"><span className="atp-sec">First up</span><b>{short(first.date)}{/^\d\d:\d\d$/.test(first.time) ? ` · ${E.clock(E.tm(first.time))}` : ''}</b><span>{first.title}</span><small>{first.report}</small></div>
             <div className="atp-done-acts">
               <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Share on WhatsApp</a>

@@ -20,7 +20,7 @@ export default function Page() {
   return (
     <div className="atp-pg">
       <header className="atp-ph"><span className="atp-eyebrow">{routes.reduce((n, r) => n + r.list.length, 0)} sailings · {routes.length} routes</span><h1>Ferry timings and fares</h1>
-        <p>Private ferries and government ships, from the operators’ own timetables. Pick a route to see every sailing and add it to your trip.</p></header>
+        <p>Private ferries and government ships, from the operators’ own timetables. Pick a route to see every sailing and add it to your trip. Our team books each ticket within 15 minutes of your confirmation and asks you for seats.</p></header>
       <section className="atp-cs is-first">
         <h2>The main triangle</h2>
         <div className="atp-routes">
