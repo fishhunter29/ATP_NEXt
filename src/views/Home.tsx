@@ -25,7 +25,7 @@ export function HomePlan({ trips }: { trips: number }) {
   let fix = 0, total = '', isles = '';
   if (has) { try { fix = E!.run(S.cart).hard; total = E!.inr(E!.total()); isles = [...new Set<string>(E!.expand(S.cart).map((e: any) => e.zone).filter(Boolean))].slice(0, 4).map((z) => E!.ZN[z]?.name).filter(Boolean).join(', '); } catch {} }
   return (
-    <section className="atp-hplan" aria-label="Plan a trip">
+    <section className="atp-hplan" aria-label="Plan a trip" data-tour="plan">
       {has && (
         <Link className="atp-cont" href="/trip" prefetch={false}>
           <span><small className="atp-eyebrow">Your trip</small><b>{E!.fD(S.trip.start)} – {E!.fD(S.trip.end)}</b><small>{isles}</small>

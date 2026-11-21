@@ -68,7 +68,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
             <span className="atp-brandn"><b>Andaman Travel Planner</b><span className="atp-dpiit">{DPIIT_LINE}</span></span>
           </Link>
           <nav className="dnav" aria-label="Main">
-            {TABS.map((t) => <Link key={t.href} href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>{L(t.label, t.hi)}{t.href === '/trip' && n > 0 && <span className="atp-count">{n}</span>}</Link>)}
+            {TABS.map((t) => <Link key={t.href} href={t.href} prefetch={false} data-tour={t.href === '/trip' ? 'trip-tab' : undefined} aria-current={active(t.href) ? 'page' : undefined}>{L(t.label, t.hi)}{t.href === '/trip' && n > 0 && <span className="atp-count">{n}</span>}</Link>)}
           </nav>
         </div>
       </header>
@@ -77,7 +77,7 @@ export default function Shell({ children, footer }: { children: ReactNode; foote
       <nav className="atp-dock" aria-label="Main">
         <div className="atp-tabs">
           {TABS.map((t) => (
-            <Link key={t.href} className="atp-tab" href={t.href} prefetch={false} aria-current={active(t.href) ? 'page' : undefined}>
+            <Link key={t.href} className="atp-tab" href={t.href} prefetch={false} data-tour={t.href === '/trip' ? 'trip-tab' : undefined} aria-current={active(t.href) ? 'page' : undefined}>
               <TideIcon n={t.icon} />
               <span>{L(t.label, t.hi)}</span>
               {t.href === '/trip' && n > 0 && <span className="atp-count">{n}</span>}

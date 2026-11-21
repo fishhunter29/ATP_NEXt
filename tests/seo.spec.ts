@@ -49,6 +49,7 @@ test('sitemap lists every planned trip and robots points to it', async ({ reques
 for (const [w, h] of [[360, 780], [1440, 900]]) {
   test(`no sideways scrolling at ${w}px`, async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width: w, height: h } });
+    await page.addInitScript(() => { try { localStorage.setItem('atp_tour_v1', 'done'); } catch {} });
     for (const p of [...INDEXABLE, '/trip']) {
       await page.goto(p); await page.waitForTimeout(600);
       const over = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

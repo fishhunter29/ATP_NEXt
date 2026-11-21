@@ -3,6 +3,7 @@ import Script from 'next/script';
 import Shell from '@/components/Shell';
 import JsonLd from '@/components/seo/JsonLd';
 import SiteFooter from '@/components/seo/SiteFooter';
+import ProductTour from '@/components/ProductTour';
 import { SITE, SITE_NAME, abs } from '@/lib/seo';
 import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Shell footer={<SiteFooter />}>{children}</Shell>
+        <ProductTour />
         {GA4 && <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA4}`} strategy="afterInteractive" />
           <Script id="ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GA4}');`}</Script>
