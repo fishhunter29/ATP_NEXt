@@ -47,7 +47,7 @@ export default function SiteFooter() {
         <div className="af-main">
           <div className="af-brand">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <a className="af-lock" href="/"><img src="/brand/atp-logo.svg" alt="ATP" width={96} height={96} loading="lazy" decoding="async" /><span><b>Andaman Travel Planner</b><small>Port Blair · Andaman Islands</small></span></a>
+            <a className="af-lock" href="/"><img src="/brand/atp-logo.svg" alt="ATP" width={96} height={96} loading="lazy" decoding="async" /><span><b>Andaman Travel Planner</b><small>Sri Vijaya Puram · Andaman Islands</small></span></a>
             <p>Ferries, stays, cabs and things to do across the Andaman Islands, planned and booked as one trip.</p>
             <ul className="af-prom">{PROMISES.map((p) => <li key={p.k}><TideIcon n="check" s={14} />{p.b}</li>)}</ul>
             <ul className="af-contact">

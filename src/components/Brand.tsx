@@ -65,7 +65,7 @@ export function TideIcon({ n, s = 20 }: { n: string; s?: number }) {
   return <Svg s={s}>{PATHS[n]}</Svg>;
 }
 
-/** The ATP logo: a navy disc with a gold ring, "ATP" in coral, and "Andaman Travel Planner · Port Blair" round the edge.
+/** The ATP logo: a navy disc with a gold ring, "ATP" in coral, and "Andaman Travel Planner · Sri Vijaya Puram" round the edge.
     public/brand/atp-logo.svg is the full logo (use it at 64px and up); atp-mark.svg is the small version without the
     ring lettering (header, favicon). Both are plain vector paths, so they stay sharp at any size. */
 export function Logo({ s = 40 }: { s?: number }) {
