@@ -5,6 +5,7 @@ import JsonLd from '@/components/seo/JsonLd';
 import SiteFooter from '@/components/seo/SiteFooter';
 import ProductTour from '@/components/ProductTour';
 import EnquiryLog from '@/components/EnquiryLog';
+import PhotoInk from '@/components/PhotoInk';
 import { SITE, SITE_NAME, abs } from '@/lib/seo';
 import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
@@ -12,6 +13,7 @@ import '@/styles/tide.css';
 import '@/styles/tide-pages.css';
 import '@/styles/tide-trip.css';
 import '@/styles/tide-flow.css';
+import '@/styles/tide-phototext.css';
 
 const DESC = 'Plan and book an Andaman trip as one itinerary. Ferries, hotels, cabs and things to do on Havelock, Neil, Port Blair and beyond, with every connection checked before you pay.';
 /* Search Console / Bing Webmaster ownership checks and Google Analytics: set these in Vercel when you have them. */
@@ -63,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Shell footer={<SiteFooter />}>{children}</Shell>
         <ProductTour />
         <EnquiryLog />
+        <PhotoInk />
         {GA4 && <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA4}`} strategy="afterInteractive" />
           <Script id="ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GA4}');`}</Script>
