@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation';
 import { commit, useEngine } from '@/engine/client';
 import { Ic, Loading } from '@/components/ui';
+import AskWhatsApp from '@/components/AskWhatsApp';
 
 export default function Profile() {
   const E = useEngine();
@@ -12,8 +13,9 @@ export default function Profile() {
     <div className="wrap"><div className="sec">
       <div className="card" style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'grid', placeItems: 'center' }}><Ic n="user" s={24} /></span>
-        <div style={{ flex: 1 }}><h1 style={{ font: 'inherit', fontWeight: 700, margin: 0 }}>{S.lead.name || 'Guest traveller'}</h1><div className="muted" style={{ fontSize: 13 }}>{S.lead.phone || 'Sign in with your WhatsApp number (coming soon)'}</div></div>
+        <div style={{ flex: 1 }}><h1 style={{ font: 'inherit', fontWeight: 700, margin: 0 }}>{S.lead.name || 'Guest traveller'}</h1><div className="muted" style={{ fontSize: 13 }}>{S.lead.phone || 'Your trip is saved on this phone. No sign-up needed.'}</div></div>
       </div>
+      <div style={{ marginTop: 12 }}><AskWhatsApp about="I have a question about my trip." label="Talk to us on WhatsApp" hint="Every day, 8 am to 9 pm. Your dates and group go with the message." /></div>
       <div className="eyebrow">Appearance</div>
       <div className="menu"><div><div><b>Theme</b><small>Day is the standard look</small></div></div>
         <div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Theme">
