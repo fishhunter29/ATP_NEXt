@@ -22,6 +22,8 @@ export function logEnquiry(e: Enquiry) {
     /* the same message twice in a few seconds (a double tap, or the link and its handler) is logged once */
     const now = Date.now(); if (e.message === last && now - lastAt < 8000) return; last = e.message; lastAt = now;
     const body = JSON.stringify({ ...e, page: location.pathname + location.search });
+    /* counted in Google Analytics as a lead, once the GA4 id is set (NEXT_PUBLIC_GA4_ID) */
+    try { (window as any).gtag?.('event', 'generate_lead', { method: 'whatsapp', lead_type: e.kind || 'general', value: e.total, currency: e.total != null ? 'INR' : undefined }); } catch {}
     if (navigator.onLine === false) { queue(body); return; }
     post(body).catch(() => queue(body));
   } catch {}
