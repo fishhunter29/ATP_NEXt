@@ -11,6 +11,7 @@ import Rail from '@/components/browse/Rail';
 import { Card } from '@/components/browse/cards';
 import { TideIcon } from '@/components/Brand';
 import PLANS from '@/data/dayplans.json';
+import GUIDES from '@/data/islandguides.json';
 import JsonLd from '@/components/seo/JsonLd';
 import DayPlans from '@/components/DayPlans';
 import { abs, crumbs, pageMeta } from '@/lib/seo';
@@ -29,7 +30,9 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
   const routes = ferryRoutes().filter((r) => r.to === z.id); const onward = ferryRoutes().filter((r) => r.from === z.id);
   const nights = z.minN && z.maxN ? (z.minN === z.maxN ? `${z.minN} night${z.minN > 1 ? 's' : ''}` : `${z.minN}–${z.maxN} nights`) : z.typN ? `${z.typN} nights` : 'A day trip';
   const q = `?island=${zone}`;
-  const ld = { '@context': 'https://schema.org', '@type': 'TouristDestination', name: `${z.name} (${z.official})`, alternateName: z.official, description: z.notes, url: abs(`/islands/${zone}`), image: abs(`/img/f/${zonePhoto(z.id)}.webp`), containedInPlace: { '@type': 'Place', name: 'Andaman and Nicobar Islands, India' },
+  const g = (GUIDES as unknown as Record<string, Guide>)[z.id];
+  const turtles = ['RAN', 'MAY', 'DIG'].includes(z.id);
+  const ld = { '@context': 'https://schema.org', '@type': 'TouristDestination', name: `${z.name} (${z.official})`, alternateName: z.official, description: g ? g.about[0] : z.notes, url: abs(`/islands/${zone}`), image: abs(`/img/f/${zonePhoto(z.id)}.webp`), containedInPlace: { '@type': 'Place', name: 'Andaman and Nicobar Islands, India' },
     includesAttraction: acts.slice(0, 10).map((a) => ({ '@type': 'TouristAttraction', name: a.n, url: abs(a.href) })) };
   const fastest = routes.flatMap((r) => r.list.map((s) => ({ m: (Number(s.arr.slice(0, 2)) * 60 + Number(s.arr.slice(3, 5)) - Number(s.dep.slice(0, 2)) * 60 - Number(s.dep.slice(3, 5)) + 1440) % 1440, from: ZN[r.from]?.name }))).filter((x) => x.m > 0).sort((x, y) => x.m - y.m)[0];
   const faq: [string, string][] = [
@@ -56,6 +59,16 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
         {(() => { const m = mapPlace({ q: `${z.official && z.official !== z.name ? `${z.official} (${z.name})` : z.name}, Andaman and Nicobar Islands` }, 11); return <MapFrame embed={m.embed} href={m.href} title={`Map of ${z.name}`} cta={`See ${z.name} on a map`} />; })()}
         <AskWhatsApp about={`I’m planning to visit ${z.name}. Can you help me plan it?`} path={`/islands/${zone}`} hint="Ask a planner who lives here." />
       </section>
+      {g && (
+        <section className="atp-cs atp-guide">
+          <h2>About {z.name}</h2>
+          {g.about.map((t, i) => <p key={i}>{t}</p>)}
+          <h3>Don’t miss</h3>
+          <ul className="atp-guide-list">{g.dontMiss.map(([n, l]) => <li key={n}><b>{n}</b><span>{l}</span></li>)}</ul>
+          <h3>When to go</h3>
+          <p>October to May is the main season, with calm seas for ferries, diving and snorkelling. From June to September the monsoon brings rain and rough water, and some boats and water sports stop.{turtles ? ' Turtles nest on the beaches here from about December to February.' : ''}</p>
+        </section>
+      )}
       {routes.length > 0 && (
         <section className="atp-cs">
           <h2>Getting there</h2>
@@ -85,8 +98,15 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
       )}
       <section className="atp-cs">
         <h2>Getting around</h2>
+        {g && <p className="atp-guide-p">{g.around}</p>}
         <Link className="atp-strip" href={`/cabs?zone=${z.id}`} prefetch={false}><TideIcon n="car" /><span><b>Cabs and scooters on {z.name}</b><small>Jetty, hotel and sightseeing rides</small></span><TideIcon n="chev" s={18} /></Link>
       </section>
+      {g && g.tips.length > 0 && (
+        <section className="atp-cs atp-guide">
+          <h2>Good to know</h2>
+          <ul className="atp-guide-tips">{g.tips.map((t) => <li key={t}>{t}</li>)}</ul>
+        </section>
+      )}
       {/* everything on the island as plain links, for search engines and for anyone who wants the whole list */}
       <nav className="atp-cs atp-index" aria-label={`Everything on ${z.name}`}>
         <h2>Everything on {z.name}</h2>
@@ -97,6 +117,8 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
     </div>
   );
 }
+
+type Guide = { about: string[]; dontMiss: [string, string][]; around: string; tips: string[] };
 
 function DayPlansSection({ zone }: { zone: string }) {
   if (!(PLANS as { z: string }[]).some((p) => p.z === zone)) return null;
