@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { commit, showToast, useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
-import { TideIcon } from '@/components/Brand';
+import { TideIcon, WaIcon } from '@/components/Brand';
+import AskWhatsApp from '@/components/AskWhatsApp';
+import { waLink, waText } from '@/lib/whatsapp';
 
 const KIND: Record<string, [string, string, string]> = { stay: ['k-stay', 'bed', 'Stay'], ferry: ['k-boat', 'boat', 'Ferry'], cab: ['k-cab', 'car', 'Cab'], rent: ['k-cab', 'car', 'Rental'], act: ['k-sight', 'sunset', 'Activity'] };
 const PAYN: Record<string, string> = { upi: 'UPI', card: 'card', nb: 'netbanking' };
@@ -88,6 +90,7 @@ export default function MyTrips() {
                 {p.vendor && <div><dt>Partner</dt><dd>{p.vendor}</dd></div>}
               </dl>
               <p className="atp-fine"><TideIcon n="check" s={14} /> Saved on this phone. It opens without network; turn the brightness up at the gate.</p>
+              <a className="atp-link atp-wa-text" href={waLink(waText(`I need help with this booking: ${p.title}.`, [`${short(p.date)}${/^\d\d:\d\d$/.test(p.time) ? ` · ${E.clock(E.tm(p.time))}` : ''} · ${p.pax} traveller${p.pax > 1 ? 's' : ''}`, `Code: ${p.code}`, S.bookingCode ? `Booking: ${S.bookingCode}` : '']))} target="_blank" rel="noopener noreferrer">Ask about this booking on WhatsApp</a>
             </div>
           </div>
         )}
@@ -135,7 +138,7 @@ export default function MyTrips() {
             {rec && rec.test && <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test booking.</b> No money was taken and the partners were not contacted.</span></p>}
             <div className="atp-first"><span className="atp-sec">First up</span><b>{short(first.date)}{/^\d\d:\d\d$/.test(first.time) ? ` · ${E.clock(E.tm(first.time))}` : ''}</b><span>{first.title}</span><small>{first.report}</small></div>
             <div className="atp-done-acts">
-              <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><TideIcon n="chat" s={18} />Share on WhatsApp</a>
+              <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Share on WhatsApp</a>
               <button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button>
             </div>
           </div>
@@ -152,7 +155,7 @@ export default function MyTrips() {
         ) : (
           <>
             <p className="atp-lead">{paid ? 'Tap a booking to show its code at the gate. Everything opens without network.' : `${range} · ${list.length} bookings, saved on this phone. Tap one to show its code.`}</p>
-            {!paid && <div className="atp-mt-tools"><a className="atp-btn is-outline" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><TideIcon n="chat" s={18} />Share</a><button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button></div>}
+            {!paid && <div className="atp-mt-tools"><a className="atp-btn is-outline" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={20} />Share</a><button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button></div>}
             <div className="atp-vlist">
               {days.map((d) => (
                 <section key={d.date} className="atp-vday" aria-label={`Day ${dayNo(d.date)}, ${short(d.date)}`}>
@@ -161,7 +164,8 @@ export default function MyTrips() {
                 </section>
               ))}
             </div>
-            <p className="atp-fine">Need to change something? Write to <a className="atp-link" href="mailto:info@andamantravelplanner.com">info@andamantravelplanner.com</a> with your booking code. Refund rules are in <Link className="atp-link" href="/refunds" prefetch={false}>refunds and cancellation</Link>.</p>
+            <AskWhatsApp withTrip={false} about={`I need to change or cancel something in my booking${S.bookingCode ? ` ${S.bookingCode}` : ''}.`} lines={[`${range} · ${first.pax} traveller${first.pax > 1 ? 's' : ''} · ${list.length} bookings`, `Name: ${(S.lead && S.lead.name) || ''}`]} label="Change or cancel on WhatsApp" hint="Your booking code and dates go with the message." />
+            <p className="atp-fine">Refund rules are in <Link className="atp-link" href="/refunds" prefetch={false}>refunds and cancellation</Link>. You can also write to <a className="atp-link" href="mailto:info@andamantravelplanner.com">info@andamantravelplanner.com</a>.</p>
           </>
         )}
       </section>

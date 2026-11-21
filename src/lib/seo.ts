@@ -7,7 +7,7 @@ export const abs = (path: string) => SITE + (path.startsWith('/') ? path : '/' +
 
 /** Title, description, canonical and social cards for one page, all pointing at the same address. */
 export function pageMeta(o: { title: string; description: string; path: string; image?: string; noindex?: boolean }): Metadata {
-  const images = [o.image || '/img/f/i179.webp'];
+  const images = [o.image || '/og.jpg'];
   return {
     title: o.title, description: o.description,
     alternates: { canonical: o.path },

@@ -57,3 +57,23 @@ for (const [w, h] of [[360, 780], [1440, 900]]) {
     await page.close();
   });
 }
+
+test('ferry and island pages answer the questions people search for', async ({ request }) => {
+  const f = await (await request.get('/ferries/pbl-hav')).text();
+  expect(f).toContain('How long is the ferry from Port Blair to Havelock?');
+  expect(f).toContain('How much is the Port Blair to Havelock ferry ticket?');
+  const faq = [...f.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'FAQPage');
+  expect(faq.mainEntity.length).toBeGreaterThan(3);
+  for (const q of faq.mainEntity) expect(q.acceptedAnswer.text.length).toBeGreaterThan(10);
+  const i = await (await request.get('/islands/hav')).text();
+  expect(i).toContain('How do I reach Havelock?');
+  expect(i).toContain('"@type":"FAQPage"');
+  // the company's contact number is in the organisation data, and link previews have a picture every app can show
+  const h = await (await request.get('/')).text();
+  expect(h).toContain('"telephone":"+919933270842"');
+  expect(h).toMatch(/<meta property="og:image" content="[^"]*\/og\.jpg"/);
+  expect(h).toContain('<html lang="en-IN"');
+  expect((await request.get('/og.jpg')).status()).toBe(200);
+  const sm = await (await request.get('/sitemap.xml')).text();
+  expect(sm).toContain('<image:loc>');
+});

@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { TideIcon } from '@/components/Brand';
 import { Row } from '@/components/browse/cards';
+import AskWhatsApp from '@/components/AskWhatsApp';
 import type { Item } from '@/lib/browse';
 
 type Group = { k: string; n: string; href: string; items: Item[] };
@@ -44,6 +45,7 @@ export function Search({ groups, isles }: { groups: Group[]; isles: Record<strin
         </section>
       )}
       {on && <p className="atp-fine atp-pad" role="status">{total ? `${total} result${total === 1 ? '' : 's'} for “${q.trim()}”` : `Nothing found for “${q.trim()}”. Try a place, an activity or a hotel name.`}</p>}
+      {on && !total && <div className="atp-pad"><AskWhatsApp about={`I’m looking for “${q.trim()}” in the Andamans and could not find it on the site.`} label="Ask us on WhatsApp" hint="If it exists on the islands, we can arrange it." /></div>}
       {found.map(({ g, hits }) => (
         <section key={g.k} className="atp-srch-g" aria-label={g.n}>
           <h2 className="atp-srch-h"><span>{g.n}</span><small>{hits.length}</small></h2>

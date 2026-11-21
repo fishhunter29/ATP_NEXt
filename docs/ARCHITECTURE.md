@@ -43,6 +43,15 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - Search (`src/views/Lists.tsx`) gets its three lists from the server page, like the browse screens, and keeps the words in `?q=`.
 - Styles: `src/styles/tide-flow.css`, which also restyles the engine's sheets (`.scrim`, `.sheet`) and the add-to-trip panel (`.addpanel`).
 
+## Plan, fold, share, ask (R6)
+- `src/components/PlanBuilder.tsx`: when, who, pace (and on `/plan` the kind of trip and the stays), then `E.genSpec` and `E.buildPkg`. A month is a guess at the dates (`S.datesAssumed`), which the Trip page already flags.
+- Folded days: `Trip` keeps which days are open in `sessionStorage` (`atp_days`: `all`, `none`, or day numbers; nothing saved means the first day and any day with a clash). Tests start with `all`.
+- `src/lib/sharelink.ts`: `packTrip` (JSON, deflate, base64url, after the `#`), `unpackTrip` (everything checked: known kinds and catalogue ids only, plain values only, sizes capped) and `withShared` (lets the engine price a shared plan without touching or saving the reader's own trip). `src/views/SharedTrip.tsx` is the page.
+- `src/lib/whatsapp.ts` and `src/components/AskWhatsApp.tsx`: one number (`COMPANY.whatsapp`), one message shape. The server writes the basic message; on the phone it adds the page address, dates and travellers.
+- `src/lib/maps.ts` and `src/components/MapFrame.tsx`: Google Maps by place name and place id. The map is an iframe added only on tap; "Open in Google Maps" uses the documented Maps URLs and works without it.
+- `src/components/seo/Faq.tsx`: answers are computed from the catalogue on the page, and the same list feeds the FAQPage data.
+- Colours: the day and night tokens in `src/styles/tide.css` are warm (paper and warm charcoal). Nothing else names a page colour.
+
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.
 - `useEngine()` gives a component the engine and re-renders it when the trip changes.

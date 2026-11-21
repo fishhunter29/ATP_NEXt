@@ -1,3 +1,4 @@
+import AskWhatsApp from '@/components/AskWhatsApp';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ZN, ferryRoutes, inr } from '@/lib/catalogue';
@@ -45,6 +46,7 @@ export default function Page() {
           ))}
         </div>
       </section>
+      <section className="atp-cs"><AskWhatsApp about="I have a question about ferries between the islands." path="/ferries" hint="Ask about seats, timings or which sailing fits your flight." /></section>
       <JsonLd data={crumbs([['Home', '/'], ['Ferries', '/ferries']])} />
     </div>
   );

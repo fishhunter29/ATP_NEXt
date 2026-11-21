@@ -2,6 +2,10 @@ import { expect, test } from '@playwright/test';
 
 const PAGES = ['/', '/things-to-do', '/stays', '/cabs', '/charters', '/trips', '/plan', '/ferries', '/ferries/pbl-hav', '/islands/hav', '/things-to-do/acv-boat-eleph', '/stays/htl-hav-003', '/trips/p2', '/search', '/profile', '/my-trips'];
 
+/* Long trips open folded, one line a day. Most tests look inside the days, so they start with every day open;
+   the test for folding itself asks for the normal behaviour ('auto'). */
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { if (!sessionStorage.getItem('atp_days')) sessionStorage.setItem('atp_days', 'all'); } catch {} }); });
+
 test('every main page opens without errors', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -551,10 +555,10 @@ test('shell: day is the default, night is chosen in Profile and remembered', asy
   const page = await browser.newPage({ viewport: { width: 390, height: 800 }, colorScheme: 'dark' });
   await page.goto('/profile');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(246, 240, 228)'); // warm paper, not pure white
   await page.getByRole('button', { name: 'Night', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(22, 24, 27)');
+  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(25, 22, 19)');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await page.getByRole('button', { name: 'Phone setting', exact: true }).click();
@@ -582,7 +586,7 @@ test('home: everything is in the server HTML, and the plan box works', async ({ 
   await page.goto('/');
   await expect(page.locator('.atp-hhero .atp-eyebrow')).toContainText(/Port Blair now · \d\d:\d\d · sunset \d\d:\d\d/);
   await expect(page.locator('.atp-today')).toContainText(/Sunrise\s*0[45]:\d\d/);
-  await page.getByRole('button', { name: /When/ }).click();
+  await page.getByRole('button', { name: 'Exact dates' }).click();
   await expect(page.getByRole('dialog', { name: 'Trip dates' })).toBeVisible();
   await page.keyboard.press('Escape');
   await page.locator('.atp-kb', { hasText: 'Stays' }).click();
@@ -768,4 +772,156 @@ test('trip: survives a reload, tips fold away, and one tap adds the missing cabs
   // a tap on a plan opens every way to change it
   await page.locator('.atp-item[data-c="do"] .atp-row').first().click();
   await expect(page.getByRole('dialog', { name: 'Move or swap' })).toBeVisible();
+});
+
+/* ---------- R6: plan in three taps, folded days, sharing on the site, maps, WhatsApp ---------- */
+const WA = 'https://wa.me/919933270842?text=';
+const waText = async (l: import('@playwright/test').Locator) => decodeURIComponent(((await l.getAttribute('href')) || '').replace(WA, ''));
+
+test('home: plan my trip in three taps builds the whole trip', async ({ page }) => {
+  await page.goto('/');
+  const plan = page.locator('.atp-plan');
+  await expect(plan.getByRole('radiogroup', { name: 'When' }).getByRole('radio').first()).toBeVisible();
+  // the button is on the first screen of a phone, above the tabs
+  const box = await plan.getByRole('button', { name: 'Build my trip' }).boundingBox(); const dock = await page.locator('.atp-dock').boundingBox();
+  expect(box!.y + box!.height).toBeLessThanOrEqual(dock!.y);
+  await plan.getByRole('radiogroup', { name: 'When' }).getByRole('radio').nth(2).click();
+  await plan.getByRole('radio', { name: /Family/ }).click();
+  await plan.getByRole('radio', { name: /Relaxed/ }).click();
+  await plan.getByRole('button', { name: 'One night less' }).click();
+  await expect(plan.locator('.atp-pnights')).toContainText('4 nights');
+  await plan.getByRole('button', { name: 'Build my trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('.atp-thead')).toContainText('2 adults · 2 children');
+  await expect(page.locator('.atp-thead')).toContainText('4 nights');
+  await expect(page.locator('.atp-nudge')).toContainText('These dates are a guess');
+  expect(await S(page, '(E) => E.S.pace')).toBe('relaxed');
+  expect(await page.locator('section.atp-dsec').count()).toBe(5);
+  // the full page adds the kind of trip and the class of stay
+  await page.goto('/plan');
+  await expect(page.getByRole('radiogroup', { name: 'The kind of trip' })).toBeVisible();
+  await page.getByRole('radio', { name: 'Premium' }).click();
+  await page.getByRole('button', { name: 'Build my trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await expect(page.locator('.toast')).toContainText('saved in My trips');
+});
+
+test('trip: a long trip opens as one line a day', async ({ page }) => {
+  await page.addInitScript(() => { try { if (sessionStorage.getItem('atp_days') === 'all') sessionStorage.setItem('atp_days', 'auto'); } catch {} });
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const days = page.locator('section.atp-dsec');
+  await expect(days).toHaveCount(6);
+  await expect(page.locator('section.atp-dsec.is-open')).toHaveCount(1);
+  await expect(page.locator('section.atp-dsec.is-folded')).toHaveCount(5);
+  // a folded day says what happens, how many plans and what it costs
+  const sum = days.nth(1).locator('.atp-dsum');
+  await expect(sum).toContainText('Ferry to Havelock');
+  await expect(sum.locator('.atp-dsum-m')).toContainText(/\d plans? · \d\d:\d\d/);
+  await expect(sum.locator('.atp-dsum-m')).toContainText('₹');
+  expect(await days.nth(1).locator('.atp-item').count()).toBe(0);
+  await sum.click();
+  await expect(days.nth(1)).toHaveClass(/is-open/);
+  expect(await days.nth(1).locator('.atp-item').count()).toBeGreaterThan(2);
+  await expect(days.nth(1).locator('.atp-dtog')).toHaveAttribute('aria-expanded', 'true');
+  // the day rail opens the day it jumps to
+  await page.locator('.atp-rail .atp-day').nth(3).click();
+  await expect(days.nth(3)).toHaveClass(/is-open/);
+  // which days are open is remembered when you come back
+  await page.goto('/my-trips'); await page.goto('/trip');
+  await expect(page.locator('section.atp-dsec.is-open')).toHaveCount(3);
+  await page.getByRole('button', { name: 'Open all days' }).click();
+  await expect(page.locator('section.atp-dsec.is-folded')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Close all days' }).click();
+  await expect(page.locator('section.atp-dsec.is-folded')).toHaveCount(6);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+});
+
+test('sharing: the link opens the plan on the site, and it can become your own trip', async ({ page, browser }) => {
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const total = (await page.locator('.cta button.tot b').first().textContent())!.trim();
+  await page.getByRole('button', { name: /Planning with others/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Share this plan' });
+  await expect(sheet).toBeVisible();
+  const url = await sheet.getByLabel('The link to this plan').inputValue();
+  expect(url).toMatch(/\/trip\/shared#[zj][\w-]+$/);
+  expect(url.length).toBeLessThan(2500);
+  // nothing personal travels in the link's address path or query, only after the #
+  expect(new URL(url).search).toBe('');
+  expect(await sheet.getByRole('link', { name: 'Send on WhatsApp' }).getAttribute('href')).toContain(encodeURIComponent(url));
+  await page.keyboard.press('Escape');
+  await expect(sheet).toHaveCount(0);
+  // someone else opens it: a new phone with nothing saved
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 800 } }); const other = await ctx.newPage();
+  await other.goto(url);
+  await expect(other.getByRole('heading', { level: 1 })).toBeVisible();
+  await expect(other.locator('.atp-sh-tag')).toContainText('Shared with you');
+  await expect(other.locator('.atp-shared .atp-tl.is-total b')).toHaveText(total);
+  await expect(other.locator('.atp-vday')).toHaveCount(6);
+  await expect(other.locator('.atp-dock .atp-tab[aria-current="page"]')).toContainText('Trip'); // inside the site, on the Trip tab
+  expect(await other.locator('.atp-sh-say').first().getAttribute('href')).toContain('wa.me/?text=');
+  expect(await other.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  await other.getByRole('button', { name: 'Open it in my planner' }).click();
+  await expect(other).toHaveURL(/\/trip$/);
+  await expect(other.locator('.cta button.tot b').first()).toHaveText(total);
+  // a link that was cut short says so and offers a way on
+  await other.goto('/trip/shared#zAAAA');
+  await expect(other.getByRole('heading', { name: 'This link does not open a plan' })).toBeVisible();
+  await ctx.close();
+});
+
+test('WhatsApp: every page opens a chat with the question already written', async ({ page }) => {
+  await page.goto('/things-to-do/acv-boat-eleph');
+  const act = page.locator('.atp-dbuy .atp-wa');
+  expect(await act.getAttribute('href')).toContain(WA);
+  await expect.poll(async () => waText(act)).toContain('/things-to-do/acv-boat-eleph');
+  expect(await waText(act)).toMatch(/^Hi Andaman Travel Planner, I have a question about “.+” on Havelock\./);
+  await expect.poll(async () => waText(act)).toContain('Travellers: 2 adults');
+  await expect(act.locator('img')).toHaveAttribute('src', '/img/logos/whatsapp.png');
+  await page.goto('/stays/htl-hav-003');
+  expect(await waText(page.locator('.atp-dbuy .atp-wa'))).toContain('staying at');
+  await page.goto('/ferries/pbl-hav');
+  expect(await waText(page.locator('main .atp-wa').first())).toContain('the ferry from Port Blair to Havelock');
+  await page.goto('/cabs');
+  expect(await waText(page.locator('main .atp-wa').first())).toContain('a cab or a rental');
+  await page.goto('/islands/hav');
+  expect(await waText(page.locator('main .atp-wa').first())).toContain('planning to visit Havelock');
+  // the browse screens carry what is chosen
+  await page.goto('/things-to-do?island=hav&cat=scuba');
+  await expect.poll(async () => waText(page.locator('.atp-br-wa .atp-wa'))).toContain('things to do on Havelock (scuba diving)');
+  // the footer of every page, with the number shown
+  await expect(page.locator('.sitefoot .atp-wa')).toContainText('+91 99332 70842');
+  // with a trip, the dates and the total go with the message
+  await page.goto('/trips/p2');
+  expect(await waText(page.locator('.atp-dbuy .atp-wa'))).toContain('interested in the trip');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/checkout');
+  const co = page.locator('.atp-co .atp-wa');
+  await expect.poll(async () => waText(co)).toContain('Dates: ');
+  expect(await waText(co)).toMatch(/total ₹[\d,]+ including GST/);
+});
+
+test('maps: shown when asked for, with directions for the day', async ({ page }) => {
+  await page.route(/google\.com\/maps/, (r) => r.abort());
+  await page.goto('/stays/htl-hav-003');
+  const map = page.locator('.atp-map').first();
+  await expect(map.locator('iframe')).toHaveCount(0); // nothing is loaded from Google until asked
+  expect(await map.locator('.atp-map-open').getAttribute('href')).toMatch(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/);
+  await map.getByRole('button', { name: /Show the map/ }).click();
+  await expect(map.locator('iframe')).toHaveAttribute('src', /^https:\/\/www\.google\.com\/maps\?output=embed/);
+  await page.goto('/things-to-do/acv-boat-eleph');
+  expect(await page.locator('.atp-map .atp-map-open').getAttribute('href')).toContain('query_place_id=');
+  await page.goto('/islands/hav');
+  await expect(page.getByRole('button', { name: /See Havelock on a map/ })).toBeVisible();
+  // on the Trip page: the day's stops in order, from the hotel and back
+  await page.goto('/trips/p2');
+  await page.getByRole('button', { name: /Use this trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  const day = page.locator('section.atp-dsec').nth(2).locator('.atp-map');
+  await expect(day.locator('.atp-map-stops')).toContainText('Hotel →');
+  expect(await day.locator('.atp-map-open').getAttribute('href')).toMatch(/maps\/dir\/\?api=1&travelmode=driving&origin=.+&destination=/);
 });

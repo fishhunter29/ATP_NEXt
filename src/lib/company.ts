@@ -6,6 +6,7 @@ export const COMPANY = {
   gstin: '35ABCCA3774B1Z0',
   dpiit: 'DIPP222255',
   email: 'info@andamantravelplanner.com',
+  whatsapp: '+91 99332 70842',
   street: 'Bargat Line, Chakargaon',
   locality: 'Sri Vijaya Puram (Port Blair)',
   region: 'Andaman & Nicobar Islands',

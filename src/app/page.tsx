@@ -1,4 +1,5 @@
 /* Home. Rendered on the server from the catalogue; only the plan box and "today" wait for the phone. */
+import AskWhatsApp from '@/components/AskWhatsApp';
 import Link from 'next/link';
 import { HomeNow, HomePlan, HomeToday } from '@/views/Home';
 import DayPlans from '@/components/DayPlans';
@@ -88,6 +89,7 @@ export default function Page() {
           <div><b>{D.rules.length}</b><span>island rules checked every time you change anything</span></div>
           <div><b>{COUNTS.stays}</b><span>stays, with their real check-in and check-out times</span></div>
         </div>
+        <AskWhatsApp about="I’d like help planning an Andaman trip." label="Talk to a planner on WhatsApp" hint="We live in Port Blair. Ask anything before you book." />
         <p className="atp-fine">A DPIIT-recognised startup, member of TAAI and IATO.</p>
         <div className="atp-logos">{RECOGNITIONS.filter((r) => /startup|taai|iato/.test(r.file)).map((r) => (
           // eslint-disable-next-line @next/next/no-img-element

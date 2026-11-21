@@ -9,6 +9,7 @@ import { commit, showToast, useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
 import { TideIcon } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE } from '@/lib/company';
+import AskWhatsApp from '@/components/AskWhatsApp';
 
 type Person = { name: string; age: string; gender: string; pp: string };
 type Lead = { name: string; phone: string; email: string; people?: Person[]; gstin?: string };
@@ -223,6 +224,7 @@ export default function Checkout() {
           {biz != null && field('gstin', 'gstin', 'Company GSTIN', biz, (v) => { setBiz(v.toUpperCase().slice(0, 15)); if (errs.gstin) setErrs({ ...errs, gstin: '' }); }, { ph: '22AAAAA0000A1Z5' })}
           <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test mode.</b> No money is taken yet: payments switch on when Razorpay is connected.</span></p>
           <p className="atp-fine">One payment; each partner is paid their share and sends you a GST invoice. By paying you agree to the <a className="atp-link" href="/terms">booking terms</a> and each partner’s rules above.</p>
+          <AskWhatsApp about="I have a question before I pay for my trip." lines={[`${rows.length} bookings · total ${E.inr(tot)} including GST`]} path="/checkout" label="A question before you pay?" hint="Ask on WhatsApp. Your dates, group and total go with the message." />
           <div className="atp-sec">You are booking with</div>
           <address className="atp-coinfo"><b>{COMPANY.name}</b><span>CIN {COMPANY.cin} · GSTIN {COMPANY.gstin}</span><span>{DPIIT_LINE}</span><span>{COMPANY.address}</span><span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span></address>
         </section>

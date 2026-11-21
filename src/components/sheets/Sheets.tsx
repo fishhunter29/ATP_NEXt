@@ -6,6 +6,9 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { commit, dispatch, lang, useEngine, type Engine } from '@/engine/client';
 import { Ic, Raw } from '../ui';
 import { TideIcon } from '../Brand';
+import { COMPANY } from '@/lib/company';
+import { waLink, waText } from '@/lib/whatsapp';
+import { tripLines } from '../AskWhatsApp';
 
 export function close(E: Engine) { E.S.sheet = null; commit(); }
 
@@ -182,14 +185,14 @@ export function AutoFixSheet({ E }: { E: Engine }) {
 /* ---------------- help ---------------- */
 export function HelpSheet({ E }: { E: Engine }) {
   const tr = lang(E);
-  const num = process.env.NEXT_PUBLIC_WHATSAPP || '+91 00000 00000';
+  const num = COMPANY.whatsapp;
   return (
-    <Sheet label={tr('Help', 'मदद')} onClose={() => close(E)}>
-      <h2>{tr('Talk to us on WhatsApp', 'WhatsApp पर हमसे बात करें')}</h2>
-      <p className="note">{tr('A local team member replies in Hindi, English, Bengali or Tamil, 7 am to 10 pm.', 'हमारी स्थानीय टीम हिंदी, अंग्रेज़ी, बांग्ला या तमिल में सुबह 7 से रात 10 बजे तक जवाब देती है।')}</p>
+    <Sheet label="Help" onClose={() => close(E)}>
+      <h2>Talk to us on WhatsApp</h2>
+      <p className="note">A planner in Port Blair replies. Your dates and group go with the message, so you do not have to type them.</p>
       <div className="card" style={{ flexDirection: 'row', alignItems: 'center' }}><b className="mono" style={{ flex: 1, fontSize: 17, userSelect: 'all' }}>{num}</b>
-        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast(tr('Number copied', 'नंबर कॉपी हो गया')); }}>{tr('Copy', 'कॉपी')}</button></div>
-      <a className="btn primary block" href={`https://wa.me/${num.replace(/\D/g, '')}`} target="_blank" rel="noopener">{tr('Open WhatsApp', 'WhatsApp खोलें')}</a>
+        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast('Number copied'); }}>Copy</button></div>
+      <a className="btn primary block" href={waLink(waText('I need help with my Andaman trip.', tripLines(E)))} target="_blank" rel="noopener noreferrer">Open WhatsApp</a>
       <button className="btn ghost block" onClick={() => close(E)}>{tr('Done', 'हो गया')}</button>
     </Sheet>
   );

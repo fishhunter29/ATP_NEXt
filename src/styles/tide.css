@@ -19,22 +19,25 @@
 /* Day is the default. Night is one switch away, in Profile. */
 :root:not([data-theme="dark"]){
   color-scheme:light;
-  --bg:#FFFFFF; --surface:#FFFFFF; --sunk:#F3F4F5; --ink:#212529; --ink-2:#495057; --line:#DEE2E6; --on-ink:#FFFFFF;
+  /* Day is warm paper, not pure white: sand for the page, a lighter sheet for cards and bars, a deeper sand for
+     sunk areas. Ink stays charcoal and the coral stays sharp, so contrast is as high as before
+     (every text colour is at least 4.5:1 on all three). */
+  --bg:#F6F0E4; --surface:#FCF9F2; --sunk:#ECE4D4; --ink:#212529; --ink-2:#4A4640; --line:#D6CBB6; --on-ink:#FCF9F2;
   --action:#F75940; --action-press:#F86E58; --action-ink:#212529;
-  --clash:#C2213D; --on-clash:#FFFFFF; --tip:#8A5200; --ok:#0B7F52; --on-ok:#FFFFFF;
+  --clash:#B01C36; --on-clash:#FFFFFF; --tip:#7A4700; --ok:#0A7049; --on-ok:#FFFFFF;
   --pass:#EAF2FB; --pass-ink-2:#3D4A5C; --pass-band:#2C365D; --on-pass-band:#FFFFFF; --pass-line:#7D90A8;
-  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#3F52E3; --k-adv:#7045AF; --k-hold:#DEE2E6;
+  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#3F52E3; --k-adv:#7045AF; --k-hold:#D6CBB6;
   --k-ink:#212529; --k-ink-inverse:#FFFFFF;
   /* soft backgrounds for notes; text on them is --ok, --clash or --tip */
-  --ok-soft:#E7F4EE; --clash-soft:#FBE9EC; --tip-soft:#FFF4DC;
+  --ok-soft:#E4EFDF; --clash-soft:#F7E3DD; --tip-soft:#F8E9C6;
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#16181B; --surface:#212529; --sunk:#1B1E21; --ink:#F8F9FA; --ink-2:#CED4DA; --line:#495057; --on-ink:#212529;
+  --bg:#191613; --surface:#24201C; --sunk:#1E1B17; --ink:#F8F4EC; --ink-2:#D2C9BB; --line:#4D463C; --on-ink:#212529;
   --action:#F75940; --action-press:#F98672; --action-ink:#212529;
   --clash:#FFA3B2; --on-clash:#212529; --tip:#F0B45F; --ok:#3DDC9A; --on-ok:#212529;
   --pass:#1E2A3A; --pass-ink-2:#B8C7DA; --pass-band:#2C365D; --on-pass-band:#FFFFFF; --pass-line:#5E7290;
-  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#5568F0; --k-adv:#8A5FCB; --k-hold:#495057;
+  --k-stay:#EC9B3B; --k-cab:#46CDCF; --k-boat:#3498DB; --k-sight:#5568F0; --k-adv:#8A5FCB; --k-hold:#4D463C;
   --k-ink:#212529; --k-ink-inverse:#FFFFFF;
   --ok-soft:#10291F; --clash-soft:#3A1820; --tip-soft:#2E2410;
 }

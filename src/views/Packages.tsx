@@ -23,29 +23,3 @@ export function PlannedTripBuy({ id }: { id: string }) {
     </div>
   );
 }
-
-export function Plan() {
-  const E = useEngine(); const router = useRouter();
-  const [n, setN] = useState(4); const [style, setStyle] = useState('classic'); const [tier, setTier] = useState('Standard');
-  if (!E) return <Loading />;
-  /* like v1's useGen: the trip you had is saved to My trips first, then the new one replaces it (never stacked on top) */
-  const build = () => {
-    const { S } = E; const start = S.win ? S.win.start : E.addD(E.baseDate(), 0); const had = S.cart.length > 0;
-    E.stashCurrent(); S.cart = []; S.seq = 1; S.dismissed = {}; S.tripId = null;
-    const spec = E.genSpec(n, style, tier); E.buildPkg(spec, start); S.pkg = null; S.tripName = `${spec.n || 'My trip'} · ${n} nights`; E.syncTrip(); commit();
-    if (had) E.toast('Your earlier trip is saved in My trips'); router.push('/trip');
-  };
-  return (
-    <div className="wrap">
-      <div className="card" style={{ gap: 14 }}>
-        <div className="eyebrow">How many nights?</div>
-        <div className="chips">{[2, 3, 4, 5, 6, 7, 8, 9, 10].map((k) => <button key={k} className="chip" aria-pressed={n === k} onClick={() => setN(k)}>{k}</button>)}</div>
-        <div className="eyebrow">What kind of trip?</div>
-        <div className="lst">{E.GSTYLES.map((g: any) => <button key={g.k} className="lrow noimg" aria-pressed={style === g.k} style={style === g.k ? { borderColor: 'var(--brand)' } : undefined} onClick={() => setStyle(g.k)}><span className="lb"><b>{g.n}</b><small>{g.d}</small></span></button>)}</div>
-        <div className="eyebrow">Stays</div>
-        <div className="chips">{['Budget', 'Standard', 'Premium', 'Luxury'].map((k) => <button key={k} className="chip" aria-pressed={tier === k} onClick={() => setTier(k)}>{k}</button>)}</div>
-        <button className="btn primary block" onClick={build}>Build my trip <Ic n="arrow" s={18} w={2.2} /></button>
-      </div>
-    </div>
-  );
-}

@@ -2,6 +2,7 @@
 /* The browse screen for things to do, stays and ready-made trips. Never one long list: an island (or trip length)
    switch, a search field, category tiles, one short row per category, and "See all" for a sorted list.
    Every choice lives in the address (?island=hav&cat=scuba&sort=price), so Back works and a link can be shared. */
+import AskWhatsApp from '@/components/AskWhatsApp';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef } from 'react';
 import type { Cat, Isle, Item } from '@/lib/browse';
@@ -108,6 +109,9 @@ export function BrowseView({ kind, items, cats, isles, st, set }: BrowseProps & 
   }
 
   const count = (z: string) => items.filter((x) => z === 'all' || x.z === z).length;
+  /* the WhatsApp question carries what is chosen on screen: the island, the kind, the words typed */
+  const isleN = byIsle && st.z !== 'all' ? (isles.find((i) => i.id === st.z) || { n: '' }).n : ''; const catN = st.c ? (cats.find((c) => c.k === st.c) || { n: '' }).n : '';
+  const ask = `I’m looking for ${kind === 'act' ? 'things to do' : kind === 'stay' ? 'a place to stay' : 'a ready-made trip'}${isleN ? ` on ${isleN}` : ' in the Andamans'}${catN ? ` (${catN.toLowerCase()})` : ''}${st.q.trim() ? `, something like “${st.q.trim()}”` : ''}. What do you suggest?`;
   return (
     <div className="atp-br">
       <div className="atp-bbar">
@@ -123,6 +127,7 @@ export function BrowseView({ kind, items, cats, isles, st, set }: BrowseProps & 
         </div>
       </div>
       {body}
+      <div className="atp-pad atp-br-wa"><AskWhatsApp about={ask} path={`/${kind === 'act' ? 'things-to-do' : kind === 'stay' ? 'stays' : 'trips'}`} label="Can’t decide? Ask on WhatsApp" hint="Tell us what you like. A planner who lives here suggests what fits." /></div>
     </div>
   );
 }

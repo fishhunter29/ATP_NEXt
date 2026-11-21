@@ -11,6 +11,10 @@ const good = () => ({
   trip: { cart: [] },
 });
 
+/* Long trips open folded, one line a day. Most tests look inside the days, so they start with every day open;
+   the test for folding itself asks for the normal behaviour ('auto'). */
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { if (!sessionStorage.getItem('atp_days')) sessionStorage.setItem('atp_days', 'all'); } catch {} }); });
+
 test('bookings API checks what it is sent', async ({ request }) => {
   const send = (b: any) => request.post('/api/bookings', { data: b });
   const bad = async (b: any, msg: RegExp) => { const r = await send(b); expect(r.status(), JSON.stringify(b).slice(0, 80)).toBe(400); expect((await r.json()).error).toMatch(msg); };
