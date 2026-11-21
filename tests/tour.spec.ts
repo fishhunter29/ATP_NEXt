@@ -52,6 +52,7 @@ test('Skip ends the tour and it stays skipped', async ({ page }) => {
 test('keyboard: arrows move, Esc skips, Tab stays inside the card', async ({ page }) => {
   await page.goto('/');
   await expect(title(page)).toHaveText(TOUR_STEPS[0].title, { timeout: 8000 });
+  await page.waitForTimeout(700);
   await page.keyboard.press('ArrowRight');
   await expect(title(page)).toHaveText(TOUR_STEPS[1].title);
   await page.waitForTimeout(600); // keys wait for the move to finish
@@ -118,6 +119,7 @@ test('phone: the card is a sheet on the bottom edge, and rises above the dock fo
   await page.setViewportSize({ width: 375, height: 740 });
   await page.goto('/');
   await expect(title(page)).toBeVisible({ timeout: 8000 });
+  await page.waitForTimeout(700); // the sheet slides up
   const b = await card(page).boundingBox();
   expect(Math.round(b!.x)).toBe(0); expect(Math.round(b!.width)).toBe(375); expect(Math.round(b!.y + b!.height)).toBe(740);
   // every button is at least 44px tall

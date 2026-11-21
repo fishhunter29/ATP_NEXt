@@ -108,3 +108,19 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok: anon cannot call create_booking';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- enquiries: the public key may add one, never read
+set role anon;
+insert into public.enquiries (kind, message, page) values ('general', 'Hi, I would like help planning a trip.', '/');
+do $$ begin
+  perform 1 from public.enquiries;
+  raise exception 'RLS check failed: anon could read enquiries';
+exception when insufficient_privilege then raise notice 'ok: anon cannot read enquiries';
+end $$;
+do $$ begin
+  insert into public.enquiries (message, status) values ('x', 'confirmed');
+  raise exception 'RLS check failed: anon could set an enquiry status';
+exception when insufficient_privilege then raise notice 'ok: anon cannot set an enquiry status';
+end $$;
+reset role;
+select pg_temp.expect('the enquiry was saved', (select count(*) from public.enquiries), 1);

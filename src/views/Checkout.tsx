@@ -11,6 +11,7 @@ import { Art, Loading } from '@/components/ui';
 import { TideIcon, WaIcon } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE } from '@/lib/company';
 import { packTrip } from '@/lib/sharelink';
+import { logEnquiry } from '@/lib/enquiry';
 import { waLink } from '@/lib/whatsapp';
 import Promises from '@/components/Promises';
 import AskWhatsApp from '@/components/AskWhatsApp';
@@ -134,6 +135,8 @@ export default function Checkout() {
     S.lead = { name: P[0].name.trim(), phone: C.phone.trim(), email: C.email.trim(), people: P.map((p) => ({ name: p.name.trim(), age: p.age, gender: p.gender, pp: '' })), ...(biz != null ? { gstin: biz.trim().toUpperCase() } : {}),
       request: { code, sig, at: Date.now(), total: tot, n: rows.length, start: S.trip ? S.trip.start : start, end: S.trip ? S.trip.end : start, text } };
     commit(); window.scrollTo(0, 0);
+    /* the same request is logged in our database, so it reaches us even if the chat is never sent */
+    logEnquiry({ kind: 'trip', ref: code, message: text, name: P[0].name.trim(), phone: C.phone.trim(), email: C.email.trim(), start: S.trip ? S.trip.start : start, end: S.trip ? S.trip.end : start, travellers: P.length, total: tot, items: rows.length, plan: plan || undefined });
     try { window.open(waLink(text), '_blank', 'noopener'); } catch {}
   };
 
