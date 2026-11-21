@@ -21,9 +21,9 @@ export const metadata = { ...pageMeta({ title: 'Andaman Travel Planner: ferries,
 
 const D = data as any;
 const KINDS = [
-  { href: '/ferries', k: 'boat', icon: 'boat', n: 'Ferries', sub: `${SAILS.length} sailings` },
+  { href: '/ferries', k: 'boat', tour: 'ferries', icon: 'boat', n: 'Ferries', sub: `${SAILS.length} sailings` },
   { href: '/stays', k: 'stay', icon: 'bed', n: 'Stays', sub: `${COUNTS.stays} places` },
-  { href: '/cabs', k: 'cab', icon: 'car', n: 'Cabs', sub: `${D.routes.filter((r: any) => !r.hop).length} routes` },
+  { href: '/cabs', k: 'cab', tour: 'cabs', icon: 'car', n: 'Cabs', sub: `${D.routes.filter((r: any) => !r.hop).length} routes` },
   { href: '/things-to-do', k: 'sight', icon: 'sunset', n: 'Things to do', sub: `${COUNTS.acts} picks` },
 ];
 
@@ -51,7 +51,7 @@ export default function Page() {
       <section className="atp-hs">
         <h2>Book one thing</h2>
         <div className="atp-kgrid">
-          {KINDS.map((x) => <Link key={x.href} className={`atp-kb k-${x.k}`} href={x.href} prefetch={false}><TideIcon n={x.icon} s={24} /><b>{x.n}</b><small>{x.sub}</small></Link>)}
+          {KINDS.map((x) => <Link key={x.href} className={`atp-kb k-${x.k}`} href={x.href} prefetch={false} data-tour={(x as { tour?: string }).tour}><TideIcon n={x.icon} s={24} /><b>{x.n}</b><small>{x.sub}</small></Link>)}
         </div>
         <Link className="atp-boat" href="/charters" prefetch={false}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -79,7 +79,7 @@ export default function Page() {
         <Rail label="Signature experiences" className="atp-rail2">{signatureItems().map((a) => <Card key={a.id} it={a} isle={isleName(a.z)} />)}</Rail>
       </section>
 
-      <section className="atp-hs" id="trips">
+      <section className="atp-hs" id="trips" data-tour="trips">
         <div className="atp-hs-h"><h2>Ready-made trips</h2><Link className="atp-btn is-text" href="/trips" prefetch={false}>All {COUNTS.trips}</Link></div>
         <p className="atp-lead">Whole trips, already checked for ferry times, closed days and check-in times. Change anything after.</p>
         <Rail label="Ready-made trips" className="atp-rail2">

@@ -21,6 +21,7 @@ export default function Profile() {
         </div></div></div>
       <div className="eyebrow">Try it out</div>
       <div className="menu">
+        <button onClick={() => router.push('/?tour=1')}><Ic n="explore" s={22} /><div><b>Take the tour</b><small>A one-minute walk round the site</small></div></button>
         <button onClick={() => { E.sampleTrip(); S.booked = []; S.scans = {}; commit(); router.push('/trip'); }}><Ic n="trip" s={22} /><div><b>Load an example trip</b><small>6 days across Port Blair, Havelock and Neil, with a few things to fix</small></div></button>
         <button onClick={() => { S.cart = []; S.booked = []; S.win = null; S.fin = null; S.fout = null; S.scans = {}; commit(); router.push('/'); }}><Ic n="swap" s={22} /><div><b>Start over</b><small>Clears your trip, passes and dates</small></div></button>
       </div>
