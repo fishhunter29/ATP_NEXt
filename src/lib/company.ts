@@ -19,7 +19,6 @@ export const DPIIT_LINE = `DPIIT Recognised Startup · ${COMPANY.dpiit}`;
 /* Recognitions and memberships, in the order they are shown. Files live in /public/img/logos. */
 export const RECOGNITIONS: { file: string; name: string }[] = [
   { file: 'startupindia.png', name: 'Startup India' },
-  { file: 'mot.svg', name: 'Ministry of Tourism, Government of India' },
   { file: 'incredible.svg', name: 'Incredible India' },
   { file: 'antourism.png', name: 'Andaman & Nicobar Tourism' },
   { file: 'taai.png', name: 'Travel Agents Association of India (TAAI)' },

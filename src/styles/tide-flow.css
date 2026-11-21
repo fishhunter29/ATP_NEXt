@@ -563,3 +563,34 @@
 .atp-btn.is-text{min-height:44px; display:inline-flex; align-items:center}
 .chip{min-width:44px; justify-content:center}
 .af-contact a{display:inline-flex; align-items:center; min-height:44px}
+
+/* Footer, professional layout: six link groups (Company, Help, Plan, Islands, Ferries, Ready-made trips) in a
+   three-by-two grid on wide screens; five recognition logos laid out evenly at every width. */
+.af-logos{grid-template-columns:repeat(6,1fr)}
+.af-logos img{grid-column:span 2}
+.af-logos img:nth-child(n+4){grid-column:span 3}
+@media (min-width:720px){.af-logos{grid-template-columns:repeat(5,1fr)}.af-logos img,.af-logos img:nth-child(n+4){grid-column:auto}}
+@media (min-width:1024px){
+  .af-cols{grid-template-columns:repeat(3,minmax(0,1fr));gap:36px 40px}
+  .af-col summary{font-size:12.5px;color:var(--f-ink)}
+}
+
+/* Company pages: contact, partners, careers, media */
+.atp-info{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+.atp-info-h{padding:8px 0 20px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.atp-info-h h1{font-size:30px;line-height:34px;letter-spacing:-.02em;margin:6px 0 10px}
+.atp-info-h p{font-size:17px;line-height:26px;color:var(--ink-2);margin:0}
+.atp-info-s{padding:18px 0;border-bottom:1px solid var(--line)}
+.atp-info-s h2{font-size:19px;line-height:24px;margin:0 0 8px}
+.atp-info-s p{font-size:16px;line-height:25px;margin:0;color:var(--ink)}
+.atp-info-s ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.atp-info-s li{display:flex;flex-direction:column;gap:2px;padding-left:14px;border-left:3px solid var(--action)}
+.atp-info-s li b{font-size:15.5px;line-height:21px}
+.atp-info-s li span{font-size:14.5px;line-height:21px;color:var(--ink-2)}
+.atp-info-a{font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.atp-info-reach{display:flex;flex-direction:column;gap:12px;border-bottom:0}
+.atp-info-wa{background:#25D366!important;color:#0B2E17!important;text-decoration:none}
+.atp-info-wa small{color:#0B2E17!important;font-family:var(--font-sans)!important}
+.atp-info-mail{display:inline-flex;align-items:center;gap:8px;font-weight:600;min-height:44px;text-decoration:underline;text-underline-offset:3px}
+.atp-info-co{font-style:normal;display:flex;flex-direction:column;gap:3px;margin-top:8px;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.atp-info-co b{color:var(--ink);font-size:15px}
