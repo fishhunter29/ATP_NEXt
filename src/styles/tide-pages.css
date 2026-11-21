@@ -390,3 +390,25 @@ a.atp-cat{text-decoration:none}
 .atp-guide-tips{margin:0;padding:0 0 0 20px;display:grid;gap:8px;max-width:68ch}
 .atp-guide-tips li{font-size:15px;line-height:22px}
 @media (min-width:1024px){.atp-guide-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}}
+
+/* About us: the founders' story, English and Hindi */
+.atp-about-in{padding:16px 16px 32px;max-width:720px;margin:0 auto}
+.atp-langsw{display:inline-grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border-radius:999px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--line);margin:4px 0 20px}
+.atp-langsw button{min-height:40px;padding:0 18px;border-radius:999px;font-weight:700;font-size:15px;color:var(--ink-2)}
+.atp-langsw button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.atp-story p{font-size:17px;line-height:28px;margin:0 0 16px;color:var(--ink)}
+.atp-story.is-hi p{font-size:18px;line-height:32px}
+.atp-story-lead{font-size:21px!important;line-height:31px!important;font-weight:600;letter-spacing:-.01em;border-left:4px solid var(--action);padding-left:14px;margin-bottom:22px!important}
+.atp-story.is-hi .atp-story-lead{font-size:21px!important;line-height:34px!important}
+.atp-story-sign{font-style:italic;color:var(--ink-2)!important;margin-top:4px!important}
+.atp-story h2{font-size:22px;line-height:28px;margin:28px 0 12px;letter-spacing:-.02em}
+.atp-story-prom{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:10px}
+.atp-story-prom li{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:var(--radius-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line)}
+.atp-story-prom b{font-size:16px;line-height:21px}
+.atp-story-prom span{font-size:14px;line-height:20px;color:var(--ink-2)}
+.atp-story-cta{display:flex;align-items:center;justify-content:center;min-height:56px;width:100%;text-decoration:none;text-align:center}
+.atp-story-cta span{display:flex;flex-direction:column;line-height:1.2}
+.atp-story-cta small{font-weight:500;font-size:13px;opacity:.9}
+.atp-story-co{font-style:normal;display:flex;flex-direction:column;gap:3px;margin-top:28px;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.atp-story-co b{color:var(--ink);font-size:15px}
+@media (min-width:1024px){.atp-story-prom{grid-template-columns:1fr 1fr}.atp-about-in{padding-top:28px}}
