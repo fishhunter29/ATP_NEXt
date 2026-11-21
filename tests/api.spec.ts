@@ -13,7 +13,8 @@ const good = () => ({
 
 /* Long trips open folded, one line a day. Most tests look inside the days, so they start with every day open;
    the test for folding itself asks for the normal behaviour ('auto'). */
-test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { if (!sessionStorage.getItem('atp_days')) sessionStorage.setItem('atp_days', 'all'); } catch {} }); });
+/* the first-visit tour has its own tests (tour.spec.ts); everywhere else it has already been seen */
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { localStorage.setItem('atp_tour_v1', 'done'); if (!sessionStorage.getItem('atp_days')) sessionStorage.setItem('atp_days', 'all'); } catch {} }); });
 
 test('bookings API checks what it is sent', async ({ request }) => {
   const send = (b: any) => request.post('/api/bookings', { data: b });

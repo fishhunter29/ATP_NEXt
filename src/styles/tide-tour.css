@@ -1,0 +1,110 @@
+/* First-visit tour (src/lib/tour). Loaded with the tour, never on the first page load.
+   Driver.js draws the dimmed page and positions the card; everything you see is styled here, in the site's own tokens:
+   charcoal ink on the light paper card, coral for the beacon, the ring and the main button.
+   Phones (≤640px): the card is a sheet on the bottom edge. Wide screens: a card beside the highlighted thing. */
+
+/* ---------- the card ---------- */
+.driver-popover.atp-tour{
+  font-family:var(--font-sans); color:var(--ink); background:var(--surface);
+  box-sizing:border-box; min-width:0; width:360px; max-width:calc(100vw - 32px);
+  padding:20px 20px 16px; border-radius:16px; border:1px solid var(--line);
+  box-shadow:0 24px 56px -12px rgba(33,37,41,.45),0 2px 6px rgba(33,37,41,.12);
+  -webkit-font-smoothing:antialiased;
+}
+.driver-popover.atp-tour *{box-sizing:border-box}
+.driver-popover.atp-tour .driver-popover-title{display:block; margin:0 40px 6px 0; font:800 20px/1.2 var(--font-sans); letter-spacing:-.015em; color:var(--ink)}
+.driver-popover.atp-tour .driver-popover-description{display:block; margin:0; font:400 15px/1.5 var(--font-sans); color:var(--ink-2)}
+
+/* close (×): a full 44px target in the corner */
+.driver-popover.atp-tour .driver-popover-close-btn{
+  all:unset; position:absolute; top:6px; right:6px; width:44px; height:44px; border-radius:12px;
+  display:grid; place-items:center; cursor:pointer; color:var(--ink-2); font:500 24px/1 var(--font-sans); z-index:2;
+}
+.driver-popover.atp-tour .driver-popover-close-btn:hover{color:var(--ink); background:var(--sunk)}
+
+/* footer: progress on the left, buttons on the right */
+.driver-popover.atp-tour .driver-popover-footer{display:flex; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap}
+.driver-popover.atp-tour .driver-popover-progress-text{display:flex!important; align-items:center; gap:10px; margin-right:auto; font:600 12px/1 var(--font-mono); color:var(--ink-2); letter-spacing:.02em; white-space:nowrap}
+.atp-tour-dots{display:flex; gap:5px}
+.atp-tour-dots i{display:block; width:6px; height:6px; border-radius:99px; background:var(--line); transition:width .26s ease,background-color .26s ease}
+.atp-tour-dots i.is-past{background:var(--ink-2)}
+.atp-tour-dots i.is-on{width:18px; background:var(--action)}
+
+.driver-popover.atp-tour .driver-popover-navigation-btns{display:flex; align-items:center; gap:8px; flex:0 0 auto}
+.driver-popover.atp-tour .driver-popover-footer button{
+  all:unset; box-sizing:border-box; cursor:pointer; min-height:44px; min-width:44px; padding:0 16px; border-radius:12px;
+  display:inline-flex; align-items:center; justify-content:center; font:700 15px/1 var(--font-sans); letter-spacing:-.005em;
+  transition:background-color .15s ease,transform .15s ease,box-shadow .15s ease;
+}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-next{background:var(--action); color:var(--action-ink); min-height:48px; padding:0 20px; box-shadow:0 1px 0 rgba(33,37,41,.25)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-next:hover{background:var(--action-press)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-next:active{transform:translateY(1px)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-back{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-back:hover{background:var(--sunk)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-skip{background:transparent; color:var(--ink-2); padding:0 10px; font-weight:600; text-decoration:underline; text-underline-offset:3px; text-decoration-color:var(--line)}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-skip:hover{color:var(--ink)}
+.driver-popover.atp-tour .driver-popover-btn-disabled{display:none!important}
+.driver-popover.atp-tour :focus-visible{outline:2.5px solid var(--ink)!important; outline-offset:2px}
+.driver-popover.atp-tour .driver-popover-footer .atp-tour-next:focus-visible{outline-color:var(--ink)!important; box-shadow:0 0 0 2px var(--surface) inset}
+
+/* arrow in the card's colour */
+.driver-popover.atp-tour .driver-popover-arrow{border-width:8px}
+.driver-popover.atp-tour .driver-popover-arrow-side-left{border-left-color:var(--surface)}
+.driver-popover.atp-tour .driver-popover-arrow-side-right{border-right-color:var(--surface)}
+.driver-popover.atp-tour .driver-popover-arrow-side-top{border-top-color:var(--surface)}
+.driver-popover.atp-tour .driver-popover-arrow-side-bottom{border-bottom-color:var(--surface)}
+
+/* first card: a photo with a small label */
+.atp-tour-hero{position:relative; margin:-8px -8px 16px; border-radius:12px; overflow:hidden; aspect-ratio:2/1; background:var(--sunk)}
+.atp-tour-hero img{display:block; width:100%; height:100%; object-fit:cover}
+.atp-tour-hero span{position:absolute; left:10px; bottom:10px; padding:6px 10px; border-radius:99px; background:rgba(33,37,41,.82); color:#FCF9F2; font:700 12px/1 var(--font-sans); letter-spacing:.01em}
+.driver-popover.atp-tour.is-first .driver-popover-close-btn{top:16px; right:16px; background:rgba(33,37,41,.72); color:#FCF9F2; width:44px; height:44px; border-radius:99px; font-size:20px}
+.driver-popover.atp-tour.is-first .driver-popover-close-btn::before{content:""; position:absolute; inset:-2px}
+.driver-popover.atp-tour.is-first .driver-popover-title{margin-right:0}
+/* last card: a coral tick */
+.atp-tour-tick{width:48px; height:48px; border-radius:99px; background:var(--action); color:var(--action-ink); display:grid; place-items:center; margin-bottom:14px}
+
+/* ---------- the ring and the beacon over the highlighted thing ---------- */
+.atp-tour-ring{
+  position:fixed; left:0; top:0; width:0; height:0; pointer-events:none; z-index:1;
+  border-radius:16px; box-shadow:0 0 0 2px var(--action),0 0 0 6px rgba(247,89,64,.22);
+  opacity:0; transition:opacity .2s ease,transform .26s cubic-bezier(.2,.8,.2,1),width .26s cubic-bezier(.2,.8,.2,1),height .26s cubic-bezier(.2,.8,.2,1);
+}
+.atp-tour-ring[data-on="1"]{opacity:1}
+.atp-tour-beacon{position:absolute; top:-7px; right:10px; width:14px; height:14px; border-radius:99px; background:var(--action); box-shadow:0 0 0 2px var(--surface)}
+.atp-tour-beacon::before,.atp-tour-beacon::after{content:""; position:absolute; inset:0; border-radius:inherit; background:var(--action); opacity:.55; animation:atp-beacon 1.8s cubic-bezier(.2,.6,.3,1) infinite}
+.atp-tour-beacon::after{animation-delay:.9s}
+@keyframes atp-beacon{0%{transform:scale(1); opacity:.55}100%{transform:scale(3.2); opacity:0}}
+
+/* ---------- phones: a sheet on the bottom edge ---------- */
+@media (max-width:640px){
+  .driver-popover.atp-tour{
+    position:fixed!important; top:auto!important; left:0!important; right:0!important; bottom:var(--atp-tour-lift,0px)!important;
+    width:auto!important; max-width:none!important; margin:0!important;
+    border-radius:20px 20px 0 0; border-width:1px 0 0; padding:22px 18px calc(14px + env(safe-area-inset-bottom));
+    box-shadow:0 -18px 48px -8px rgba(33,37,41,.45);
+    animation:atp-tour-up .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .driver-popover.atp-tour::before{content:""; position:absolute; top:8px; left:50%; width:36px; height:4px; margin-left:-18px; border-radius:99px; background:var(--line)}
+  .driver-popover.atp-tour.is-lifted{left:10px!important; right:10px!important; border-radius:20px; border-width:1px; padding-bottom:14px}
+  .driver-popover.atp-tour.is-lifted::before{display:none}
+  .driver-popover.atp-tour .driver-popover-arrow{display:none!important}
+  .driver-popover.atp-tour .driver-popover-footer{margin-top:16px}
+  .driver-popover.atp-tour .driver-popover-progress-text{flex:1 0 100%; margin:0 0 2px}
+  .driver-popover.atp-tour .driver-popover-navigation-btns{flex:1 1 auto}
+  .driver-popover.atp-tour .driver-popover-footer .atp-tour-skip{margin-right:auto}
+  .driver-popover.atp-tour .driver-popover-footer .atp-tour-next{flex:1 1 auto; max-width:220px; margin-left:auto}
+  .driver-popover.atp-tour.is-last .driver-popover-footer .atp-tour-next{max-width:none}
+  .atp-tour-hero{aspect-ratio:16/7}
+}
+@keyframes atp-tour-up{from{transform:translateY(24px); opacity:0}to{transform:none; opacity:1}}
+
+/* Night theme: the card follows the page */
+:root[data-theme="dark"] .driver-popover.atp-tour{box-shadow:0 24px 56px -12px rgba(0,0,0,.7); border-color:var(--line)}
+
+/* ---------- motion turned off: nothing moves or pulses ---------- */
+@media (prefers-reduced-motion:reduce){
+  .driver-popover.atp-tour,.driver-overlay{animation:none!important}
+  .atp-tour-ring,.atp-tour-dots i,.driver-popover.atp-tour .driver-popover-footer button{transition:none!important}
+  .atp-tour-beacon::before,.atp-tour-beacon::after{animation:none!important; display:none}
+}

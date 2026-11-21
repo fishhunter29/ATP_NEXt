@@ -5,6 +5,7 @@ import PKGS from '@/data/packages.json';
 import { Logo } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
 import AskWhatsApp from '@/components/AskWhatsApp';
+import { TourLink } from '@/components/ProductTour';
 import Promises from '@/components/Promises';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
@@ -26,7 +27,7 @@ export default function SiteFooter() {
         <div><b>Islands</b>{ZONES.map((z) => <a key={z.id} href={`/islands/${slug(z.id)}`}>{z.name}</a>)}</div>
         <div><b>Ferries</b>{routes.map((r) => <a key={r.key} href={`/ferries/${r.key}`}>{ZN[r.from]} to {ZN[r.to]}</a>)}<a href="/ferries">All ferry routes</a></div>
         <div><b>Planned trips</b>{trips.map((p) => <a key={p.id} href={`/trips/${slug(p.id)}`}>{p.n}</a>)}<a href="/trips">All {(PKGS as any[]).length} trips</a></div>
-        <div><b>Plan</b><a href="/things-to-do">Things to do</a><a href="/stays">Stays</a><a href="/cabs">Cabs and scooters</a><a href="/charters">Boat charters</a><a href="/plan">Build my itinerary</a></div>
+        <div><b>Plan</b><a href="/things-to-do">Things to do</a><a href="/stays">Stays</a><a href="/cabs">Cabs and scooters</a><a href="/charters">Boat charters</a><a href="/plan">Build my itinerary</a><TourLink /></div>
       </nav>
       <div className="sf-trust">
         <b className="sf-h">Recognitions and memberships</b>
