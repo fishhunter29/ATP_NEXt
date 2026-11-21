@@ -379,3 +379,14 @@ a.atp-cat{text-decoration:none}
 
 .atp-detail .hgal-n{position:absolute;right:12px;bottom:12px;margin:0;padding:4px 8px;border-radius:12px;background:#212529;color:#FFFFFF;font:600 12px/16px var(--font-mono)}
 .atp-detail .hgal-w .note{margin:0;padding:8px 16px;font-size:12px;line-height:16px;color:var(--ink-2);border-bottom:1px solid var(--line)}
+
+/* Island guide: about, don't miss, when to go, getting around, good to know */
+.atp-guide p,.atp-guide-p{font-size:16px;line-height:25px;color:var(--ink);margin:0 0 12px;max-width:68ch}
+.atp-guide h3{font-size:17px;line-height:22px;margin:20px 0 8px;letter-spacing:-.01em}
+.atp-guide-list{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.atp-guide-list li{display:flex;flex-direction:column;gap:2px;padding:10px 0 10px 14px;border-left:3px solid var(--accent);margin-bottom:8px}
+.atp-guide-list b{font-size:15px;line-height:20px}
+.atp-guide-list span{font-size:14px;line-height:20px;color:var(--ink-2)}
+.atp-guide-tips{margin:0;padding:0 0 0 20px;display:grid;gap:8px;max-width:68ch}
+.atp-guide-tips li{font-size:15px;line-height:22px}
+@media (min-width:1024px){.atp-guide-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}}

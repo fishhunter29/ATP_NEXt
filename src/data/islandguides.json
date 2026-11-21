@@ -1,0 +1,330 @@
+{
+  "PBL": {
+    "about": [
+      "Port Blair, now officially Sri Vijaya Puram, is the capital of the Andaman and Nicobar Islands and the door to everything else. Every flight lands at Veer Savarkar Airport here, and every private ferry to Havelock and Neil leaves from Haddo Wharf. Most trips begin and end with a night in town.",
+      "It is also the islands' history book. The Cellular Jail, built by the British for freedom fighters, is now a national memorial, and its evening Light and Sound Show tells the story in Hindi and English. A short boat ride away, Ross Island holds the ruins of the old British headquarters, slowly taken back by banyan roots, with deer walking among them.",
+      "For the sea, North Bay is the town's coral playground: snorkelling, sea walks, semi-submarines and first scuba dives. Chidiya Tapu, at the southern tip, is for birds in the morning and the sunset in the evening, and the Mount Harriet forest across the harbour has the best views of the town."
+    ],
+    "dontMiss": [
+      [
+        "Cellular Jail and the Light and Sound Show",
+        "The memorial by day, the story told in light after dark."
+      ],
+      [
+        "Ross Island and North Bay",
+        "One morning boat from Aberdeen Jetty covers both."
+      ],
+      [
+        "Chidiya Tapu at sunset",
+        "Birds, forest and the last light over the sea."
+      ],
+      [
+        "Corbyn's Cove",
+        "The town beach, with water sports and old Japanese bunkers."
+      ],
+      [
+        "The museums",
+        "Anthropological, Samudrika Naval Marine and the Fisheries Museum."
+      ]
+    ],
+    "around": "Cabs are the easy way round town and out to Chidiya Tapu, Wandoor and Mount Harriet. Ross Island and North Bay boats leave from Aberdeen Jetty, and the small government ferry from Chatham crosses to Bamboo Flat for Mount Harriet.",
+    "tips": [
+      "Cellular Jail and the museums are closed on Mondays; the evening show still runs.",
+      "Ross Island is closed on Wednesdays.",
+      "The English Light and Sound Show runs at 18:50 on Mondays, Wednesdays and Fridays; the other shows are in Hindi.",
+      "Keep the first and last night here so a late flight or ferry never costs you an island."
+    ]
+  },
+  "HAV": {
+    "about": [
+      "Havelock, officially Swaraj Dweep, is the island most people picture when they think of the Andamans: white sand, clear water and forest down to the beach. It is the largest of Ritchie's Archipelago, about 90 minutes from Port Blair by private ferry, and the busiest island for travellers after the capital.",
+      "Its beaches are named by number after the old villages. Radhanagar, Beach 7, is the famous one, a long curve of sand with the sunset straight ahead and a Blue Flag for cleanliness. Kalapathar on the east is for sunrise and black rocks, Vijaynagar (Beach 5) is calm and long, and Govind Nagar (Beach 3) is where the cafés, shops and dive centres are.",
+      "Havelock is also the diving capital of India. You can try a first dive from the shore, take a full PADI course over a few days, or go out on boat dives to the outer reefs. Elephant Beach, reached by boat or a forest trek, has the island's snorkelling and water sports, and on dark nights the mangrove creeks glow with bioluminescence."
+    ],
+    "dontMiss": [
+      [
+        "Radhanagar Beach at sunset",
+        "Arrive an hour before; the light changes every few minutes."
+      ],
+      [
+        "Elephant Beach",
+        "Snorkelling, sea walk and water rides, by boat or by trail."
+      ],
+      [
+        "A first dive or a PADI course",
+        "Shore dives for beginners, boat dives for the certified."
+      ],
+      [
+        "Kalapathar at sunrise",
+        "Quiet, rocky and lovely before 7 am."
+      ],
+      [
+        "Night kayaking in the mangroves",
+        "On dark nights the water lights up as you paddle."
+      ]
+    ],
+    "around": "Havelock has one main road joining the jetty, the numbered beaches and Radhanagar. Cabs, autos and rented scooters cover it easily; Radhanagar is about 25 minutes from the jetty. Elephant Beach is by boat from the jetty or a guided forest trek.",
+    "tips": [
+      "Two nights is the minimum to enjoy it; ferries take a good part of the arrival and departure days.",
+      "Elephant Beach closes at 3 pm, so go in the morning.",
+      "Diving and snorkelling run from October to May; the sea is rough in the monsoon.",
+      "Bioluminescence needs a dark night: pick a date away from the full moon."
+    ]
+  },
+  "NEI": {
+    "about": [
+      "Neil, officially Shaheed Dweep, is Havelock's quieter little sister: small enough to cycle round in a morning, green with paddy fields and vegetable farms, and slow in the best way. Ferries connect it to Havelock in about an hour and to Port Blair in about 90 minutes.",
+      "Its three beaches each have a time of day. Sitapur, on the eastern tip, is for sunrise. Bharatpur, near the jetty, is a calm lagoon for swimming, glass-bottom boats and snorkelling. Laxmanpur on the west has a long white sandbar and the island's sunset.",
+      "At low tide the reef near Laxmanpur opens up to reveal the Natural Bridge, a rock arch carved by the sea, and pools full of starfish, sea cucumbers and small fish. Evenings are for the market at Neil Kendra and, on dark nights, some of the clearest stars in the islands."
+    ],
+    "dontMiss": [
+      [
+        "Natural Bridge at low tide",
+        "Timed to the tide on your date, with a guide for the rock pools."
+      ],
+      [
+        "Sitapur at sunrise",
+        "The first light on the island, worth the early start."
+      ],
+      [
+        "Bharatpur lagoon",
+        "Swim, snorkel or take a glass-bottom boat over the coral."
+      ],
+      [
+        "Laxmanpur at sunset",
+        "A long white sandbar and a quiet end to the day."
+      ],
+      [
+        "A night under the stars",
+        "Little light pollution and, on dark nights, a sky full of stars."
+      ]
+    ],
+    "around": "Neil is small: cycles and scooters are the favourite way round, and cabs and autos cover the beaches in minutes. Everything is within about 15 minutes of the jetty.",
+    "tips": [
+      "One night is enough for most trips; two if you like a slow pace.",
+      "The Natural Bridge and rock pools only show at low tide; we time it for you.",
+      "Fewer ferries run to Neil than to Havelock, so book the ferry before the stay.",
+      "Neil goes quiet early; dinner is around the Neil Kendra market."
+    ]
+  },
+  "WAN": {
+    "about": [
+      "Wandoor is a small village about an hour south-west of Port Blair and the gateway to the Mahatma Gandhi Marine National Park, a protected stretch of reefs, mangroves and small islands. There are no tourist stays here; it is a day trip from Port Blair.",
+      "Boats from Wandoor Jetty go to Jolly Buoy or Red Skin, the two park islands open to visitors. They take turns through the year, so only one is open on any date. Both have clear, shallow water over coral, and snorkelling with a guide is the reason to go.",
+      "Back on the mainland, Wandoor Beach is a quiet, tree-lined shore for a walk after the boat, and the mangrove creeks nearby can be explored by kayak when the tide allows."
+    ],
+    "dontMiss": [
+      [
+        "Jolly Buoy or Red Skin",
+        "Whichever is open on your date, with guided snorkelling."
+      ],
+      [
+        "Mangrove kayaking",
+        "Through the park's creeks, timed to the tide."
+      ],
+      [
+        "Wandoor Beach",
+        "A quiet shore at the gateway to the marine park."
+      ]
+    ],
+    "around": "Wandoor is reached by road from Port Blair, about an hour each way. Book a cab for the day: the boats run in the morning and are back by early afternoon.",
+    "tips": [
+      "The marine park is closed on Mondays.",
+      "A forest permit is needed and is issued two days ahead; we apply with your ID.",
+      "The park islands close at 2 pm, so the day starts early.",
+      "You cannot catch a ferry to Havelock or Neil the same day; the last one is usually gone by the time you are back."
+    ]
+  },
+  "BAR": {
+    "about": [
+      "Baratang lies in Middle Andaman, about three and a half hours north of Port Blair by road. The drive itself is part of the story: the Andaman Trunk Road passes through the Jarawa tribal reserve, and vehicles cross it together in escorted convoys at fixed times.",
+      "From Nilambur jetty a speedboat takes you through a tunnel of mangroves to the limestone caves, a short walk inland, where centuries of dripping water have shaped the rock into pillars and curtains. Nearby, a small mud volcano bubbles quietly in the forest.",
+      "Those who stay the night can take a boat at dusk to Parrot Island, where thousands of parakeets come home to roost as the sun goes down."
+    ],
+    "dontMiss": [
+      [
+        "The limestone caves",
+        "By boat through the mangrove creek, then a 1.2 km walk."
+      ],
+      [
+        "The mud volcano",
+        "A short stop on the same day trip."
+      ],
+      [
+        "Parrot Island at sunset",
+        "Only if you stay the night in Baratang."
+      ]
+    ],
+    "around": "Baratang is reached by road and convoy from Port Blair, with a short vehicle ferry across Middle Strait. The caves are by boat from Nilambur jetty. Most visitors come on a full-day trip with a cab.",
+    "tips": [
+      "Day trips start at about 3:30 am to make the 6 am convoy.",
+      "In the Jarawa reserve vehicles may not stop, and photographs are not allowed.",
+      "A forest and convoy permit is needed; we arrange it.",
+      "By road, the convoy returns too late for any ferry to Havelock or Neil that day. A Makruzz sailing from Port Blair stops at Baratang for the caves and then continues to Havelock, so you can see them on the way."
+    ]
+  },
+  "RAN": {
+    "about": [
+      "Rangat is a market town in Middle Andaman and the natural halfway stop on the long road north. Few travellers linger, which is exactly its charm: quiet beaches, mangrove walks and turtle beaches with hardly anyone else around.",
+      "Dhani Nallah has a 1.2 km wooden boardwalk through the mangroves that ends on a beach where turtles nest in winter. South of town, Cuthbert Bay is a turtle sanctuary, and in season you can join a night watch for nesting turtles.",
+      "Amkunj has driftwood benches under the trees, Morrice Dera a natural rock arch, and Yerrata a mangrove park with a watchtower. From Yerrata jetty, the government ferry runs to Long Island."
+    ],
+    "dontMiss": [
+      [
+        "Dhani Nallah boardwalk",
+        "A 1.2 km walk through the mangroves to the sea."
+      ],
+      [
+        "Turtle nesting watch at Cuthbert Bay",
+        "Night walks in the winter nesting season."
+      ],
+      [
+        "Amkunj Beach",
+        "An eco-park beach with driftwood seats."
+      ],
+      [
+        "Morrice Dera",
+        "A rocky shore with a natural arch."
+      ],
+      [
+        "Yerrata Mangrove Park",
+        "Climb the watchtower over the creeks."
+      ]
+    ],
+    "around": "Rangat is about six and a half hours from Port Blair by road and convoy, three hours from Baratang and two and a half from Mayabunder. A cab for the day covers the beaches; Long Island is by government ferry from Yerrata jetty.",
+    "tips": [
+      "Turtle season here is roughly December to February.",
+      "Most travellers stay one night on the way to Mayabunder or Diglipur.",
+      "Facilities are simple; book your stay before you set off."
+    ]
+  },
+  "LON": {
+    "about": [
+      "Long Island is a small, quiet island off Middle Andaman with no cars, a few lanes and a handful of guest houses. It is reached only by government ferry, which keeps it peaceful and means you will need at least one night.",
+      "From the jetty, a forest trail leads to Lalaji Bay, a long white beach that you may have to yourself. By boat, Guitar Island is a sandbar shaped as its name says, and Merk Bay on North Passage Island has some of the clearest water and finest sand in the islands.",
+      "Life here moves at the speed of the ferry timetable. Come for empty beaches, forest walks and the feeling of being properly far away."
+    ],
+    "dontMiss": [
+      [
+        "Lalaji Bay",
+        "Walk the forest trail from the jetty, or go by boat."
+      ],
+      [
+        "Merk Bay, North Passage Island",
+        "Clear water and soft sand; needs a forest permit."
+      ],
+      [
+        "Guitar Island",
+        "A sandbar island, by boat."
+      ],
+      [
+        "The three-beach boat",
+        "Lalaji, Merk Bay and Guitar Island in one day."
+      ]
+    ],
+    "around": "There are no cars on Long Island. You walk, or take a boat from the jetty to the beaches. Government ships link it to Rangat (Yerrata jetty, about an hour) and, on set days, to Havelock, Neil and Port Blair.",
+    "tips": [
+      "Government ships are the only way in and out, and there are only a few each day, so plan at least one night.",
+      "Merk Bay needs Forest Department permission; we arrange it.",
+      "Carry cash and some snacks; there are only a few small shops."
+    ]
+  },
+  "MAY": {
+    "about": [
+      "Mayabunder sits at the northern end of Middle Andaman, where the road crosses towards North Andaman. It is a quiet, green town with a mixed community, including the Karen people whose families came from Burma in the colonial years.",
+      "Karmatang Beach is a long stretch of sand where turtles nest in winter, and Rampur Beach is the place for sunrise and for boats to Avis Island, a tiny coconut island just offshore. Further out, Interview Island is a wildlife sanctuary known for its feral elephants, visited with a forest permit.",
+      "Most travellers stop here for a night on the way to Diglipur, and it is worth slowing down for."
+    ],
+    "dontMiss": [
+      [
+        "Karmatang Beach",
+        "A long beach and a winter turtle nesting site."
+      ],
+      [
+        "Avis Island",
+        "A small coconut island, by boat from near Rampur Beach."
+      ],
+      [
+        "Interview Island",
+        "A wildlife sanctuary, with a forest permit."
+      ],
+      [
+        "Rampur Beach at sunrise",
+        "The morning side of Mayabunder."
+      ]
+    ],
+    "around": "Mayabunder is about eight hours from Port Blair by road and convoy, two and a half from Rangat and three from Diglipur. A cab covers the beaches; the islands are by boat from the jetty.",
+    "tips": [
+      "Interview Island needs a Forest Department permit.",
+      "Turtle season is roughly December to February.",
+      "One night here breaks the long drive to Diglipur nicely."
+    ]
+  },
+  "DIG": {
+    "about": [
+      "Diglipur is the far north of the Andamans, a long way from the crowds and well worth the journey. It is about 11 hours from Port Blair by road and convoy, or a night on the government ship to Aerial Bay.",
+      "Its star is Ross and Smith, two islands joined by a narrow white sandbar, with turquoise water on both sides. Behind the town rises Saddle Peak, the highest point in the Andaman Islands, with a guided trek through the forest to the top.",
+      "Kalipur Beach is a turtle nesting beach in winter, Lamiya Bay a pebble cove inside the Saddle Peak reserve, and Ramnagar a calm beach with a pilot Blue Flag. There is also the Alfred Caves, home to swiftlets, and a small mud volcano at Shyamnagar."
+    ],
+    "dontMiss": [
+      [
+        "Ross and Smith Islands",
+        "Twin islands joined by a sandbar; permit at the jetty."
+      ],
+      [
+        "Saddle Peak trek",
+        "The highest point in the islands, with a guide."
+      ],
+      [
+        "Kalipur turtle watch",
+        "Night walks in the winter nesting season."
+      ],
+      [
+        "Ramnagar Beach",
+        "A calm pilot Blue Flag beach."
+      ],
+      [
+        "Alfred Caves",
+        "Swiftlet caves, with a local guide."
+      ]
+    ],
+    "around": "Boats to Ross and Smith leave from Aerial Bay jetty. Cabs cover Kalipur, Lamiya Bay, Ramnagar and the trailheads. The road south passes Mayabunder and Rangat.",
+    "tips": [
+      "Two nights at least: the journey here is long.",
+      "The Ross and Smith permit office is shut on Sundays, so book by Friday.",
+      "Saddle Peak treks start early; the trail closes at noon.",
+      "Turtle season here is roughly December to February."
+    ]
+  },
+  "LIT": {
+    "about": [
+      "Little Andaman lies south of Port Blair, an overnight trip on the government ship, and few travellers make the journey. Those who do find long empty beaches, waterfalls in the rainforest and surf that is rare in the islands.",
+      "Butler Bay is a wide beach with waves for surfing lessons. Inland, White Surf and Whisper Wave waterfalls are reached by forest trails, and the old lighthouse looks out over the island's coast.",
+      "Hut Bay is the main town and port. Tourism here is simple and supply is thin, so plan ahead and travel with time to spare."
+    ],
+    "dontMiss": [
+      [
+        "Butler Bay",
+        "A long surf beach, with lessons for beginners."
+      ],
+      [
+        "White Surf and Whisper Wave waterfalls",
+        "Rainforest trails to two falls."
+      ],
+      [
+        "Little Andaman Lighthouse",
+        "Views along the island's coast."
+      ],
+      [
+        "Netaji Nagar Beach",
+        "A family beach north of Hut Bay."
+      ]
+    ],
+    "around": "Little Andaman is reached only by government ship from Port Blair to Hut Bay. On the island, a cab or scooter covers Butler Bay, the waterfalls and the lighthouse.",
+    "tips": [
+      "Ship times change and can be cancelled for weather; keep spare days.",
+      "Parts of the island are tribal reserve and closed to visitors.",
+      "Stays and food are simple, and there are few of them; book before you sail."
+    ]
+  }
+}
