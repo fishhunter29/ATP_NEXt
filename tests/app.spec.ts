@@ -24,17 +24,127 @@ test('example trip loads and every day has a timeline', async ({ page }) => {
   await expect(page.locator('.atp-pass').first()).toBeVisible();
 });
 
-test('build a trip, pay, and get passes', async ({ page }) => {
+/* Checkout asks for every traveller when the trip has a ferry (the operators' passenger list). */
+async function fillTravellers(page: import('@playwright/test').Page) {
+  const names = ['Priya Sharma', 'Arjun Sharma', 'Mira Sharma', 'Dev Sharma', 'Asha Sharma', 'Ravi Sharma'];
+  await page.locator('.atp-trav').first().waitFor();
+  const n = await page.locator('.atp-trav').count();
+  for (let i = 0; i < n; i++) {
+    const t = page.locator('.atp-trav').nth(i);
+    await t.locator('input').first().fill(names[i] || `Guest ${i + 1}`);
+    if (await t.getByLabel('Age').count()) await t.getByLabel('Age').fill(String(36 - i));
+    if (await t.getByRole('radiogroup').count()) await t.getByRole('radio', { name: i % 2 ? 'Male' : 'Female', exact: true }).click();
+  }
+  await page.fill('#lp', '+91 9876543210');
+  await page.fill('#le', 'priya@example.com');
+}
+
+test('build a trip, pay, and get every ticket', async ({ page }) => {
   await page.goto('/plan');
   await page.getByRole('button', { name: /Build my trip/ }).click();
   await expect(page).toHaveURL(/\/trip$/);
   await page.goto('/checkout');
-  await page.fill('#ln', 'Priya Sharma');
-  await page.fill('#lp', '+91 9876543210');
-  await page.fill('#le', 'priya@example.com');
+  await fillTravellers(page);
+  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  // each partner confirms in turn, then the confirmation
+  await expect(page.getByRole('heading', { name: 'Booking your trip' })).toBeVisible();
+  await expect(page.locator('.atp-conf li').first()).toContainText('Payment received');
+  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
+  await expect(page.getByRole('heading', { name: 'You’re going to the Andamans' })).toBeVisible();
+  await expect(page.locator('.atp-rcpt')).toContainText('Paid');
+  expect(await page.locator('.atp-vch').count()).toBeGreaterThan(5);
+  // ferries are boarding passes; a tap shows the code to scan
+  const pass = page.locator('.atp-vch .atp-pass').first();
+  await pass.click();
+  await expect(page.locator('.atp-vopen .atp-qr svg')).toBeVisible();
+  await expect(page.locator('.atp-vcode')).toHaveText(/^ATP-/);
+  // the day's cab rides are one row
+  const cab = page.locator('.atp-vrow', { hasText: /Cab · \d+ rides?/ }).first();
+  await cab.click();
+  expect(await page.locator('.atp-rides li').count()).toBeGreaterThan(0);
+  // the whole trip as a calendar file
+  const [file] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Add to calendar' }).click()]);
+  expect(file.suggestedFilename()).toBe('andaman-trip.ics');
+  // later, without ?paid, it is the plain list
+  await page.goto('/my-trips');
+  await expect(page.getByRole('heading', { name: 'My trips' })).toBeVisible();
+  expect(await page.locator('.atp-vch').count()).toBeGreaterThan(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+});
+
+test('checkout: missing details are marked, the price opens by kind, and one contact is enough without a ferry', async ({ page }) => {
+  await page.goto('/plan');
+  await page.getByRole('button', { name: /Build my trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/checkout');
+  await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
+  // the Pay bar sits on the screen, joined to the dock, not at the end of the page (same on the Trip page)
+  const joined = async () => { await page.waitForTimeout(400); const bar = await page.locator('.cta').boundingBox(); const dock = await page.locator('.atp-dock').boundingBox(); return Math.abs(bar!.y + bar!.height - dock!.y); };
+  expect(await joined()).toBeLessThanOrEqual(2);
+  await page.goto('/trip');
+  await expect(page.locator('.cta')).toBeVisible();
+  expect(await joined()).toBeLessThanOrEqual(2);
+  await page.goto('/checkout');
+  await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
+  expect(await page.locator('.atp-trav').count()).toBeGreaterThan(1);
+  // nothing filled: every missing detail is named, and nothing is booked
+  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  await expect(page.locator('.toast')).toContainText('missing');
+  expect(await page.locator('.atp-err').count()).toBeGreaterThan(3);
+  await expect(page.locator('#ln')).toHaveAttribute('aria-invalid', 'true');
+  await expect(page).toHaveURL(/checkout/);
+  // the price by kind of booking, each line with its partner
+  const stays = page.locator('.atp-brk-h', { hasText: 'Stays' });
+  await stays.click();
+  await expect(stays).toHaveAttribute('aria-expanded', 'true');
+  expect(await page.locator('.atp-brk-l li').count()).toBeGreaterThan(0);
+  const money = (t: string | null) => Number((t || '').replace(/[^0-9]/g, ''));
+  const sub = money(await page.locator('.atp-tl', { hasText: 'Subtotal' }).locator('b').textContent());
+  const gst = money(await page.locator('.atp-tl', { hasText: 'GST' }).locator('b').textContent());
+  const tot = money(await page.locator('.atp-tl.is-total b').textContent());
+  expect(Math.abs(sub + gst - tot)).toBeLessThanOrEqual(1);
+  await expect(page.locator('.atp-co')).toContainText('If plans change');
+  await expect(page.locator('.atp-draft')).toContainText('No money is taken yet');
+  // foreign travellers add a passport number
+  await page.getByRole('switch', { name: /Indian national/ }).click();
+  await expect(page.getByLabel('Passport number').first()).toBeVisible();
+  // a business trip asks for a GSTIN and checks its shape
+  await page.getByRole('switch', { name: /Business trip/ }).click();
+  await page.getByLabel('Company GSTIN').fill('123');
+  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  await expect(page.locator('[data-f="gstin"] .atp-err')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  // one activity, no ferry: one contact is enough
+  await page.evaluate(() => localStorage.clear());
+  await page.goto('/things-to-do/acv-boat-eleph');
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await page.goto('/checkout');
+  await expect(page.locator('.atp-trav')).toHaveCount(1);
+  await expect(page.getByLabel('Age')).toHaveCount(0);
+  await fillTravellers(page);
   await page.getByRole('button', { name: /^Pay ₹/ }).click();
   await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
-  expect(await page.locator('.pass').count()).toBeGreaterThan(5);
+  await expect(page.locator('.atp-vch')).toHaveCount(1);
+});
+
+test('search: results stay in their groups and the words stay in the address', async ({ page }) => {
+  await page.goto('/search');
+  await expect(page.getByRole('searchbox', { name: 'Search' })).toBeFocused();
+  await expect(page.locator('.atp-srch-g')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Scuba', exact: true }).click();
+  await expect(page.locator('.atp-srch-g').first()).toBeVisible();
+  await expect(page).toHaveURL(/q=Scuba/);
+  await page.getByRole('searchbox', { name: 'Search' }).fill('beach');
+  await expect(page.getByRole('region', { name: 'Things to do' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Stays' })).toBeVisible();
+  expect(await page.getByRole('region', { name: 'Things to do' }).locator('.atp-lrow').count()).toBeLessThanOrEqual(5);
+  await page.getByRole('link', { name: /See all \d+ in things to do/ }).click();
+  await expect(page).toHaveURL(/things-to-do\?q=beach/);
+  await page.goBack();
+  await expect(page.getByRole('searchbox', { name: 'Search' })).toHaveValue('beach');
+  await page.getByRole('searchbox', { name: 'Search' }).fill('zzzz');
+  await expect(page.getByRole('status')).toContainText('Nothing found');
 });
 
 test('add one thing from its page, then change and remove it', async ({ page }) => {
@@ -78,6 +188,11 @@ test('price breakdown and fix-for-me sheets open and close', async ({ page }) =>
   await expect(page.getByRole('dialog', { name: 'Price breakdown' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  // the close button does the same, and focus goes back to what opened the sheet
+  await page.locator('.cta button.tot').click();
+  await page.getByRole('dialog', { name: 'Price breakdown' }).getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.cta button.tot')).toBeFocused();
   await page.getByRole('button', { name: 'Review the fixes' }).click();
   await expect(page.getByRole('dialog', { name: 'Fixes' })).toBeVisible();
   await page.getByRole('button', { name: 'Undo' }).click();
@@ -379,7 +494,7 @@ test('home and island pages list day plans, and one opens its sheet', async ({ p
 });
 
 /* ---------- light mode ---------- */
-test('light mode: tabs, small labels and pass cards', async ({ browser }) => {
+test('light mode: tabs, small labels, checkout and My trips on a wide screen', async ({ browser }) => {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, colorScheme: 'light' });
   await page.goto('/trips');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
@@ -398,11 +513,15 @@ test('light mode: tabs, small labels and pass cards', async ({ browser }) => {
   await page.goto('/plan');
   await page.getByRole('button', { name: /Build my trip/ }).click();
   await page.goto('/checkout');
-  await page.fill('#ln', 'Priya Sharma'); await page.fill('#lp', '+91 9876543210'); await page.fill('#le', 'priya@example.com');
+  // on a wide screen the price sits beside the form, and the days sit three in a row
+  const price = await page.locator('.atp-coside').boundingBox(); const who = await page.locator('.atp-trav').first().boundingBox();
+  expect(price!.x).toBeGreaterThan(who!.x + who!.width);
+  await fillTravellers(page);
   await page.getByRole('button', { name: /^Pay ₹/ }).click();
   await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
-  const tops = await page.locator('.passgrid').first().locator('.pass').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round((e.firstElementChild as HTMLElement).getBoundingClientRect().top)));
-  expect(new Set(tops).size).toBe(1);
+  await page.locator('.atp-vlist .atp-vday').nth(2).waitFor();
+  const tops = await page.locator('.atp-vlist .atp-vday').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
+  expect(tops.length).toBe(3); expect(new Set(tops).size).toBe(1);
   await page.close();
 });
 

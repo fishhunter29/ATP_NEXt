@@ -105,6 +105,12 @@ h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em}
 .atp-tab .atp-count{position:absolute;top:5px;left:calc(50% + 8px)}
 @media (min-width:1024px){.atp-dock{display:none}}
 
+/* Pages fade in. No movement: an animated transform, even a finished one, makes the page the anchor for
+   position:fixed, which left the total-and-action bar at the end of the page instead of on the screen. */
+main>*{animation:atp-in .2s ease}
+@keyframes atp-in{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){main>*{animation:none}}
+
 /* what sits above the dock on a phone */
 main{padding-bottom:calc(var(--dock-h) + 32px + env(safe-area-inset-bottom,0px))}
 main.tall{padding-bottom:calc(var(--dock-h) + 104px + env(safe-area-inset-bottom,0px))}
@@ -112,7 +118,7 @@ main.tall{padding-bottom:calc(var(--dock-h) + 104px + env(safe-area-inset-bottom
 @media (min-width:1024px){main{padding-bottom:72px}main.tall{padding-bottom:140px}.sitefoot{padding-bottom:28px}}
 @media (max-width:1023.9px){
   /* the total-and-action bar joins the dock: one block, as in the approved design */
-  .cta.abovenav{left:0;right:0;bottom:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));width:auto;max-width:none;margin:0;border:0;border-top:2px solid var(--ink);border-radius:0;box-shadow:none;background:var(--surface);padding:8px 16px}
+  .cta.abovenav{left:0;right:0;bottom:calc(var(--dock-h) - 1px + env(safe-area-inset-bottom,0px));width:auto;max-width:none;margin:0;border:0;border-top:2px solid var(--ink);border-radius:0;box-shadow:none;background:var(--surface);padding:8px 16px}
   body:has(.cta.abovenav) .atp-dock{border-top:1px solid var(--line)}
   .fab{bottom:calc(var(--dock-h) + 16px + env(safe-area-inset-bottom,0px))}
 }

@@ -35,6 +35,14 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - **Drag to move** is still the v1 engine's: it finds rows by `.ev[data-uid]` and days by `section.day[data-date]`, so those class names stay on the new markup.
 - Styles are in `src/styles/tide-trip.css`.
 
+## Checkout and My trips
+- `src/views/Checkout.tsx`. The form lives in React state; on Pay it checks every field itself (no engine call), marks what is missing and scrolls to the first one. The trip decides how much is asked: with a ferry, every traveller; without, one contact.
+- The price is grouped by kind from `E.info(item)`; GST lines come from each item's own rate; "if plans change" reads each item's policy id (`POL-FLEX`, `POL-MOD`, `POL-OPERATOR`, `POL-GOVT`) and its date, so the "free until" day is real for that trip.
+- Pay is still simulated. `E.bookAll()` makes the vouchers; checkout adds what a ticket needs to draw itself (`ref`, `cls`, `nights`, `arr`) and keeps a small receipt in `S.lead.paid`. The server gets only name, phone and email as `lead`; every traveller goes inside `trip.travellers`. Passport numbers are sent with the booking and are not kept on the phone.
+- `src/views/MyTrips.tsx` groups `S.booked` by day. Ferries reuse the Trip page's boarding pass; cab rides of one day fold into one row; the calendar file (`.ics`) is built on the phone.
+- Search (`src/views/Lists.tsx`) gets its three lists from the server page, like the browse screens, and keeps the words in `?q=`.
+- Styles: `src/styles/tide-flow.css`, which also restyles the engine's sheets (`.scrim`, `.sheet`) and the add-to-trip panel (`.addpanel`).
+
 ## The engine
 `src/engine/core.js` is the v1 trip engine, moved unchanged: pricing and seasons, ferry reporting times, the 134 island rules, conflict detection, auto-fix, gap suggestions, meals, passes. It runs in the browser only.
 - `useEngine()` gives a component the engine and re-renders it when the trip changes.
