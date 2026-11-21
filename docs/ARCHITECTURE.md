@@ -43,6 +43,12 @@ Every Google-facing page must be complete in the HTML the server sends, before a
 - Search (`src/views/Lists.tsx`) gets its three lists from the server page, like the browse screens, and keeps the words in `?q=`.
 - Styles: `src/styles/tide-flow.css`, which also restyles the engine's sheets (`.scrim`, `.sheet`) and the add-to-trip panel (`.addpanel`).
 
+## Confirm first (launch mode)
+- `src/views/Checkout.tsx` validates the form, builds the message (`message(code)`), saves the request in `S.lead.request` (`code`, `sig`, `at`, `total`, `n`, `start`, `end`, `text`) and opens `wa.me` with it. The plan link is made ahead of time (`packTrip`) so the click opens WhatsApp at once. The page shows the "sent" screen whenever the saved request matches the trip on screen (`sig`).
+- No voucher is made and nothing is posted: `E.bookAll()` and `/api/bookings` are for the paid step. Tests make tickets straight from a trip (`seedTickets`) to keep My trips covered.
+- `src/lib/whatsapp.ts`: `itemQuery` (one stay, activity, ferry, cab or rental from the choices on screen) and `tripQuery` (a ready-made trip).
+- `src/components/Promises.tsx` holds the promises once; `compact` is the one-line form.
+
 ## Plan, fold, share, ask (R6)
 - `src/components/PlanBuilder.tsx`: when, who, pace (and on `/plan` the kind of trip and the stays), then `E.genSpec` and `E.buildPkg`. A month is a guess at the dates (`S.datesAssumed`), which the Trip page already flags.
 - Folded days: `Trip` keeps which days are open in `sessionStorage` (`atp_days`: `all`, `none`, or day numbers; nothing saved means the first day and any day with a clash). Tests start with `all`.

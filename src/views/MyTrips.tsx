@@ -42,6 +42,9 @@ export default function MyTrips() {
   const paid = params.get('paid') === '1';
   const list: any[] = S.booked.slice().sort((a: any, b: any) => a.date.localeCompare(b.date) || String(a.time).localeCompare(String(b.time)));
   const rec = (S.lead && S.lead.paid) || null;
+  /* a trip sent for confirmation and still in the planner */
+  const ask = S.lead && S.lead.request && S.cart.length ? S.lead.request : null;
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   const first = list[0], last = list[list.length - 1];
   const days: { date: string; items: any[] }[] = [];
   list.forEach((p) => { const d = days[days.length - 1]; if (d && d.date === p.date) d.items.push(p); else days.push({ date: p.date, items: [p] }); });
@@ -149,9 +152,22 @@ export default function MyTrips() {
 
       <section className={`atp-cs${paid && first ? '' : ' is-first'}`}>
         {paid && first ? <h2>Every ticket and voucher</h2> : <h1 className="atp-h1">My trips</h1>}
+        {ask && (
+          <div className="atp-reqcard">
+            <span className="atp-sh-tag">Ref {ask.code}</span>
+            <b>Waiting for our confirmation</b>
+            <span>{short(ask.start)}{ask.end !== ask.start ? ` – ${short(ask.end)}` : ''} · {ask.n} bookings · {E.inr(ask.total)}</span>
+            <small>Made ready at {hhmm(ask.at)}. We confirm every booking within 30 minutes of your WhatsApp message, and you pay only after that.</small>
+            <span className="atp-reqcard-acts">
+              <a className="atp-btn is-commit" href={waLink(ask.text)} target="_blank" rel="noopener noreferrer"><WaIcon s={20} />Send it again</a>
+              <a className="atp-btn is-outline" href={waLink(waText(`any news on my trip ${ask.code}?`))} target="_blank" rel="noopener noreferrer">Ask for an update</a>
+              <Link className="atp-btn is-outline" href="/trip" prefetch={false}>Open my trip</Link>
+            </span>
+          </div>
+        )}
         {!list.length ? (
           <div className="atp-mt-empty">
-            <p className="atp-lead">After you pay, every ferry ticket, stay, cab and activity shows here day by day, saved on your phone.</p>
+            <p className="atp-lead">{ask ? 'Once it is confirmed and paid, every ticket and voucher shows here day by day, saved on your phone.' : 'Build a trip and send it for confirmation. We confirm within 30 minutes; once it is paid, every ticket and voucher shows here day by day.'}</p>
             <button type="button" className="atp-btn is-action" onClick={() => router.push(S.cart.length ? '/trip' : '/')}>{S.cart.length ? 'Go to my trip' : 'Start exploring'}</button>
           </div>
         ) : (

@@ -38,32 +38,5 @@ test('health says what is connected, never the keys', async ({ request }) => {
   expect(JSON.stringify(j)).not.toMatch(/key|secret/i);
 });
 
-test('checkout: the booking code and any renamed pass codes come back to the phone', async ({ page }) => {
-  let sent: any = null;
-  await page.route('**/api/bookings', async (route) => {
-    sent = route.request().postDataJSON();
-    await route.fulfill({ json: { ok: true, stored: true, code: 'ATP-TEST01', renamed: { [sent.items[0].code]: 'ATP-RENAMD' } } });
-  });
-  await page.goto('/plan');
-  await page.getByRole('button', { name: /Build my trip/ }).click();
-  await page.goto('/checkout');
-  await page.locator('.atp-trav').first().waitFor();
-  const n = await page.locator('.atp-trav').count();
-  for (let i = 0; i < n; i++) { const t = page.locator('.atp-trav').nth(i); await t.locator('input').first().fill(['Priya Sharma', 'Arjun Sharma'][i] || `Guest ${i + 1}`); if (await t.getByLabel('Age').count()) await t.getByLabel('Age').fill('34'); await t.getByRole('radio', { name: 'Female', exact: true }).click(); }
-  await page.fill('#lp', '+91 9876543210'); await page.fill('#le', 'priya@example.com');
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
-  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
-  // what checkout sent adds up, with the trip's dates and every pass
-  expect(sent.start).toMatch(/^\d{4}-\d{2}-\d{2}$/); expect(sent.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-  expect(Math.abs(sent.items.reduce((s: number, i: any) => s + (i.price || 0), 0) - sent.subtotal)).toBeLessThanOrEqual(1);
-  expect(Math.abs(sent.subtotal + sent.fee + sent.gst - sent.total)).toBeLessThanOrEqual(1);
-  expect(Math.abs(sent.fee - Math.round(sent.subtotal * 0.05))).toBeLessThanOrEqual(1); // the convenience fee
-  expect(new Set(sent.items.map((i: any) => i.code)).size).toBe(sent.items.length);
-  await expect(page.locator('.atp-rcpt')).toContainText('ATP-TEST01');
-  // only the contact goes in `lead`; every traveller goes with the trip
-  expect(Object.keys(sent.lead).sort()).toEqual(['email', 'name', 'phone']);
-  expect(sent.trip.travellers.length).toBe(n);
-  const codes = await page.evaluate(() => (window as any).__ATP__.S.booked.map((b: any) => b.code));
-  expect(codes).toContain('ATP-RENAMD');
-  expect(codes).not.toContain(sent.items[0].code);
-});
+/* Checkout is in "confirm first" mode: the trip goes to the team on WhatsApp and nothing is posted to /api/bookings
+   until payments are switched on. The checks on what a booking must contain are the tests above. */

@@ -418,3 +418,61 @@
 .atp-sheet .atp-pol{display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
 .atp-sheet .atp-pol b{display:block;font-size:15px;line-height:20px}
 .atp-sheet .atp-pol small{display:block;color:var(--ink-2);font-size:13px;line-height:18px}
+
+/* ---------- Confirm first: the promise, the send screen, the request card ---------- */
+.atp-prom{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr;gap:0}
+.atp-prom li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.atp-prom li:first-child{border-top:0}
+.atp-prom-i{width:40px;height:40px;border-radius:var(--radius-sm);display:grid;place-items:center;background:var(--ink);color:var(--on-ink)}
+.atp-prom b{display:block;font-size:16px;line-height:22px;letter-spacing:-.01em}
+.atp-prom small{display:block;color:var(--ink-2);font-size:13px;line-height:19px}
+.atp-prom.is-compact{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:10px}
+.atp-prom.is-compact li{display:flex;align-items:center;gap:4px;padding:0;border:0;font-size:12px;line-height:18px;font-weight:600;color:var(--ink-2)}
+.atp-prom.is-compact svg{color:var(--ok);flex:none}
+.atp-prom.is-dark li{border-top-color:rgba(252,249,242,.22)}
+.atp-prom.is-dark .atp-prom-i{background:var(--action);color:#212529}
+.atp-prom.is-dark b{color:#FCF9F2}
+.atp-prom.is-dark small{color:#FCF9F2;opacity:.82}
+.atp-promband{margin:8px 0 0;padding:22px 16px 10px;background:#212529;color:#FCF9F2}
+.atp-promband .atp-eyebrow{color:#FCF9F2;opacity:.8;display:block}
+.atp-promband h2{margin:6px 0 8px;font-size:24px;line-height:28px;letter-spacing:-.02em;color:#FCF9F2}
+.atp-promband>p{margin:0 0 10px;font-size:14px;line-height:21px;color:#FCF9F2;opacity:.88;max-width:60ch}
+.atp-promisebox h2{font-size:20px;line-height:26px}
+.atp-how{list-style:none;counter-reset:how;margin:10px 0 2px;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.atp-how li{counter-increment:how;display:flex;flex-direction:column;gap:2px;padding:10px;border-radius:var(--radius-md);background:var(--sunk)}
+.atp-how li::before{content:counter(how);width:22px;height:22px;border-radius:var(--radius-sm);background:var(--ink);color:var(--on-ink);font:700 12px/22px var(--font-mono);text-align:center;margin-bottom:4px}
+.atp-how b{font-size:14px;line-height:18px}
+.atp-how span{font-size:12px;line-height:16px;color:var(--ink-2)}
+.atp-quick{margin-top:10px;font-size:14px;gap:8px;text-decoration:none}
+.atp-copay-note{display:none}
+.atp-sent-acts{display:grid;grid-template-columns:1fr;gap:8px;margin:14px 0 6px}
+.atp-sent-acts a{text-decoration:none;gap:8px}
+.atp-sent .atp-sh-tag{margin-bottom:10px}
+.atp-track{list-style:none;margin:16px 0 0;padding:0}
+.atp-track li{position:relative;display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;padding:0 0 18px}
+.atp-track li::before{content:"";position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.atp-track li:last-child{padding-bottom:0}
+.atp-track li:last-child::before{display:none}
+.atp-track li.is-done::before{background:var(--ok)}
+.atp-track .atp-st{position:relative;background:var(--sunk);color:var(--ink-2)}
+.atp-track .is-done .atp-st{background:var(--ok);color:var(--on-ok)}
+.atp-track .is-now .atp-st{background:var(--action);color:#212529}
+.atp-track b{display:block;font-size:15px;line-height:20px;padding-top:6px}
+.atp-track small{display:block;color:var(--ink-2);font-size:13px;line-height:19px}
+.atp-sent-foot{display:flex;flex-direction:column;gap:8px}
+.atp-reqcard{display:flex;flex-direction:column;gap:4px;align-items:flex-start;margin:0 0 16px;padding:14px;border-radius:var(--radius-md);box-shadow:inset 0 0 0 2px var(--ink)}
+.atp-reqcard b{font-size:18px;line-height:24px;letter-spacing:-.01em}
+.atp-reqcard>span{font:600 13px/18px var(--font-mono);letter-spacing:-.01em}
+.atp-reqcard small{color:var(--ink-2);font-size:13px;line-height:19px}
+.atp-reqcard-acts{display:flex!important;flex-wrap:wrap;gap:8px;margin-top:8px}
+.atp-reqcard-acts a{text-decoration:none;font:600 14px/20px var(--font-sans);letter-spacing:0;gap:6px;min-height:40px;padding:0 12px}
+@media (min-width:1024px){
+  .atp-prom:not(.is-compact){grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+  .atp-prom:not(.is-compact) li{border-top:0;padding:0;grid-template-columns:1fr}
+  .atp-promband{margin:24px auto 0;padding:32px;border-radius:var(--radius-lg);max-width:1120px}
+  .atp-promband h2{font-size:30px;line-height:36px}
+  .atp-copay-note{display:block}
+  .atp-sent{max-width:720px}
+  .atp-pg.atp-co.atp-sent{display:block}
+  .atp-sent-acts{grid-template-columns:1fr 1fr}
+}

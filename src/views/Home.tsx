@@ -41,7 +41,7 @@ export function HomePlan({ trips }: { trips: number }) {
       </div>
       <Link className="atp-bsearch" href="/search" prefetch={false}><TideIcon n="search" /><span>Search beaches, dives, hotels…</span></Link>
       <ul className="atp-trust">
-        <li><TideIcon n="check" s={14} />Free to plan</li><li><TideIcon n="check" s={14} />GST shown before you pay</li><li><TideIcon n="check" s={14} />UPI, cards, netbanking</li>
+        <li><TideIcon n="check" s={14} />Free to plan</li><li><TideIcon n="check" s={14} />Confirmed in 30 minutes</li><li><TideIcon n="check" s={14} />Nothing to pay until then</li>
       </ul>
     </section>
   );

@@ -3,6 +3,9 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { commit, dispatch, useEngine } from '@/engine/client';
+import { WaIcon } from '@/components/Brand';
+import Promises from '@/components/Promises';
+import { tripQuery, waLink } from '@/lib/whatsapp';
 import { Ic, Loading } from '@/components/ui';
 
 /** The live part of a planned trip's page: today's price for your dates and travellers, and the button that loads it.
@@ -20,6 +23,8 @@ export function PlannedTripBuy({ id }: { id: string }) {
       <span className="atp-total"><b>{E.inr(pr.pp)}</b><small>a person · {E.inr(pr.total)} for {E.paxLabel(p)} · incl. GST and fee · from {E.fD(pr.start)}</small></span>
       <button className="atp-btn is-action" onClick={use}>Use this trip</button>
       <p className="atp-fine">You can change dates, hotels and every plan after loading it.</p>
+      <a className="atp-btn is-outline atp-wide atp-quick" href={waLink(tripQuery(E, p, pr, typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''))} target="_blank" rel="noopener noreferrer"><WaIcon s={20} />Want it as it is? Confirm it on WhatsApp</a>
+      <Promises compact />
     </div>
   );
 }
