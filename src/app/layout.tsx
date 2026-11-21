@@ -22,7 +22,7 @@ const THEME_BOOT = `try{var t=JSON.parse(localStorage.getItem('atp_v6')||'{}').t
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: 'Andaman Travel Planner: ferries, stays, cabs and things to do in one plan', template: '%s · Andaman Travel Planner' },
+  title: { default: 'Andaman Travel Planner: Ferries, Hotels, Cabs & Tours', template: '%s · Andaman Travel Planner' },
   description: DESC,
   applicationName: SITE_NAME,
   manifest: '/manifest.webmanifest',

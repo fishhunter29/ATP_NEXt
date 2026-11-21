@@ -16,7 +16,7 @@ export function HotelGallery({ id, name, island }: { id: string; name: string; i
     <div className="hgal-w">
       <div className="hgal" role="group" aria-label={name}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={island || '/img/f/i179.webp'} alt="" width={720} height={480} decoding="async" />
+        <img src={island || '/img/f/i179.webp'} alt={`Photo of the island where ${name} is`} width={720} height={480} decoding="async" />
       </div>
       <p className="note">A photo of the island. We confirm the hotel with you on WhatsApp before anything is booked.</p>
     </div>
