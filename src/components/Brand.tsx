@@ -65,11 +65,12 @@ export function TideIcon({ n, s = 20 }: { n: string; s?: number }) {
   return <Svg s={s}>{PATHS[n]}</Svg>;
 }
 
-/** The ATP mark: two islands joined by the ferry route, in the coral tile (public/brand/atp-icon.png, designed in Canva;
-    the full logo with the wordmark is public/brand/atp-logo.png, and atp-logo-dark.png for dark backgrounds). */
-export function Logo({ s = 36 }: { s?: number }) {
+/** The ATP logo: a navy disc with a gold ring, "ATP" in coral, and "Andaman Travel Planner · Port Blair" round the edge.
+    public/brand/atp-logo.svg is the full logo (use it at 64px and up); atp-mark.svg is the small version without the
+    ring lettering (header, favicon). Both are plain vector paths, so they stay sharp at any size. */
+export function Logo({ s = 40 }: { s?: number }) {
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className="atp-logo" src="/brand/atp-icon.png" alt="" aria-hidden="true" width={s} height={s} decoding="async" />;
+  return <img className="atp-logo" src="/brand/atp-mark.svg" alt="" aria-hidden="true" width={s} height={s} decoding="async" />;
 }
 
 /** The WhatsApp mark, from the file the company supplied (public/img/logos/whatsapp.png), used as it is. */

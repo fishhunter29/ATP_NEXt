@@ -73,7 +73,7 @@ h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em}
 .atp-brandbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink)}
 .atp-brandin{display:flex;align-items:center;gap:10px;min-height:56px;width:100%;max-width:var(--maxw);margin-inline:auto;padding:0 max(8px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
 .atp-brandl{display:flex;align-items:center;gap:10px;flex:1;min-width:0;min-height:44px;text-decoration:none;color:inherit}
-.atp-logo{width:36px;height:36px;display:block;flex:none;object-fit:contain}
+.atp-logo{width:40px;height:40px;display:block;flex:none;object-fit:contain}
 .atp-brandn{display:flex;flex-direction:column;min-width:0}
 .atp-brandn b{font-size:16px;line-height:20px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .atp-dpiit{display:block;font:600 10px/12px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
