@@ -8,7 +8,6 @@ import { Card, inr } from '@/components/browse/cards';
 import { TideIcon } from '@/components/Brand';
 import { HOTELS, SAILS, zonePhoto } from '@/lib/catalogue';
 import { COUNTS, ISLES, actItems, isleName, signatureItems, tripItems } from '@/lib/browse';
-import { RECOGNITIONS } from '@/lib/company';
 import Promises from '@/components/Promises';
 import data from '@/data/catalogue.json';
 import { pageMeta } from '@/lib/seo';
@@ -112,11 +111,6 @@ export default function Page() {
           <div><b>{COUNTS.stays}</b><span>stays, with their real check-in and check-out times</span></div>
         </div>
         <AskWhatsApp about="I’d like help planning an Andaman trip." label="Talk to a planner on WhatsApp" hint="We live in Port Blair. Ask anything before you book." />
-        <p className="atp-fine">A DPIIT-recognised startup, member of TAAI and IATO.</p>
-        <div className="atp-logos">{RECOGNITIONS.filter((r) => /startup|taai|iato/.test(r.file)).map((r) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <span key={r.file} className="atp-lg"><img src={`/img/logos/${r.file}`} alt={r.name} width={120} height={32} loading="lazy" decoding="async" /></span>
-        ))}</div>
       </section>
 
       {/* the questions people ask before an Andaman trip, answered from the same data the site runs on */}
