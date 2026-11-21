@@ -4,6 +4,7 @@ import Shell from '@/components/Shell';
 import JsonLd from '@/components/seo/JsonLd';
 import SiteFooter from '@/components/seo/SiteFooter';
 import ProductTour from '@/components/ProductTour';
+import EnquiryLog from '@/components/EnquiryLog';
 import { SITE, SITE_NAME, abs } from '@/lib/seo';
 import { COMPANY } from '@/lib/company';
 import '@/styles/app.css';
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Shell footer={<SiteFooter />}>{children}</Shell>
         <ProductTour />
+        <EnquiryLog />
         {GA4 && <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA4}`} strategy="afterInteractive" />
           <Script id="ga4" strategy="afterInteractive">{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${GA4}');`}</Script>

@@ -41,3 +41,23 @@ test('health says what is connected, never the keys', async ({ request }) => {
 
 /* Checkout is in "confirm first" mode: the trip goes to the team on WhatsApp and nothing is posted to /api/bookings
    until payments are switched on. The checks on what a booking must contain are the tests above. */
+
+/* /api/enquiries: every WhatsApp query is logged. Without a database it accepts the query and says it stored nothing. */
+test('enquiries: a message is needed, and a good one is accepted', async ({ request }) => {
+  expect((await request.post('/api/enquiries', { data: {} })).status()).toBe(400);
+  expect((await request.post('/api/enquiries', { data: { message: '   ' } })).status()).toBe(400);
+  const r = await request.post('/api/enquiries', { data: { kind: 'trip', message: 'Hi Andaman Travel Planner, please confirm this trip for me.\nRef: ATP-TEST01', total: 12345, travellers: 2 } });
+  expect(r.status()).toBe(200);
+  expect((await r.json()).ok).toBe(true);
+});
+
+test('tapping a WhatsApp link logs the query before the chat opens', async ({ page }) => {
+  const seen: any[] = [];
+  await page.route('**/api/enquiries', async (route) => { seen.push(route.request().postDataJSON()); await route.fulfill({ json: { ok: true, stored: false } }); });
+  await page.goto('/stays');
+  await page.evaluate(() => { window.open = () => null; document.addEventListener('click', (e) => { if ((e.target as Element).closest('a[href^="https://wa.me/"]')) e.preventDefault(); }); });
+  await page.locator('footer a[href^="https://wa.me/"]').first().click();
+  await expect.poll(() => seen.length).toBe(1);
+  expect(seen[0].message).toContain('Andaman trip');
+  expect(seen[0].page).toBe('/stays');
+});

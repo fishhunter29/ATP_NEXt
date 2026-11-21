@@ -108,3 +108,21 @@ do $$ begin
 exception when insufficient_privilege then raise notice 'ok: anon cannot call create_booking';
 end $$;
 reset role;
+
+-- ---------------------------------------------------------------- enquiries: the public key may add one, never read
+set role anon;
+insert into public.enquiries (kind, message, page) values ('general', 'Hi, I would like help planning a trip.', '/');
+-- reading: refused outright where select is revoked (as on Supabase after the migration); where a wider grant exists
+-- (the test grant at the top of this file) Row Level Security still shows no rows
+do $$ declare n bigint; begin
+  begin select count(*) into n from public.enquiries; exception when insufficient_privilege then n := 0; end;
+  if n <> 0 then raise exception 'RLS check failed: anon could read % enquiries', n; end if;
+  raise notice 'ok: anon cannot read enquiries';
+end $$;
+do $$ begin
+  insert into public.enquiries (message, status) values ('x', 'confirmed');
+  raise exception 'RLS check failed: anon could set an enquiry status';
+exception when insufficient_privilege then raise notice 'ok: anon cannot set an enquiry status';
+end $$;
+reset role;
+select pg_temp.expect('the enquiry was saved', (select count(*) from public.enquiries), 1);
