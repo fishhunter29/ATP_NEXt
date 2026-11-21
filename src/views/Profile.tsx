@@ -1,11 +1,9 @@
 'use client';
-/* Profile: who the traveller is (if they have booked), their trips, help from a real person, the look of the site,
-   and the company's policies. No sign-in yet: the trip lives in this browser, and the page says so plainly. */
+/* Profile: who the traveller is (if they have booked), their trips, the look of the site and a short tour.
+   Contact, policies and company details live in the site footer just below. No sign-in yet: the trip lives in this browser, and the page says so plainly. */
 import { useRouter } from 'next/navigation';
 import { commit, useEngine } from '@/engine/client';
 import { Ic, Loading } from '@/components/ui';
-import AskWhatsApp from '@/components/AskWhatsApp';
-import { COMPANY, DPIIT_LINE } from '@/lib/company';
 
 export default function Profile() {
   const E = useEngine();
@@ -28,36 +26,24 @@ export default function Profile() {
 
       <div className="eyebrow">Your trips</div>
       <div className="menu">
-        <button onClick={() => router.push('/trip')}><Ic n="trip" s={22} /><div><b>{hasTrip ? 'Your plan' : 'Plan a trip'}</b><small>{hasTrip ? `${S.cart.length} thing${S.cart.length > 1 ? 's' : ''} added so far` : 'Stays, ferries, cabs and things to do, day by day'}</small></div></button>
+        <button onClick={() => router.push('/trip')}><Ic n="trip" s={22} /><div><b>{hasTrip ? 'Your plan' : 'Plan a trip'}</b><small>{hasTrip ? `${S.cart.length} thing${S.cart.length > 1 ? 's' : ''} added so far` : 'Stays, ferries, cabs and things to do'}</small></div></button>
         <button onClick={() => router.push('/my-trips')}><Ic n="ticket" s={22} /><div><b>Bookings</b><small>Ferry passes, stays and booking codes</small></div></button>
-      </div>
-
-      <div className="eyebrow">Help</div>
-      <AskWhatsApp about="I have a question about my trip." label="Talk to a planner on WhatsApp" hint="Every day, 8 am to 9 pm. We live in the islands." />
-      <div className="menu" style={{ marginTop: 12 }}>
-        <button onClick={() => { window.location.href = `mailto:${COMPANY.email}`; }}><Ic n="chat" s={22} /><div><b>Email us</b><small>{COMPANY.email}</small></div></button>
-        <button onClick={() => router.push('/?tour=1')}><Ic n="explore" s={22} /><div><b>How the site works</b><small>A one-minute tour</small></div></button>
       </div>
 
       <div className="eyebrow">Appearance</div>
       <div className="menu"><div style={{ display: 'block' }}><div className="segm" role="group" aria-label="Theme">
-        {[['light', 'Day'], ['dark', 'Night'], ['auto', 'Match phone']].map(([k, l]) => <button key={k} aria-pressed={theme === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
+        {[['light', 'Day'], ['dark', 'Night'], ['auto', 'Auto']].map(([k, l]) => <button key={k} aria-pressed={theme === k} onClick={() => { S.theme = k; commit(); }}>{l}</button>)}
       </div></div></div>
 
-      <div className="eyebrow">Policies</div>
-      <div className="menu">
-        <button onClick={() => router.push('/refunds')}><Ic n="shield" s={22} /><div><b>Cancellations and refunds</b></div></button>
-        <button onClick={() => router.push('/terms')}><Ic n="shield" s={22} /><div><b>Terms of booking</b></div></button>
-        <button onClick={() => router.push('/privacy')}><Ic n="shield" s={22} /><div><b>Privacy</b></div></button>
+      <div className="menu" style={{ marginTop: 24 }}>
+        <button onClick={() => router.push('/?tour=1')}><Ic n="explore" s={22} /><div><b>How the site works</b><small>A one-minute tour</small></div></button>
       </div>
 
       {hasAny && (
-        <div className="menu" style={{ marginTop: 24 }}>
+        <div className="menu" style={{ marginTop: 12 }}>
           <button onClick={() => { if (!window.confirm('Clear your plan, passes and dates from this browser?')) return; S.cart = []; S.booked = []; S.win = null; S.fin = null; S.fout = null; S.scans = {}; commit(); router.push('/'); }}><Ic n="swap" s={22} /><div><b>Clear my plan</b><small>Start a fresh trip on this browser</small></div></button>
         </div>
       )}
-
-      <p className="note" style={{ textAlign: 'center' }}>{COMPANY.name}<br />{DPIIT_LINE} · Sri Vijaya Puram</p>
     </div></div>
   );
 }
