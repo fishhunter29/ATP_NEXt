@@ -33,7 +33,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
       <div className="atp-dmain">
         <div className="atp-dhero">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={(item?.ph || `/img/t/${zonePhoto('HAV')}.webp`).replace('/img/t/', '/img/f/')} alt="" width={1280} height={853} fetchPriority="high" decoding="async" />
+          <img src={(item?.ph || `/img/t/${zonePhoto('HAV')}.webp`).replace('/img/t/', '/img/f/')} alt={`${p.n}, a ${p.nights}-night Andaman trip`} width={1280} height={853} fetchPriority="high" decoding="async" />
           {item?.tag && <span className="atp-pk-tag">{item.tag}</span>}
         </div>
         <section className="atp-cs is-first">

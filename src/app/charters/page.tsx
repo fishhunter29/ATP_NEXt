@@ -5,7 +5,7 @@ export const metadata = pageMeta({ title: 'Boat charters in the Andamans', descr
 const HERO = (
   <div className="chhero">
     {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img alt="" src="/img/f/i120.webp" />
+    <img alt="Boats moored off a white-sand beach in the Andaman Islands" src="/img/f/i120.webp" />
     <div className="wrap"><span className="eyebrow">Boat charters</span><h1>The sea, on your clock</h1><p>Whole boats, private speedboats, fishing and sunset cruises. Pick a boat, we fit it into your trip.</p></div>
   </div>
 );
