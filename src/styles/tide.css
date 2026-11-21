@@ -73,8 +73,7 @@ h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em}
 .atp-brandbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:var(--surface);border-bottom:1px solid var(--line);color:var(--ink)}
 .atp-brandin{display:flex;align-items:center;gap:10px;min-height:56px;width:100%;max-width:var(--maxw);margin-inline:auto;padding:0 max(8px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
 .atp-brandl{display:flex;align-items:center;gap:10px;flex:1;min-width:0;min-height:44px;text-decoration:none;color:inherit}
-.atp-logo{width:32px;height:32px;border-radius:var(--radius-md);background:var(--action);color:var(--action-ink);display:grid;place-items:center;flex:none}
-.atp-logo svg{display:block}
+.atp-logo{width:36px;height:36px;display:block;flex:none;object-fit:contain}
 .atp-brandn{display:flex;flex-direction:column;min-width:0}
 .atp-brandn b{font-size:16px;line-height:20px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .atp-dpiit{display:block;font:600 10px/12px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -89,7 +88,7 @@ h1,h2,h3{font-family:var(--font-sans);font-weight:700;letter-spacing:-.025em}
   .atp-brandin{min-height:64px;padding-inline:32px;gap:12px}
   .atp-brandin.has-back{padding-left:32px;gap:12px}
   .atp-brandin .atp-back{display:none}
-  .atp-brandin.has-back .atp-logo{display:grid}
+  .atp-brandin.has-back .atp-logo{display:block}
   .atp-brandl{flex:0 1 auto}
   .dnav{display:flex;align-self:stretch;margin-left:auto}
   .dnav a{position:relative;display:flex;align-items:center;gap:8px;padding:0 16px;font:600 15px/20px var(--font-sans);color:var(--ink-2);text-decoration:none}

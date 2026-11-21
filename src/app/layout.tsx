@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   description: DESC,
   applicationName: SITE_NAME,
   manifest: '/manifest.webmanifest',
-  icons: { icon: [{ url: '/icons/icon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png', sizes: '192x192' }], apple: '/icons/icon-180.png' },
+  icons: { icon: [{ url: '/icons/favicon-48.png', sizes: '48x48', type: 'image/png' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/icons/icon-180.png' },
   openGraph: { type: 'website', siteName: SITE_NAME, locale: 'en_IN', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Andaman Travel Planner' }] },
   twitter: { card: 'summary_large_image', images: ['/og.jpg'] },
   formatDetection: { telephone: false },

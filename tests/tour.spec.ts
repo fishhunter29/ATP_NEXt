@@ -90,10 +90,15 @@ test('"Take the tour" in the footer replays it, from Home and from another page'
   await page.addInitScript((k) => { try { localStorage.setItem(k, 'done'); } catch {} }, KEY);
   await page.goto('/stays'); await page.waitForTimeout(1500);
   await expect(card(page)).toHaveCount(0);
+  // on a phone the footer's lists fold: open "Plan" first
+  const plan = page.locator('footer details.af-col', { hasText: 'Build my itinerary' });
+  if (!(await plan.evaluate((d) => (d as HTMLDetailsElement).open))) await plan.locator('summary').click();
   await page.locator('footer').getByRole('link', { name: 'Take the tour' }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(title(page)).toHaveText(TOUR_STEPS[0].title, { timeout: 8000 });
   await page.keyboard.press('Escape');
+  const plan2 = page.locator('footer details.af-col', { hasText: 'Build my itinerary' });
+  if (!(await plan2.evaluate((d) => (d as HTMLDetailsElement).open))) await plan2.locator('summary').click();
   await page.locator('footer').getByRole('link', { name: 'Take the tour' }).click();
   await expect(title(page)).toHaveText(TOUR_STEPS[0].title, { timeout: 8000 });
 });
