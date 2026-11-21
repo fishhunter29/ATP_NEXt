@@ -23,11 +23,12 @@ const THEME_BOOT = `try{var t=JSON.parse(localStorage.getItem('atp_v6')||'{}').t
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),
-  title: { default: 'Andaman Travel Planner: Ferries, Hotels, Cabs & Tours', template: '%s · Andaman Travel Planner' },
+  title: { default: 'Andaman Travel Planner: Ferries, Hotels, Cabs & Tours', template: '%s · ATP' },
   description: DESC,
   applicationName: SITE_NAME,
   manifest: '/manifest.webmanifest',
-  icons: { icon: [{ url: '/icons/favicon-48.png', sizes: '48x48', type: 'image/png' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/icons/icon-180.png' },
+  /* Google shows a site's icon in search results only from a square icon that is a multiple of 48px; /favicon.ico (src/app/favicon.ico) covers browsers that ask for it by name */
+  icons: { icon: [{ url: '/icons/favicon-48.png', sizes: '48x48', type: 'image/png' }, { url: '/icons/favicon-96.png', sizes: '96x96', type: 'image/png' }, { url: '/icons/favicon-144.png', sizes: '144x144', type: 'image/png' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }], apple: '/icons/icon-180.png' },
   openGraph: { type: 'website', siteName: SITE_NAME, locale: 'en_IN', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Andaman Travel Planner' }] },
   twitter: { card: 'summary_large_image', images: ['/og.jpg'] },
   formatDetection: { telephone: false },

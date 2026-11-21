@@ -26,7 +26,7 @@ export function Card({ it, isle, wide, q, eager, notag }: { it: Item; isle?: str
     <Link className={`atp-bc${wide ? ' is-wide' : ''}`} href={it.href + (q || '')} prefetch={false}>
       <span className="atp-bc-ph">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={it.ph} alt="" width={464} height={309} loading={eager ? 'eager' : 'lazy'} decoding="async" />
+        <img src={it.ph} alt="" width={464} height={309} loading={eager ? 'eager' : 'lazy'} fetchPriority={eager ? 'high' : 'auto'} decoding="async" />
         {it.tag && !notag && <span className="atp-pk-tag">{it.tag}</span>}
         {it.smp && <span className="atp-smp">{it.smp}</span>}
       </span>

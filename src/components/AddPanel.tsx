@@ -60,7 +60,7 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
 
   return (
     <div className="card addpanel">
-      <h3 style={{ fontSize: 18 }}>{editing ? L('Change this booking', 'यह बुकिंग बदलें') : L('Add to your trip', 'अपनी यात्रा में जोड़ें')}</h3>
+      <h2 style={{ fontSize: 18 }}>{editing ? L('Change this booking', 'यह बुकिंग बदलें') : L('Add to your trip', 'अपनी यात्रा में जोड़ें')}</h2>
       <div className="eyebrow">{L('Day', 'दिन')}</div>
       <div className="daypick" role="radiogroup" aria-label={L('Day', 'दिन')}>
         {days.map((d) => { const p = E.pDate(d); return (

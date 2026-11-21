@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const pay = event?.payload?.payment?.entity || {};
   const orderId: string | undefined = pay.order_id || event?.payload?.order?.entity?.id;
   const sb = db();
-  if (!sb) { console.log('razorpay event (database not connected)', event.event); return Response.json({ ok: true, stored: false }); }
+  if (!sb) { return Response.json({ ok: true, stored: false }); }
   await sb.from('payment_events').insert({ event: String(event.event || 'unknown'), order_id: orderId ?? null, payment_id: pay.id ?? null, payload: event });
   if ((event.event === 'payment.captured' || event.event === 'order.paid') && orderId) {
     const { error } = await sb.from('bookings').update({ status: 'paid', razorpay_payment_id: pay.id ?? null }).eq('razorpay_order_id', orderId).eq('status', 'pending');
