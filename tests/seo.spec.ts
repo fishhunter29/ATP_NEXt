@@ -77,3 +77,22 @@ test('ferry and island pages answer the questions people search for', async ({ r
   const sm = await (await request.get('/sitemap.xml')).text();
   expect(sm).toContain('<image:loc>');
 });
+
+test('AI assistants and search tools get a plain, current summary, and are allowed in', async ({ request }) => {
+  const r = await request.get('/llms.txt'); expect(r.status()).toBe(200);
+  expect(r.headers()['content-type']).toContain('text/plain');
+  const t = await r.text();
+  expect(t).toMatch(/^# Andaman Travel Planner\n/);
+  for (const x of ['## How booking works', 'within 30 minutes', 'Peak season: 15 December to 15 January', '## Ferries between the main islands', 'Port Blair to Havelock', '+91 99332 70842', '/islands/hav'])
+    expect(t, x).toContain(x);
+  expect(t).toMatch(/Port Blair to Havelock\]\([^)]+\/ferries\/pbl-hav\): \d+ sailings a day, first \d\d:\d\d, last \d\d:\d\d, about \d h( \d+ min)?, from ₹[\d,]+ a person/);
+  const rb = await (await request.get('/robots.txt')).text();
+  for (const bot of ['GPTBot', 'OAI-SearchBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended', 'Bingbot']) expect(rb, bot).toContain(`User-Agent: ${bot}`);
+  expect(rb).toContain('Disallow: /trip/shared');
+  // Home answers the questions asked before a trip, in the page and in the data
+  const h = await (await request.get('/')).text();
+  expect(h).toContain('When is peak season in the Andamans?');
+  expect(h).toContain('How do I book an Andaman trip with Andaman Travel Planner?');
+  const faq = [...h.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'FAQPage');
+  expect(faq.mainEntity.length).toBeGreaterThan(5);
+});

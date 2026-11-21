@@ -45,6 +45,7 @@ The new design (phone-first, categorised browsing, boarding-pass ferry tiles, op
 - **After sending**: "Press Send in WhatsApp and you are done", then the four steps with the times. The request stays on the phone (it survives a reload), My trips shows it as waiting with the same reference, and sending a changed trip keeps the reference.
 - **A ready message for every thing.** Under every add-to-trip panel: "Just this? Confirm it on WhatsApp", written from what is chosen on screen (a stay: hotel, check-in, nights, room; an activity: day and time; a ferry: operator, sailing, class and a question about seats; a cab: route, time, vehicle). Ready-made trips have their own.
 - The booking terms say the same: confirmed before payment.
+- **For AI assistants and search.** `/llms.txt` is a plain summary built from the catalogue (how booking works, the seasons, ferry times and fares between the main islands, each island, the company). `robots.txt` names the crawlers behind the AI assistants and lets them in, with the personal pages kept out. Home answers the questions asked before a trip (how to book, peak season, how many days, how to move between islands), in the page and as FAQPage data.
 - **To switch online payment back on later**: the Pay step replaces "Send for confirmation" in `src/views/Checkout.tsx`; the tickets in My trips, the booking API and its checks are unchanged and still tested.
 
 Adding hotel photos: put `<hotel id in lower case>-0.webp` … (720×480) and `-t.webp` (224×168) in `public/img/h` and set the count in `src/data/hotelphotos.json`.
