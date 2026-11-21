@@ -147,7 +147,7 @@ function CabOpts({ E, c, update }: any) {
       <div className="eyebrow">{lang(E)('Car', 'गाड़ी')}</div>
       <div className="chips">{r.prices.map((p: any) => <button key={p.c} className="chip" aria-pressed={c.vc === p.c} onClick={() => update({ vc: p.c })}>{p.c} · {p.seats} seats</button>)}</div>
       <div className="eyebrow">{lang(E)('Pickup', 'पिकअप')}</div>
-      <div className="chips">{['07:00', '08:00', '09:00', '10:00', '12:00', '14:00', '16:00', '18:00'].map((t) => <button key={t} className="chip" aria-pressed={c.t === t} onClick={() => update({ t })}>{t}</button>)}</div>
+      <div className="chips">{(E.CAB_TIMES as string[]).map((t) => <button key={t} className="chip" aria-pressed={c.t === t} onClick={() => update({ t })}>{t}</button>)}</div>
       {r.prices.some((p: any) => p.ret) && <div className="chips"><button className="chip" aria-pressed={!!c.ret} onClick={() => update({ ret: !c.ret })}>{lang(E)('Return trip with waiting', 'इंतज़ार के साथ वापसी')}</button></div>}
     </>
   );
