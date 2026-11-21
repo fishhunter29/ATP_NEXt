@@ -15,8 +15,21 @@ const str = (v: unknown, max: number) => (typeof v === 'string' && v.trim() ? v.
 const day = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
 const int = (v: unknown, lo: number, hi: number) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? Math.round(v) : null);
 
+/* One visitor may log 8 queries a minute. Kept in memory, so it is per server instance: it stops a runaway script,
+   not a determined attacker (that is the firewall's job). */
+const hits = new Map<string, number[]>();
+function limited(ip: string, max = 8, windowMs = 60_000) {
+  const now = Date.now(); const a = (hits.get(ip) || []).filter((t) => now - t < windowMs); a.push(now); hits.set(ip, a);
+  if (hits.size > 5000) for (const [k, v] of hits) if (!v.some((t) => now - t < windowMs)) hits.delete(k);
+  return a.length > max;
+}
+
 export async function POST(req: Request) {
-  const b = await req.json().catch(() => null) as Record<string, unknown> | null;
+  const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown';
+  if (limited(ip)) return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': '60' } });
+  const raw = await req.text().catch(() => '');
+  if (raw.length > 20_000) return Response.json({ error: 'Too large' }, { status: 413 });
+  let b: Record<string, unknown> | null = null; try { const j = JSON.parse(raw); if (j && typeof j === 'object' && !Array.isArray(j)) b = j; } catch {}
   const message = b && str(b.message, 6000);
   if (!b || !message) return Response.json({ error: 'A message is needed' }, { status: 400 });
   const ref = str(b.ref, 12) || (message.match(/\bATP-[A-Z0-9]{4,10}\b/) || [null])[0];

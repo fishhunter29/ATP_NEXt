@@ -106,7 +106,7 @@ create table if not exists public.price_overrides (
 );
 
 -- ---------------------------------------------------------------- keep updated_at fresh
-create or replace function public.touch_updated_at() returns trigger language plpgsql as $$
+create or replace function public.touch_updated_at() returns trigger language plpgsql set search_path = public as $$
 begin new.updated_at = now(); return new; end $$;
 drop trigger if exists bookings_touch on public.bookings;
 create trigger bookings_touch before update on public.bookings for each row execute function public.touch_updated_at();

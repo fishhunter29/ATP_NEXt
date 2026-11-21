@@ -2,9 +2,10 @@
 /* Every WhatsApp link on the site (wa.me/…?text=…) is logged when it is tapped: the message that was written for
    the visitor goes to /api/enquiries, then WhatsApp opens as usual. Mounted once in the root layout. */
 import { useEffect } from 'react';
-import { logEnquiry } from '@/lib/enquiry';
+import { flushEnquiries, logEnquiry } from '@/lib/enquiry';
 
 export default function EnquiryLog() {
+  useEffect(() => { flushEnquiries(); window.addEventListener('online', flushEnquiries); return () => window.removeEventListener('online', flushEnquiries); }, []);
   useEffect(() => {
     const h = (ev: MouseEvent) => {
       const a = (ev.target as Element | null)?.closest?.('a[href^="https://wa.me/"]') as HTMLAnchorElement | null; if (!a) return;

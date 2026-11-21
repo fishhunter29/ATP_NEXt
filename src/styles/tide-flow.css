@@ -558,3 +558,8 @@
   .af-legal .af-copy{grid-column:1 / -1}
 }
 @media (prefers-reduced-motion:reduce){.af-btn,.af-col summary svg{transition:none}}
+
+/* ---------- tap targets: nothing a finger has to hit is under 44px (audit UX-01) ---------- */
+.atp-btn.is-text{min-height:44px; display:inline-flex; align-items:center}
+.chip{min-width:44px; justify-content:center}
+.af-contact a{display:inline-flex; align-items:center; min-height:44px}

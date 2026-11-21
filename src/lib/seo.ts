@@ -6,7 +6,11 @@ export const SITE_NAME = 'Andaman Travel Planner';
 export const abs = (path: string) => SITE + (path.startsWith('/') ? path : '/' + path);
 
 /** Title, description, canonical and social cards for one page, all pointing at the same address. */
-export function pageMeta(o: { title: string; description: string; path: string; image?: string; noindex?: boolean }): Metadata {
+/** Cut at a word so Google shows the whole line: about 160 characters for a description. */
+export function clip(t: string, max = 158) { if (t.length <= max) return t; const c = t.slice(0, max); return c.slice(0, Math.max(c.lastIndexOf(' '), max - 30)).replace(/[\s,;:.–-]+$/, '') + '…'; }
+
+export function pageMeta(o0: { title: string; description: string; path: string; image?: string; noindex?: boolean }): Metadata {
+  const o = { ...o0, description: clip(o0.description) };
   const images = [o.image || '/og.jpg'];
   return {
     title: o.title, description: o.description,

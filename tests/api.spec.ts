@@ -33,9 +33,9 @@ test('bookings API checks what it is sent', async ({ request }) => {
   expect(await r.json()).toMatchObject({ ok: true, stored: false, items: 2 });   // no database in CI
 });
 
-test('health says what is connected, never the keys', async ({ request }) => {
+test('health says the site is up, and nothing about what is connected', async ({ request }) => {
   const j = await (await request.get('/api/health')).json();
-  expect(j).toMatchObject({ ok: true, database: 'not configured' });
+  expect(j).toEqual({ ok: true });
   expect(JSON.stringify(j)).not.toMatch(/key|secret/i);
 });
 
@@ -60,4 +60,24 @@ test('tapping a WhatsApp link logs the query before the chat opens', async ({ pa
   await expect.poll(() => seen.length).toBe(1);
   expect(seen[0].message).toContain('Andaman trip');
   expect(seen[0].page).toBe('/stays');
+});
+
+test('enquiries: a flood from one visitor is refused, and so is an oversized body', async ({ request }) => {
+  const h = { 'x-forwarded-for': '203.0.113.77' }; const codes: number[] = [];
+  for (let i = 0; i < 10; i++) codes.push((await request.post('/api/enquiries', { data: { message: 'again' }, headers: h })).status());
+  expect(codes.slice(0, 8).every((c) => c === 200)).toBe(true);
+  expect(codes[9]).toBe(429);
+  const big = await request.post('/api/enquiries', { data: { message: 'x'.repeat(30000) }, headers: { 'x-forwarded-for': '203.0.113.78' } });
+  expect(big.status()).toBe(413);
+});
+
+test('security headers are set, photos are cached, and an uppercase address goes to the lowercase page', async ({ request }) => {
+  const r = await request.get('/');
+  expect(r.headers()['x-content-type-options']).toBe('nosniff');
+  expect(r.headers()['x-frame-options']).toBe('SAMEORIGIN');
+  expect(r.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+  expect((await request.get('/brand/atp-mark.svg')).headers()['cache-control']).toContain('max-age=86400');
+  const up = await request.get('/Stays', { maxRedirects: 0 });
+  expect(up.status()).toBe(308); expect(up.headers()['location']).toMatch(/\/stays$/);
+  expect((await request.get('/favicon.ico')).status()).toBe(200);
 });

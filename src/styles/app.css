@@ -1691,7 +1691,7 @@ section.day>.anchor{padding-left:54px!important}
 .chc-b{padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px}
 .chc-g{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:16px}
 .chc-g>span{display:flex;flex-direction:column;min-width:0}
-.chc-g small{font:700 9px var(--f-mono);letter-spacing:.12em;color:var(--c)}
+.chc-g small{font:700 10px var(--f-mono);letter-spacing:.12em;color:var(--muted)}
 .chc-g b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .chc-g b.m{font:700 14px var(--f-mono)}
 .chc-f{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px solid var(--line)}
