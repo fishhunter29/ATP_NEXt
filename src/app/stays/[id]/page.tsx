@@ -21,7 +21,9 @@ export function generateStaticParams() { return HOTELS.map((h) => ({ id: slug(h.
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params; const h = HOTELS.find((x) => x.id === unslug(id)); if (!h) return {};
   /* link previews use the hotel's own cover photo when it has sent one, otherwise the island's photo */
-  return pageMeta({ title: `${h.n}, ${ZN[h.z]?.name}: rooms and prices`, description: `${h.n}: ${h.t} stay on ${ZN[h.z]?.name}, Andaman${h.rt ? `, rated ${h.rt} on Google` : ''}. Rooms from ${inr(hotelFrom(h))} a night. Book it with your ferries and transfers in one plan.`, path: `/stays/${id}`, image: hotelCover(h.id) || `/img/f/${zonePhoto(h.z)}.webp` });
+  const m = pageMeta({ title: `${h.n}, ${ZN[h.z]?.name}: rooms and prices`, description: `${h.n}: ${h.t} stay on ${ZN[h.z]?.name}, Andaman${h.rt ? `, rated ${h.rt} on Google` : ''}. Rooms from ${inr(hotelFrom(h))} a night. Book it with your ferries and transfers in one plan.`, path: `/stays/${id}`, image: hotelCover(h.id) || `/img/f/${zonePhoto(h.z)}.webp` });
+  /* the island placeholders are not a hotel: kept out of search */
+  return h.tbc ? { ...m, robots: { index: false, follow: true } } : m;
 }
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
@@ -33,10 +35,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   return (
     <div className="atp-pg atp-detail">
       <div className="atp-dmain">
-        <HotelGallery id={h.id} name={h.n} />
+        <HotelGallery id={h.id} name={h.n} island={`/img/f/${zonePhoto(h.z)}.webp`} />
         <section className="atp-cs is-first">
           <span className="atp-eyebrow"><a href={`/stays?island=${slug(h.z)}&cat=${h.t}`}>{h.t} stay</a> · <a href={`/islands/${slug(h.z)}`}>{z?.name}</a></span>
           <h1 className="atp-h1">{h.n}</h1>
+          {h.tbc && h.about ? <p className="atp-lead">{h.about}</p> : null}
           {h.rt ? <p className="atp-rateline"><Rate rt={h.rt} rv={h.rv} /><small>on Google</small></p> : null}
           <div className="atp-meta">{h.a && <span><TideIcon n="pin" s={16} />{h.a}</span>}<span><TideIcon n="clock" s={16} />Check-in 12:00 · out 10:00</span><span><TideIcon n="bed" s={16} />{h.rooms.length} room type{h.rooms.length > 1 ? 's' : ''}</span></div>
         </section>
@@ -49,7 +52,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         {z && (() => { const m = mapPlace({ q: inIsles(h.n, z.name) }, 15); return <section className="atp-cs"><h2>Where it is</h2><MapFrame embed={m.embed} href={m.href} title={`${h.n}, ${z.name}`} /></section>; })()}
         {more.length > 2 && <section className="atp-cs"><div className="atp-hs-h"><h2>More {h.t.toLowerCase()} stays on {z?.name}</h2></div><Rail label="Similar stays" className="atp-rail2">{more.map((x) => <Card key={x.id} it={x} notag />)}</Rail></section>}
       </div>
-      <JsonLd data={[ld, crumbs([['Home', '/'], ['Stays', '/stays'], [z?.name || 'Island', `/islands/${slug(h.z)}`], [h.n, `/stays/${id}`]])]} />
+      <JsonLd data={[...(h.tbc ? [] : [ld]), crumbs([['Home', '/'], ['Stays', '/stays'], [z?.name || 'Island', `/islands/${slug(h.z)}`], [h.n, `/stays/${id}`]])]} />
     </div>
   );
 }

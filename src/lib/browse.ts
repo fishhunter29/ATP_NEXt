@@ -8,7 +8,7 @@ export type Cat = { k: string; n: string; icon: string };
 /** One thing in a browse list: a thing to do, a stay or a ready-made trip. */
 export type Item = {
   id: string; href: string; n: string; z: string; cs: string[];
-  ph: string; th: string; sample?: boolean; tag?: string;
+  ph: string; th: string; smp?: string; tag?: string;
   l1: string; l2?: string; l3?: string;
   rt: number | null; rv: number | null;
   p: number | null; unit: string; from: boolean;
@@ -74,10 +74,11 @@ export const stayCats: Cat[] = [
 ];
 export function stayItems(): Item[] {
   return HOTELS.map((h) => {
-    const own = hotelPhotoCount(h.id) > 0; const key = own ? h.id.toLowerCase() : 'sample';
-    return { id: h.id, href: `/stays/${h.id.toLowerCase()}`, n: h.n, z: h.z, cs: [h.t], ph: `/img/h/${key}-0.webp`, th: `/img/h/${key}-t.webp`, sample: !own, tag: h.t,
+    /* every listed hotel has its own photos; the island placeholders show the island, labelled */
+    const own = hotelPhotoCount(h.id) > 0; const isle = `/img/f/${zonePhoto(h.z)}.webp`;
+    return { id: h.id, href: `/stays/${h.id.toLowerCase()}`, n: h.n, z: h.z, cs: [h.t], ph: own ? `/img/h/${h.id.toLowerCase()}-0.webp` : isle, th: own ? `/img/h/${h.id.toLowerCase()}-t.webp` : isle, smp: own ? undefined : 'Hotel confirmed by us', tag: h.t,
       l1: h.a || isleName(h.z), l2: `${h.rooms.length} room type${h.rooms.length > 1 ? 's' : ''}`, rt: h.rt, rv: h.rv, p: hotelFrom(h), unit: 'a night', from: true, d: 0,
-      /* hotels that have sent their own photos come first, then by rating */
+      /* by rating; the island placeholders last */
       s: score(h.rt, h.rv) + (own ? 100 : 0), q: text(h.n, h.a, h.t, isleName(h.z)) };
   }).sort((x, y) => y.s - x.s);
 }

@@ -96,3 +96,19 @@ test('AI assistants and search tools get a plain, current summary, and are allow
   const faq = [...h.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g)].map((m) => JSON.parse(m[1])).find((d) => d['@type'] === 'FAQPage');
   expect(faq.mainEntity.length).toBeGreaterThan(5);
 });
+
+test('every listed hotel shows its own photos; the island placeholders are labelled and kept out of search', async ({ request }) => {
+  const list = await (await request.get('/stays')).text();
+  expect(list).not.toContain('/img/h/sample');
+  const stay = await (await request.get('/stays/htl-hav-002')).text();
+  expect(stay).toContain('/img/h/htl-hav-002-0.webp');
+  const ph = await (await request.get('/stays/htl-ran-001')).text();
+  expect(ph).toContain('hotel confirmed by us');
+  expect(ph).toMatch(/<meta name="robots" content="noindex/);
+  expect(ph).not.toContain('"LodgingBusiness"');
+  const sm = await (await request.get('/sitemap.xml')).text();
+  expect(sm).not.toContain('/stays/htl-ran-001');
+  expect(sm).toContain('/stays/htl-pbl-c02');
+  // hotels that are not in the folder are gone
+  expect((await request.get('/stays/htl-ran-002')).status()).toBe(404);
+});
