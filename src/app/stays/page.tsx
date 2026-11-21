@@ -7,7 +7,7 @@ export default function Page() {
   const items = stayItems();
   return (
     <BrowsePage kind="stay" items={items} cats={stayCats} isles={ISLES} eyebrow={`${items.length} stays`} title="Simple rooms to beach resorts"
-      lead="Prices are a night, before GST, at this season’s rate. Hotels that have sent us their own photos come first. Ratings are from Google.">
+      lead="Prices are a night, before GST, at this season’s rate. Every photo is the hotel’s own. Ratings are from Google.">
       <JsonLd data={crumbs([['Home', '/'], ['Stays', '/stays']])} />
     </BrowsePage>
   );

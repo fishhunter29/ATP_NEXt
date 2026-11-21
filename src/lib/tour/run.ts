@@ -125,7 +125,7 @@ function decorate(pop: PopoverDOM, i: number, total: number, skip: () => void) {
 
   if (first && !w.querySelector('.atp-tour-hero')) {
     const hero = document.createElement('div'); hero.className = 'atp-tour-hero'; hero.setAttribute('aria-hidden', 'true');
-    hero.innerHTML = '<img src="/img/f/i179.webp" alt="" width="640" height="320" decoding="async"><span>Quick tour · 1 minute</span>';
+    hero.innerHTML = '<img src="/img/f/i179.webp" alt="" width="640" height="320" decoding="async"><img class="atp-tour-badge" src="/brand/atp-logo.svg" alt="" width="64" height="64"><span>Quick tour · 1 minute</span>';
     w.insertBefore(hero, pop.title);
   }
   if (last && !w.querySelector('.atp-tour-tick')) {

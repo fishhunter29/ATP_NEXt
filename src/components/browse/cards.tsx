@@ -28,7 +28,7 @@ export function Card({ it, isle, wide, q, eager, notag }: { it: Item; isle?: str
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={it.ph} alt="" width={464} height={309} loading={eager ? 'eager' : 'lazy'} decoding="async" />
         {it.tag && !notag && <span className="atp-pk-tag">{it.tag}</span>}
-        {it.sample && <span className="atp-smp">Sample photo</span>}
+        {it.smp && <span className="atp-smp">{it.smp}</span>}
       </span>
       <span className="atp-bc-b">
         <b>{it.n}</b>
@@ -46,7 +46,7 @@ export function Row({ it, isle, q }: { it: Item; isle?: string; q?: string }) {
       <span className="atp-lrow-ph">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={it.th} alt="" width={224} height={168} loading="lazy" decoding="async" />
-        {it.sample && <span className="atp-smp">Sample</span>}
+        {it.smp && <span className="atp-smp">{it.smp}</span>}
       </span>
       <span className="atp-lrow-b">
         <b>{it.n}</b>

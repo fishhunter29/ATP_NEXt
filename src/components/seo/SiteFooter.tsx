@@ -1,52 +1,89 @@
-/* Site-wide footer, rendered on the server: an index of the islands, ferry routes, planned trips and lists,
-   so every Google-facing page is a link or two from any other. */
+/* Site-wide footer, rendered on the server. A full-width charcoal band that closes every page:
+   1. a last call to plan (WhatsApp and Plan my trip);
+   2. the brand, the four promises and how to reach us;
+   3. an index of the islands, ferry routes, ready-made trips and the planner, so every Google-facing page is a link
+      or two from any other (on phones the lists fold, but they are all in the HTML);
+   4. recognitions on one light strip; 5. the company's legal details and the policies. */
 import { ZONES, ferryRoutes, slug } from '@/lib/catalogue';
 import PKGS from '@/data/packages.json';
-import { Logo } from '@/components/Brand';
+import { TideIcon, WaIcon } from '@/components/Brand';
+import FootOpen from '@/components/seo/FootOpen';
 import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
-import AskWhatsApp from '@/components/AskWhatsApp';
 import { TourLink } from '@/components/ProductTour';
-import Promises from '@/components/Promises';
+import { PROMISES } from '@/components/Promises';
+import { waLink } from '@/lib/whatsapp';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
+
+function Col({ title, children, open }: { title: string; children: React.ReactNode; open?: boolean }) {
+  return (
+    <details className="af-col" open={open}>
+      <summary><span>{title}</span><TideIcon n="chev" s={16} /></summary>
+      <div className="af-links">{children}</div>
+    </details>
+  );
+}
 
 export default function SiteFooter() {
   const R = ferryRoutes(); const ZN = Object.fromEntries(ZONES.map((z) => [z.id, z.name]));
   const routes = TOP_ROUTES.map((k) => R.find((r) => r.key === k)).filter(Boolean) as ReturnType<typeof ferryRoutes>;
-  const trips = (PKGS as any[]).filter((p) => /^P\d/.test(p.id)).slice(0, 8);
+  const trips = (PKGS as any[]).filter((p) => /^P\d/.test(p.id)).slice(0, 7);
+  const wa = waLink('Hi, I’d like help planning an Andaman trip.');
   return (
-    <footer className="foot sitefoot wrap" aria-label="Site">
-      <div className="sf-brand">
-        <span className="atp-brandl"><Logo /><span className="atp-brandn"><b>Andaman Travel Planner</b></span></span>
-        <span className="sf-dpiit">{DPIIT_LINE}</span>
-        <span>Ferries, stays, transfers and experiences across the Andaman Islands, booked as one itinerary.</span>
-        <Promises compact />
-        <AskWhatsApp about="I’d like help planning an Andaman trip." label="Chat with us on WhatsApp" hint={`${COMPANY.whatsapp} · a planner in Port Blair replies`} />
+    <footer className="atp-foot sitefoot" aria-label="Site">
+      <div className="af-in">
+        <section className="af-cta" aria-label="Plan with us">
+          <div>
+            <span className="af-eyebrow">Planned in Port Blair</span>
+            <h2>Your Andaman trip, confirmed in 30 minutes.</h2>
+            <p>Tell us what you have in mind. A planner who lives here checks every ferry, stay and cab, and replies on WhatsApp.</p>
+          </div>
+          <div className="af-cta-b">
+            <a className="af-btn is-wa atp-wa" href={wa} target="_blank" rel="noopener"><WaIcon s={22} /><span><b>Chat on WhatsApp</b><small>{COMPANY.whatsapp}</small></span></a>
+            <a className="af-btn is-plan" href="/plan">Plan my trip<TideIcon n="arrow" s={18} /></a>
+          </div>
+        </section>
+
+        <div className="af-main">
+          <div className="af-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <a className="af-lock" href="/"><img src="/brand/atp-logo.svg" alt="ATP" width={96} height={96} loading="lazy" decoding="async" /><span><b>Andaman Travel Planner</b><small>Sri Vijaya Puram · Andaman Islands</small></span></a>
+            <p>Ferries, stays, cabs and things to do across the Andaman Islands, planned and booked as one trip.</p>
+            <ul className="af-prom">{PROMISES.map((p) => <li key={p.k}><TideIcon n="check" s={14} />{p.b}</li>)}</ul>
+            <ul className="af-contact">
+              <li><TideIcon n="pin" s={16} /><span>{COMPANY.locality}, Andaman &amp; Nicobar Islands</span></li>
+              <li><TideIcon n="mail" s={16} /><a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></li>
+            </ul>
+          </div>
+          <nav className="af-cols" aria-label="Browse">
+            <Col title="Islands">{ZONES.map((z) => <a key={z.id} href={`/islands/${slug(z.id)}`}>{z.name}</a>)}</Col>
+            <Col title="Ferries">{routes.map((r) => <a key={r.key} href={`/ferries/${r.key}`}>{ZN[r.from]} to {ZN[r.to]}</a>)}<a className="is-all" href="/ferries">All ferry routes</a></Col>
+            <Col title="Ready-made trips">{trips.map((p) => <a key={p.id} href={`/trips/${slug(p.id)}`}>{p.n}</a>)}<a className="is-all" href="/trips">All {(PKGS as any[]).length} trips</a></Col>
+            <Col title="Plan">
+              <a href="/plan">Build my itinerary</a><a href="/things-to-do">Things to do</a><a href="/stays">Stays</a><a href="/cabs">Cabs and scooters</a><a href="/charters">Boat charters</a><TourLink />
+            </Col>
+          </nav>
+          <FootOpen />
+        </div>
+
+        <div className="af-trust">
+          <span className="af-eyebrow">Recognised by</span>
+          <div className="af-logos">{RECOGNITIONS.map((r) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={r.file} src={`/img/logos/${r.file}`} alt={r.name} width={160} height={44} loading="lazy" decoding="async" />
+          ))}</div>
+        </div>
+
+        <div className="af-legal">
+          <address>
+            <b>{COMPANY.name}</b>
+            <span>{DPIIT_LINE} · CIN {COMPANY.cin} · GSTIN {COMPANY.gstin}</span>
+            <span>Registered office: {COMPANY.address}</span>
+          </address>
+          <nav aria-label="Terms and policies"><a href="/terms">Booking terms</a><a href="/refunds">Refunds</a><a href="/privacy">Privacy</a></nav>
+          <span className="af-copy">© 2026 {COMPANY.name}. Prices in ₹; GST and every fee shown before you confirm.</span>
+        </div>
       </div>
-      <nav className="sf-cols" aria-label="Browse">
-        <div><b>Islands</b>{ZONES.map((z) => <a key={z.id} href={`/islands/${slug(z.id)}`}>{z.name}</a>)}</div>
-        <div><b>Ferries</b>{routes.map((r) => <a key={r.key} href={`/ferries/${r.key}`}>{ZN[r.from]} to {ZN[r.to]}</a>)}<a href="/ferries">All ferry routes</a></div>
-        <div><b>Planned trips</b>{trips.map((p) => <a key={p.id} href={`/trips/${slug(p.id)}`}>{p.n}</a>)}<a href="/trips">All {(PKGS as any[]).length} trips</a></div>
-        <div><b>Plan</b><a href="/things-to-do">Things to do</a><a href="/stays">Stays</a><a href="/cabs">Cabs and scooters</a><a href="/charters">Boat charters</a><a href="/plan">Build my itinerary</a><TourLink /></div>
-      </nav>
-      <div className="sf-trust">
-        <b className="sf-h">Recognitions and memberships</b>
-        <div className="sf-logos">{RECOGNITIONS.map((r) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <span key={r.file} className="sf-lg"><img src={`/img/logos/${r.file}`} alt={r.name} width={160} height={44} loading="lazy" decoding="async" /></span>
-        ))}</div>
-        <address className="sf-co">
-          <b>{COMPANY.name}</b>
-          <span>CIN {COMPANY.cin}</span>
-          <span>GSTIN {COMPANY.gstin}</span>
-          <span>{DPIIT_LINE}</span>
-          <span>Registered office: {COMPANY.address}</span>
-          <span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
-          <span>WhatsApp <a href={`https://wa.me/${COMPANY.whatsapp.replace(/\D/g, '')}`}>{COMPANY.whatsapp}</a></span>
-        </address>
-        <nav className="sf-pol" aria-label="Terms and policies"><a href="/terms">Booking terms</a><a href="/refunds">Refunds and cancellation</a><a href="/privacy">Privacy</a></nav>
-      </div>
-      <span className="sf-legal">© 2026 {COMPANY.name} · Prices in ₹, GST shown before you pay.</span>
     </footer>
   );
 }

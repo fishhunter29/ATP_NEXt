@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...ZONES.map((z) => u(`/islands/${slug(z.id)}`, 0.8, `/img/f/${zonePhoto(z.id)}.webp`)),
     ...ferryRoutes().map((r) => u(`/ferries/${r.key}`, 0.8)),
     ...ACTS.filter((a) => !/^ACV-(MEAL|SHOP)/.test(a.id)).map((a) => u(`/things-to-do/${slug(a.id)}`, 0.6, `/img/f/${actPhoto(a.id)}.webp`)),
-    ...HOTELS.map((h) => u(`/stays/${slug(h.id)}`)),
+    ...HOTELS.filter((h) => !h.tbc).map((h) => u(`/stays/${slug(h.id)}`)),
     ...(PKGS as { id: string }[]).map((p) => u(`/trips/${slug(p.id)}`, 0.7)),
   ];
 }

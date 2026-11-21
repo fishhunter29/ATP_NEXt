@@ -57,6 +57,7 @@ const PATHS: Record<string, ReactNode> = {
   grip: <path d="M8 6h.01M8 12h.01M8 18h.01M16 6h.01M16 12h.01M16 18h.01" />,
   bulb: <path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.500V15h8v-1.500A6 6 0 0 0 12 3z" />,
   chat: <path d="M4 5h16v11H9l-5 4z" />,
+  mail: <><path d="M3 6h18v12H3z"/><path d="M3 7l9 6 9-6"/></>,
   down: <path d="M6 9l6 6 6-6" />,
 };
 
@@ -64,9 +65,12 @@ export function TideIcon({ n, s = 20 }: { n: string; s?: number }) {
   return <Svg s={s}>{PATHS[n]}</Svg>;
 }
 
-/** The coral tile with three waves. */
-export function Logo() {
-  return <span className="atp-logo" aria-hidden="true"><TideIcon n="waves" s={18} /></span>;
+/** The ATP logo: a navy disc with a gold ring, "ATP" in coral, and "Andaman Travel Planner · Sri Vijaya Puram" round the edge.
+    public/brand/atp-logo.svg is the full logo (use it at 64px and up); atp-mark.svg is the small version without the
+    ring lettering (header, favicon). Both are plain vector paths, so they stay sharp at any size. */
+export function Logo({ s = 40 }: { s?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="atp-logo" src="/brand/atp-mark.svg" alt="" aria-hidden="true" width={s} height={s} decoding="async" />;
 }
 
 /** The WhatsApp mark, from the file the company supplied (public/img/logos/whatsapp.png), used as it is. */
