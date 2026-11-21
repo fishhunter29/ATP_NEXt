@@ -43,19 +43,77 @@ async function fillTravellers(page: import('@playwright/test').Page) {
   await page.fill('#le', 'priya@example.com');
 }
 
-test('build a trip, pay, and get every ticket', async ({ page }) => {
+/* Checkout opens WhatsApp in a new tab; the tests keep the address it would open instead. */
+const catchWhatsApp = (page: import('@playwright/test').Page) => page.addInitScript(() => { (window as any).open = (u: string) => { (window as any).__opened = u; return null; }; });
+const opened = async (page: import('@playwright/test').Page) => decodeURIComponent(String(await page.evaluate(() => (window as any).__opened || '')).split('text=')[1] || '');
+/* Tickets as they will be once a trip is confirmed and paid: made straight from the trip, the way checkout will. */
+const seedTickets = (page: import('@playwright/test').Page) => page.evaluate(() => {
+  const E = (window as any).__ATP__; const cart = E.S.cart.slice(); E.bookAll();
+  E.S.booked.forEach((b: any, i: number) => { const it = cart[i]; if (!it) return; b.ref = it.ref; if (it.cls) b.cls = it.cls; if (it.nights) b.nights = it.nights; if (it.kind === 'ferry' && E.SAIL[it.ref]) b.arr = E.SAIL[it.ref].arr; });
+  E.S.cart = []; E.S.win = null; E.save();
+});
+
+test('build a trip and send it for confirmation: nothing is paid, the whole trip goes on WhatsApp', async ({ page }) => {
+  await catchWhatsApp(page);
+  let posted = false; await page.route('**/api/bookings', (r) => { posted = true; return r.abort(); });
   await page.goto('/plan');
   await page.getByRole('button', { name: /Build my trip/ }).click();
   await expect(page).toHaveURL(/\/trip$/);
   await page.goto('/checkout');
+  // the promise is on the page before anything is asked for
+  await expect(page.locator('.atp-promisebox')).toContainText('Confirmed in 30 minutes. Nothing to pay now.');
+  for (const t of ['Confirmed in 30 minutes', 'The best price in India', 'No sales calls', 'With you all the way']) await expect(page.locator('.atp-promisebox')).toContainText(t);
+  await expect(page.getByRole('button', { name: /^Pay/ })).toHaveCount(0);
+  await expect(page.locator('.atp-co')).not.toContainText('Test mode');
   await fillTravellers(page);
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
-  // each partner confirms in turn, then the confirmation
-  await expect(page.getByRole('heading', { name: 'Booking your trip' })).toBeVisible();
-  await expect(page.locator('.atp-conf li').first()).toContainText('Payment received');
-  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
-  await expect(page.getByRole('heading', { name: 'You’re going to the Andamans' })).toBeVisible();
-  await expect(page.locator('.atp-rcpt')).toContainText('Paid');
+  const total = (await page.locator('.atp-tl.is-total b').textContent())!.trim();
+  await page.getByRole('button', { name: 'Send for confirmation' }).click();
+  // the message is complete: reference, dates, route, total, every traveller, contact and the link to the plan
+  const msg = await opened(page);
+  expect(await page.evaluate(() => (window as any).__opened)).toMatch(/^https:\/\/wa\.me\/919933270842\?text=/);
+  expect(msg).toMatch(/^Hi Andaman Travel Planner, please confirm this trip\. Ref ATP-[2-9A-Z]{6}\n/);
+  expect(msg).toContain(`Total ${total} including GST and fee`);
+  expect(msg).toContain('Travellers: Priya Sharma (36, F); Arjun Sharma (35, M)');
+  expect(msg).toContain('Contact: +91 9876543210 · priya@example.com');
+  expect(msg).toMatch(/Plan: http[^\s]+\/trip\/shared#[zj][\w-]+$/);
+  expect(msg).not.toMatch(/passport/i);
+  // what the traveller sees next: one tap left, then what happens and when
+  await expect(page.getByRole('heading', { name: 'Press Send in WhatsApp and you are done' })).toBeVisible();
+  const ref = (await page.locator('.atp-sent .atp-sh-tag').innerText()).replace(/ref /i, '');
+  expect(msg).toContain(ref);
+  await expect(page.locator('.atp-track')).toContainText('Every booking confirmed within 30 minutes');
+  await expect(page.locator('.atp-track')).toContainText('You pay once, after it is all confirmed');
+  expect(await page.getByRole('link', { name: 'Open WhatsApp' }).getAttribute('href')).toContain('wa.me/919933270842');
+  expect(await page.getByRole('link', { name: 'Send it by email instead' }).getAttribute('href')).toMatch(/^mailto:info@andamantravelplanner\.com\?subject=/);
+  // it survives a reload, the trip is still in the planner, and nothing was booked or posted
+  await page.reload();
+  await expect(page.locator('.atp-sent .atp-sh-tag')).toContainText(ref);
+  expect(await S(page, '(E) => E.S.cart.length')).toBeGreaterThan(5);
+  expect(await S(page, '(E) => E.S.booked.length')).toBe(0);
+  expect(posted).toBe(false);
+  // My trips shows it as waiting, with the same reference
+  await page.goto('/my-trips');
+  await expect(page.locator('.atp-reqcard')).toContainText('Waiting for our confirmation');
+  await expect(page.locator('.atp-reqcard')).toContainText(ref);
+  await expect(page.locator('.atp-vch')).toHaveCount(0);
+  // changing the trip brings the form back, and the reference is kept for the new version
+  await page.goto('/things-to-do/acv-boat-eleph');
+  await page.getByRole('button', { name: 'Add to trip' }).click();
+  await page.goto('/checkout');
+  await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
+  await expect(page.locator('#ln')).toHaveValue('Priya Sharma');
+  await page.getByRole('button', { name: 'Send for confirmation' }).click();
+  expect(await opened(page)).toContain(ref);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+});
+
+test('my trips: tickets day by day, ferries as boarding passes, cab rides as one row, a calendar file', async ({ page }) => {
+  await page.goto('/plan');
+  await page.getByRole('button', { name: /Build my trip/ }).click();
+  await expect(page).toHaveURL(/\/trip$/);
+  await seedTickets(page);
+  await page.goto('/my-trips');
+  await expect(page.getByRole('heading', { name: 'My trips' })).toBeVisible();
   expect(await page.locator('.atp-vch').count()).toBeGreaterThan(5);
   // ferries are boarding passes; a tap shows the code to scan
   const pass = page.locator('.atp-vch .atp-pass').first();
@@ -69,14 +127,11 @@ test('build a trip, pay, and get every ticket', async ({ page }) => {
   // the whole trip as a calendar file
   const [file] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Add to calendar' }).click()]);
   expect(file.suggestedFilename()).toBe('andaman-trip.ics');
-  // later, without ?paid, it is the plain list
-  await page.goto('/my-trips');
-  await expect(page.getByRole('heading', { name: 'My trips' })).toBeVisible();
-  expect(await page.locator('.atp-vch').count()).toBeGreaterThan(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
 });
 
 test('checkout: missing details are marked, the price opens by kind, and one contact is enough without a ferry', async ({ page }) => {
+  await catchWhatsApp(page);
   await page.goto('/plan');
   await page.getByRole('button', { name: /Build my trip/ }).click();
   await expect(page).toHaveURL(/\/trip$/);
@@ -92,7 +147,7 @@ test('checkout: missing details are marked, the price opens by kind, and one con
   await expect(page.getByRole('heading', { name: 'Who’s travelling' })).toBeVisible();
   expect(await page.locator('.atp-trav').count()).toBeGreaterThan(1);
   // nothing filled: every missing detail is named, and nothing is booked
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  await page.getByRole('button', { name: 'Send for confirmation' }).click();
   await expect(page.locator('.toast')).toContainText('missing');
   expect(await page.locator('.atp-err').count()).toBeGreaterThan(3);
   await expect(page.locator('#ln')).toHaveAttribute('aria-invalid', 'true');
@@ -114,14 +169,14 @@ test('checkout: missing details are marked, the price opens by kind, and one con
   await expect(page.locator('.atp-feenote')).not.toContainText('%');
   await expect(page.locator('.atp-tl', { hasText: 'Convenience fee' })).not.toContainText('%');
   await expect(page.locator('.atp-co')).toContainText('If plans change');
-  await expect(page.locator('.atp-draft')).toContainText('No money is taken yet');
-  // foreign travellers add a passport number
+  await expect(page.locator('.atp-co')).toContainText('You pay once, when everything is confirmed');
+  // foreign travellers are not asked for passport numbers here; the team asks on WhatsApp
   await page.getByRole('switch', { name: /Indian national/ }).click();
-  await expect(page.getByLabel('Passport number').first()).toBeVisible();
+  await expect(page.getByLabel('Passport number')).toHaveCount(0);
   // a business trip asks for a GSTIN and checks its shape
   await page.getByRole('switch', { name: /Business trip/ }).click();
   await page.getByLabel('Company GSTIN').fill('123');
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
+  await page.getByRole('button', { name: 'Send for confirmation' }).click();
   await expect(page.locator('[data-f="gstin"] .atp-err')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
   // one activity, no ferry: one contact is enough
@@ -133,9 +188,9 @@ test('checkout: missing details are marked, the price opens by kind, and one con
   await expect(page.locator('.atp-trav')).toHaveCount(1);
   await expect(page.getByLabel('Age')).toHaveCount(0);
   await fillTravellers(page);
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
-  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
-  await expect(page.locator('.atp-vch')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Send for confirmation' }).click();
+  await expect(page.getByRole('heading', { name: 'Press Send in WhatsApp and you are done' })).toBeVisible();
+  expect(await opened(page)).toMatch(/Travellers: Priya Sharma\n/);
 });
 
 test('search: results stay in their groups and the words stay in the address', async ({ page }) => {
@@ -552,12 +607,12 @@ test('light mode: tabs, small labels, checkout and My trips on a wide screen', a
   await page.goto('/plan');
   await page.getByRole('button', { name: /Build my trip/ }).click();
   await page.goto('/checkout');
-  // on a wide screen the price sits beside the form, and the days sit three in a row
+  // on a wide screen the price sits beside the form, and in My trips the days sit three in a row
   const price = await page.locator('.atp-coside').boundingBox(); const who = await page.locator('.atp-trav').first().boundingBox();
   expect(price!.x).toBeGreaterThan(who!.x + who!.width);
-  await fillTravellers(page);
-  await page.getByRole('button', { name: /^Pay ₹/ }).click();
-  await expect(page).toHaveURL(/my-trips/, { timeout: 10_000 });
+  await expect(page.locator('.atp-coside').getByRole('button', { name: 'Send for confirmation' })).toBeVisible();
+  await seedTickets(page);
+  await page.goto('/my-trips');
   await page.locator('.atp-vlist .atp-vday').nth(2).waitFor();
   const tops = await page.locator('.atp-vlist .atp-vday').evaluateAll((els) => els.slice(0, 3).map((e) => Math.round(e.getBoundingClientRect().top)));
   expect(tops.length).toBe(3); expect(new Set(tops).size).toBe(1);
@@ -983,4 +1038,33 @@ test('more like this: nothing twice, places stay on their island, activities may
   // the signature experiences are on Home
   await page.goto('/');
   await expect(page.locator('#signature .atp-bc')).toHaveCount(8);
+});
+
+test('the promise is on Home, and every thing has its own ready message', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.atp-promband')).toContainText('You choose the trip. We confirm it in 30 minutes.');
+  await expect(page.locator('.atp-promband .atp-prom li')).toHaveCount(4);
+  await expect(page.locator('.atp-promband')).toContainText('No middleman from the mainland');
+  const quick = async () => decodeURIComponent(((await page.locator('.atp-quick').first().getAttribute('href')) || '').split('text=')[1] || '');
+  // a stay: the hotel, check-in, nights, room, travellers, the price seen
+  await page.goto('/stays/htl-hav-003');
+  await page.locator('.atp-quick').first().waitFor();
+  expect(await quick()).toMatch(/please confirm this for me\.\nStay: .+, Havelock\nCheck-in .+ · \d+ nights? · .+\nTravellers: 2 adults\nPrice I saw: ₹[\d,]+/);
+  // choices made on the page go into the message
+  await page.locator('.addpanel .chip', { hasText: /^3$/ }).first().click();
+  expect(await quick()).toContain('3 nights');
+  // an activity: the day and the time
+  await page.goto('/things-to-do/acv-boat-eleph');
+  await page.locator('.atp-quick').first().waitFor();
+  expect(await quick()).toMatch(/Activity: .+, Havelock\n.+ at \d\d:\d\d\n/);
+  // a ferry: the operator, the sailing, the class, and a question about seats
+  await page.goto('/ferries/pbl-hav');
+  await page.locator('button.atp-fr').first().click();
+  await page.locator('.atp-quick').first().waitFor();
+  expect(await quick()).toMatch(/Ferry: Port Blair → Havelock\n.+ · leaves \d\d:\d\d · .+ class\nPlease tell me which seats are free\./);
+  // a ready-made trip
+  await page.goto('/trips/p2');
+  await page.locator('.atp-quick').first().waitFor();
+  expect(await quick()).toMatch(/please confirm this trip for me\.\nTrip: .+ · 5 nights\n/);
+  expect(await page.locator('.atp-quick').first().getAttribute('href')).toMatch(/^https:\/\/wa\.me\/919933270842\?text=/);
 });

@@ -8,11 +8,11 @@
    ],
    [
     "Prices",
-    "Prices are in rupees. GST is shown separately before you pay. We check every price again at the moment you pay; if a price has changed, we show you before taking money."
+    "Prices are in rupees. GST is shown separately before you pay. We check every price again when we confirm your trip; if a price has changed, we tell you before you pay."
    ],
    [
     "Confirmation",
-    "Each booking is confirmed by its partner after payment. If a partner cannot confirm, that part is refunded in full to your original payment method, and we offer a similar option."
+    "You send us your trip and we confirm every booking with its partner within 30 minutes, before you pay. If a partner cannot confirm, we offer you the closest option and its price before you pay anything."
    ],
    [
     "Travellers and ID",
@@ -70,7 +70,7 @@
    ],
    [
     "Payments",
-    "Card and bank details are handled by Razorpay. We never see or store them."
+    "When you pay online, card and bank details are handled by the payment provider and are not stored by us. We never see or store them."
    ],
    [
     "Your choices",

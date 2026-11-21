@@ -5,6 +5,7 @@ import PKGS from '@/data/packages.json';
 import { Logo } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
 import AskWhatsApp from '@/components/AskWhatsApp';
+import Promises from '@/components/Promises';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
 
@@ -18,6 +19,7 @@ export default function SiteFooter() {
         <span className="atp-brandl"><Logo /><span className="atp-brandn"><b>Andaman Travel Planner</b></span></span>
         <span className="sf-dpiit">{DPIIT_LINE}</span>
         <span>Ferries, stays, transfers and experiences across the Andaman Islands, booked as one itinerary.</span>
+        <Promises compact />
         <AskWhatsApp about="I’d like help planning an Andaman trip." label="Chat with us on WhatsApp" hint={`${COMPANY.whatsapp} · a planner in Port Blair replies`} />
       </div>
       <nav className="sf-cols" aria-label="Browse">

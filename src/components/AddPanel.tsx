@@ -4,6 +4,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { commit, lang, useEngine } from '@/engine/client';
 import { Ic } from './ui';
+import { WaIcon } from './Brand';
+import Promises from './Promises';
+import { itemQuery, waLink } from '@/lib/whatsapp';
 
 type Kind = 'act' | 'stay' | 'ferry' | 'cab' | 'rent';
 
@@ -77,6 +80,13 @@ export default function AddPanel({ kind, id, uid }: { kind: Kind; id: string; ui
           <span style={{ display: 'flex', gap: 8 }}><button className="btn ghost" onClick={remove}>{L('Remove', 'हटाएँ')}</button><button className="btn primary" onClick={save}>{L('Save changes', 'बदलाव सेव करें')}</button></span>
         ) : <button className="btn primary" onClick={add}><Ic n="plus" s={18} w={2.6} /> {L('Add to trip', 'यात्रा में जोड़ें')}</button>}
       </div>
+      {!editing && (
+        <>
+          {/* the same choices as a ready message: just this, confirmed by our team, without building a trip */}
+          <a className="atp-btn is-outline atp-wide atp-quick" href={waLink(itemQuery(E, c, typeof window !== 'undefined' ? window.location.origin + window.location.pathname : ''))} target="_blank" rel="noopener noreferrer"><WaIcon s={20} />Just this? Confirm it on WhatsApp</a>
+          <Promises compact />
+        </>
+      )}
     </div>
   );
 }

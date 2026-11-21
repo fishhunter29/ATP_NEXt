@@ -1,26 +1,31 @@
 'use client';
-/* Checkout (Tide): who is travelling, the price by kind of booking, what happens if plans change, how to pay.
-   After Pay: each partner confirms in turn, then My trips. Payment is simulated until Razorpay is connected
-   (see /api/payments), and the page says so. */
+/* Checkout (Tide), in "confirm first" mode: who is travelling, the price by kind of booking, what happens if plans
+   change, then "Send for confirmation". Nothing is paid here. The whole trip goes to our team on WhatsApp as a ready
+   message with a link to the plan; they confirm every booking within 30 minutes and the traveller pays after that.
+   Online payment (Razorpay) comes back at this step when it is connected. */
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { commit, showToast, useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
-import { TideIcon } from '@/components/Brand';
+import { TideIcon, WaIcon } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE } from '@/lib/company';
+import { packTrip } from '@/lib/sharelink';
+import { waLink } from '@/lib/whatsapp';
+import Promises from '@/components/Promises';
 import AskWhatsApp from '@/components/AskWhatsApp';
 
 type Person = { name: string; age: string; gender: string; pp: string };
 type Lead = { name: string; phone: string; email: string; people?: Person[]; gstin?: string };
-const PAYS: [string, string, string][] = [['upi', 'UPI', 'Google Pay, PhonePe, Paytm, BHIM or any UPI app'], ['card', 'Debit or credit card', 'Visa, Mastercard, RuPay'], ['nb', 'Netbanking', 'All major Indian banks']];
+/* a short reference both sides can quote; no look-alike letters */
+const newRef = () => 'ATP-' + Array.from({ length: 6 }, () => '23456789ABCDEFGHJKMNPQRSTUVWXYZ'[Math.floor(Math.random() * 31)]).join('');
 const KINDS: [string, string, string, string][] = [['stay', 'Stays', 'k-stay', 'bed'], ['ferry', 'Ferries', 'k-boat', 'boat'], ['cab', 'Cabs and rentals', 'k-cab', 'car'], ['act', 'Activities and entry tickets', 'k-sight', 'sunset']];
 const GENDERS = ['Female', 'Male', 'Other'];
 
 export default function Checkout() {
   const E = useEngine();
   const router = useRouter();
-  const [busy, setBusy] = useState<{ steps: [string, string, string][]; done: number } | null>(null);
+  const [plan, setPlan] = useState('');
   const [people, setPeople] = useState<Person[] | null>(null);
   const [contact, setContact] = useState<{ phone: string; email: string } | null>(null);
   const [indian, setIndian] = useState(true);
@@ -29,27 +34,14 @@ export default function Checkout() {
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [now, setNow] = useState('');
   useEffect(() => { setNow(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })); }, []);
+  /* the link to this plan, made ahead of time so the Send button can open WhatsApp straight away */
+  const cartSig = E ? `${E.S.cart.length}|${E.S.cart.map((i: any) => i.uid + (i.date || '') + (i.t || '')).join('').length}` : '';
+  useEffect(() => { if (!E || !E.S.cart.length) return; let on = true; packTrip(E.S).then((c) => { if (on) setPlan(`${location.origin}/trip/shared#${c}`); }).catch(() => {}); return () => { on = false; }; }, [E, cartSig]);
   if (!E) return <Loading />;
   const { S } = E;
 
-  if (busy) return (
-    <div className="atp-pg atp-co">
-      <section className="atp-cs is-first">
-        <h1 className="atp-h1">Booking your trip</h1>
-        <p className="atp-lead">Each booking goes to its own partner. This takes under a minute.</p>
-        <ol className="atp-conf" aria-live="polite">
-          {busy.steps.map(([b, s, ok], i) => (
-            <li key={i} className={i < busy.done ? 'is-done' : i === busy.done ? 'is-now' : ''}>
-              <span className="atp-st">{i < busy.done ? <TideIcon n="check" s={18} /> : <i className="atp-spin" />}</span>
-              <span><b>{b}</b><small>{s}</small></span><em>{i < busy.done ? ok : i === busy.done ? 'Confirming' : 'Waiting'}</em>
-            </li>
-          ))}
-        </ol>
-      </section>
-    </div>
-  );
   if (!S.cart.length) return (
-    <div className="atp-pg atp-trip-empty"><h1>Nothing to pay for yet</h1><p className="atp-lead">Add something to your trip first.</p>
+    <div className="atp-pg atp-trip-empty"><h1>Nothing to confirm yet</h1><p className="atp-lead">Add something to your trip first.</p>
       <button type="button" className="atp-btn is-action atp-wide" onClick={() => router.push('/')}>Start exploring</button></div>
   );
 
@@ -106,7 +98,6 @@ export default function Checkout() {
       if (!hasFerry) return;
       if (roles[i].k === 'adult' && !(Number(p.age) >= 12 && Number(p.age) <= 110)) bad[`t${i}age`] = 'Add the age in years';
       if (!p.gender) bad[`t${i}gender`] = 'Choose one';
-      if (!indian && roles[i].k !== 'infant' && p.pp.trim().length < 6) bad[`t${i}pp`] = 'Add the passport number';
     });
     if (C.phone.replace(/\D/g, '').length < 10) bad.phone = 'Add a 10-digit WhatsApp number; tickets and updates go there';
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(C.email.trim())) bad.email = 'Add an email address for invoices and receipts';
@@ -114,37 +105,62 @@ export default function Checkout() {
     return bad;
   };
 
-  const pay = () => {
+  /* the request stays on the phone, so the page still shows it after a reload or a trip to WhatsApp and back */
+  const start: string = S.trip ? S.trip.start : S.cart.map((i: any) => i.date).sort()[0];
+  const sig = `${S.cart.length}|${tot}|${start}`;
+  const sent = S.lead && S.lead.request && S.lead.request.sig === sig ? S.lead.request : null;
+  const hhmm = (ms: number) => new Date(ms).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  const word: Record<string, [string, string]> = { stay: ['stay', 'stays'], ferry: ['ferry', 'ferries'], cab: ['cab ride', 'cab rides'], act: ['activity', 'activities'] };
+  const counts = groups.map((g) => `${g.list.length} ${word[g.k][g.list.length > 1 ? 1 : 0]}`).join(', ');
+  const routeTxt = (E.tripRoute(S.cart) as [string, number][]).map(([z, k]) => `${E.ZN[z].name} ${k}N`).join(' → ');
+  const message = (code: string) => [
+    `Hi Andaman Travel Planner, please confirm this trip. Ref ${code}`,
+    `${S.trip ? `${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}` : E.fD(start)} · ${E.paxTxt()}`,
+    routeTxt, counts,
+    `Total ${E.inr(tot)} including GST and fee`,
+    `Travellers: ${P.map((p) => `${p.name.trim()}${hasFerry ? ` (${[p.age, p.gender ? p.gender[0] : ''].filter(Boolean).join(', ')})` : ''}`).join('; ')}`,
+    hasFerry && !indian ? 'Some of us are not Indian nationals.' : '',
+    `Contact: ${C.phone.trim()} · ${C.email.trim()}`,
+    biz != null && biz.trim() ? `Company GSTIN: ${biz.trim().toUpperCase()}` : '',
+    plan ? `Plan: ${plan}` : '',
+  ].filter(Boolean).join('\n');
+
+  const send = () => {
     const bad = check(); setErrs(bad);
     const first = Object.keys(bad)[0];
     if (first) { showToast(`${Object.keys(bad).length} detail${Object.keys(bad).length > 1 ? 's' : ''} missing. They are marked in red.`); const el = document.querySelector<HTMLElement>(`[data-f="${first}"]`); el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => el?.querySelector<HTMLElement>('input,button')?.focus({ preventScroll: true }), 350); return; }
-    S.lead = { name: P[0].name.trim(), phone: C.phone.trim(), email: C.email.trim(), people: P.map((p) => ({ name: p.name.trim(), age: p.age, gender: p.gender, pp: '' })), ...(biz != null ? { gstin: biz.trim().toUpperCase() } : {}) };
-    const method = (PAYS.find((p) => p[0] === S.pay) || PAYS[0])[1];
-    const steps: [string, string, string][] = [['Payment received', `${E.inr(tot)} by ${method}`, 'Confirmed'], ...vendors.map((v): [string, string, string] => { const mine = rows.filter((x: any) => x.I.vendor === v); const c = mine.length; const boat = mine.every((x: any) => x.it.kind === 'ferry');
-      return [v, boat ? `${c} ticket${c > 1 ? 's' : ''} · our team books within 15 minutes` : `${c} booking${c > 1 ? 's' : ''}`, boat ? 'Received' : 'Confirmed']; })];
-    S.lead.paid = { total: tot, method: S.pay || 'upi', at: Date.now(), test: true };
-    E.bookAll();
-    /* what My trips needs to draw a ticket: the sailing, the class, the nights (same order as the trip) */
-    S.booked.forEach((b: any, i: number) => { const it = S.cart[i]; if (!it) return; b.ref = it.ref; if (it.cls) b.cls = it.cls; if (it.nights) b.nights = it.nights; if (it.own) b.own = true; if (it.kind === 'ferry') { if (E.SAIL[it.ref]) b.arr = E.SAIL[it.ref].arr; b.seats = ''; } });
-    setBusy({ steps, done: 0 }); commit(); window.scrollTo(0, 0);
-    /* send it to the server (saved in the database once Supabase is connected); the vouchers stay on the phone either way */
-    E.syncTrip(); const trip = S.trip || S.win || {};
-    const send = fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-      lead: { name: S.lead.name, phone: S.lead.phone, email: S.lead.email }, pay: 'simulated', pax: { adults: S.pax.adults, kids: S.pax.kids, infants: S.pax.infants },
-      start: trip.start, end: trip.end, subtotal: sub, fee, gst, total: tot,
-      items: S.booked, trip: { cart: S.cart, pax: S.pax, win: S.win, fin: S.fin, fout: S.fout, method: S.pay, fee, travellers: P.map((p, i) => ({ name: p.name.trim(), age: p.age, gender: p.gender, role: roles[i].k, ...(indian ? {} : { passport: p.pp.trim() }) })), gstin: S.lead.gstin, indian },
-    }) }).then((r) => r.json()).then((j) => {
-      if (!j || !j.stored) return;
-      S.bookingCode = j.code;
-      // the server gave a new code to any voucher whose code was already taken, so the QR matches the database
-      Object.entries(j.renamed || {}).forEach(([from, to]) => { const b = S.booked.find((x: any) => x.code === from); if (b) b.code = to; });
-    }).catch(() => {});
-    /* each partner ticks off in turn; the whole thing never takes longer than about three seconds */
-    const gap = Math.min(380, Math.round(2600 / steps.length));
-    steps.forEach((_, i) => setTimeout(() => setBusy((b) => (b ? { ...b, done: i + 1 } : b)), gap * (i + 1)));
-    const wait = new Promise((r) => setTimeout(r, gap * steps.length + 500));
-    Promise.all([wait, Promise.race([send, new Promise((r) => setTimeout(r, 6000))])]).then(() => { S.cart = []; S.win = null; commit(); router.push('/my-trips?paid=1'); });
+    const code = (S.lead && S.lead.request && S.lead.request.code) || newRef();
+    const text = message(code);
+    S.lead = { name: P[0].name.trim(), phone: C.phone.trim(), email: C.email.trim(), people: P.map((p) => ({ name: p.name.trim(), age: p.age, gender: p.gender, pp: '' })), ...(biz != null ? { gstin: biz.trim().toUpperCase() } : {}),
+      request: { code, sig, at: Date.now(), total: tot, n: rows.length, start: S.trip ? S.trip.start : start, end: S.trip ? S.trip.end : start, text } };
+    commit(); window.scrollTo(0, 0);
+    try { window.open(waLink(text), '_blank', 'noopener'); } catch {}
   };
+
+  if (sent) return (
+    <div className="atp-pg atp-co atp-sent">
+      <section className="atp-cs is-first">
+        <span className="atp-sh-tag">Ref {sent.code}</span>
+        <h1 className="atp-h1">Press Send in WhatsApp and you are done</h1>
+        <p className="atp-lead">Your trip opens in WhatsApp as a ready message to our team. Nothing to pay now.</p>
+        <div className="atp-sent-acts">
+          <a className="atp-btn is-action" href={waLink(sent.text)} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Open WhatsApp</a>
+          <a className="atp-btn is-outline" href={`mailto:${COMPANY.email}?subject=${encodeURIComponent(`Please confirm my trip ${sent.code}`)}&body=${encodeURIComponent(sent.text)}`}>Send it by email instead</a>
+        </div>
+        <ol className="atp-track" aria-label="What happens next">
+          <li className="is-done"><span className="atp-st"><TideIcon n="check" s={18} /></span><span><b>Trip planned and priced</b><small>{sent.n} bookings · {E.inr(sent.total)} including GST and fee</small></span></li>
+          <li className="is-now"><span className="atp-st"><TideIcon n="chat" s={18} /></span><span><b>Sent to our team in Port Blair</b><small>Ready at {hhmm(sent.at)}. It reaches us when you press Send.</small></span></li>
+          <li><span className="atp-st"><TideIcon n="clock" s={18} /></span><span><b>Every booking confirmed within 30 minutes</b><small>We check each stay, ferry, cab and activity with the partner and reply on WhatsApp. If something is full, you get the closest option and its price before anything is paid.</small></span></li>
+          <li><span className="atp-st"><TideIcon n="wallet" s={18} /></span><span><b>You pay once, after it is all confirmed</b><small>Tickets and vouchers follow on WhatsApp.</small></span></li>
+        </ol>
+      </section>
+      <section className="atp-cs"><Promises /></section>
+      <section className="atp-cs atp-sent-foot">
+        <Link className="atp-btn is-outline atp-wide" href="/trip" prefetch={false}>See or change my trip</Link>
+        <p className="atp-fine">Changed something? Open checkout again and send the new version. The reference stays the same.</p>
+      </section>
+    </div>
+  );
 
   const field = (id: string, key: string, label: string, value: string, on: (v: string) => void, o: { ph?: string; mode?: 'text' | 'tel' | 'email' | 'numeric'; hint?: string; auto?: string } = {}) => (
     <div className={`atp-f${errs[key] ? ' is-bad' : ''}`} data-f={key}>
@@ -162,7 +178,17 @@ export default function Checkout() {
           <span><b>{S.trip ? (S.trip.start === S.trip.end ? E.fD(S.trip.start) : `${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}`) : 'Your bookings'}</b><small>{E.paxTxt()}</small><small className="atp-okline"><TideIcon n="check" s={14} />{rows.length} booking{rows.length > 1 ? 's' : ''} checked</small></span>
           <Link className="atp-btn is-text" href="/trip" prefetch={false}>Edit</Link>
         </div>
-        <p className="atp-checked"><TideIcon n="clock" s={16} /><span>Prices checked{now ? <> at <b className="atp-mono">{now}</b></> : ''}. We check again the moment you pay.</span></p>
+        <p className="atp-checked"><TideIcon n="clock" s={16} /><span>Prices checked{now ? <> at <b className="atp-mono">{now}</b></> : ''}. We check them again when we confirm.</span></p>
+
+        <section className="atp-cs atp-promisebox" aria-label="How it works">
+          <h2>Confirmed in 30 minutes. Nothing to pay now.</h2>
+          <ol className="atp-how">
+            <li><b>Send your trip</b><span>It goes to our team in Port Blair as it is.</span></li>
+            <li><b>We confirm every booking</b><span>Within 30 minutes, on WhatsApp.</span></li>
+            <li><b>You pay once</b><span>Only after everything is confirmed.</span></li>
+          </ol>
+          <Promises compact />
+        </section>
 
         <section className="atp-cs">
           <h1 className="atp-h1">Who’s travelling</h1>
@@ -180,14 +206,13 @@ export default function Checkout() {
                   {errs[`t${i}gender`] && <small className="atp-err">{errs[`t${i}gender`]}</small>}
                 </div>
               </div>}
-              {hasFerry && !indian && r.k !== 'infant' && field(`t${i}pp`, `t${i}pp`, 'Passport number', P[i].pp, (v) => setP(i, 'pp', v.toUpperCase()), {})}
               {i === 0 && <>
-                {field('lp', 'phone', 'WhatsApp number', C.phone, (v) => setC('phone', v), { ph: '98xxx xxxxx', mode: 'tel', auto: 'tel', hint: 'Tickets, driver details and changes come here.' })}
+                {field('lp', 'phone', 'WhatsApp number', C.phone, (v) => setC('phone', v), { ph: '98xxx xxxxx', mode: 'tel', auto: 'tel', hint: 'Our confirmation, tickets and driver details come here.' })}
                 {field('le', 'email', 'Email', C.email, (v) => setC('email', v), { ph: 'you@email.com', mode: 'email', auto: 'email', hint: 'For GST invoices and receipts.' })}
               </>}
             </div>
           ))}
-          {hasFerry && <button type="button" className="atp-switch-row" role="switch" aria-checked={indian} onClick={() => setIndian(!indian)}><span><b>Everyone is an Indian national</b><small>Foreign nationals add a passport number for the ferry list.</small></span><span className="atp-sw" /></button>}
+          {hasFerry && <button type="button" className="atp-switch-row" role="switch" aria-checked={indian} onClick={() => setIndian(!indian)}><span><b>Everyone is an Indian national</b><small>If not, we ask for passport details on WhatsApp when we book the ferry.</small></span><span className="atp-sw" /></button>}
         </section>
 
         <aside className="atp-coside" aria-label="Price">
@@ -208,8 +233,9 @@ export default function Checkout() {
             {Object.keys(rates).length > 0 && <p className="atp-fine">{Object.keys(rates).sort((a, b) => Number(a) - Number(b)).map((r) => `${r}% on ${E.inr(rates[r])}`).join(' · ')}</p>}
             <div className="atp-tl is-total"><span>Total<small>{E.inr(Math.round(tot / n))} a person</small></span><b>{E.inr(tot)}</b></div>
             {meals > 0 && <p className="atp-fine">{meals} meal time{meals > 1 ? 's are' : ' is'} kept in your plan and paid at the restaurant. Nothing else is added later.</p>}
-            {req > 0 && <p className="atp-fine">{req} booking{req > 1 ? 's are' : ' is'} confirmed by the partner before you are charged.</p>}
-            <button type="button" className="atp-btn is-action atp-wide atp-copay" onClick={pay}>Pay {E.inr(tot)}</button>
+            {req > 0 && <p className="atp-fine">{req} booking{req > 1 ? 's are' : ' is'} priced on request; we send the price with the confirmation.</p>}
+            <button type="button" className="atp-btn is-action atp-wide atp-copay" onClick={send}><WaIcon s={22} />Send for confirmation</button>
+            <p className="atp-fine atp-center atp-copay-note">Nothing to pay now. We confirm within 30 minutes.</p>
           </section>
         </aside>
 
@@ -221,22 +247,20 @@ export default function Checkout() {
         </section>
 
         <section className="atp-cs">
-          <h2>Pay with</h2>
-          <div className="atp-paym" role="radiogroup" aria-label="Pay with">
-            {PAYS.map(([k, b, s]) => <button key={k} type="button" role="radio" aria-checked={(S.pay || 'upi') === k} onClick={() => { S.pay = k; commit(); }}><span className="atp-rd" /><span><b>{b}</b><small>{s}</small></span></button>)}
-          </div>
+          <h2>After we confirm</h2>
+          <div className="atp-pol"><TideIcon n="wallet" /><span><b>You pay once, when everything is confirmed</b><small>We send the payment details with the confirmation: UPI, card or netbanking.</small></span></div>
+          <div className="atp-pol"><TideIcon n="ticket" /><span><b>Tickets and vouchers on WhatsApp</b><small>Ferry tickets are booked within 15 minutes of your payment. Hotel, cab and activity vouchers come with them.</small></span></div>
           <button type="button" className="atp-switch-row" role="switch" aria-checked={biz != null} onClick={() => setBiz(biz != null ? null : L.gstin || '')}><span><b>Business trip?</b><small>Add your company GSTIN to claim the GST.</small></span><span className="atp-sw" /></button>
           {biz != null && field('gstin', 'gstin', 'Company GSTIN', biz, (v) => { setBiz(v.toUpperCase().slice(0, 15)); if (errs.gstin) setErrs({ ...errs, gstin: '' }); }, { ph: '22AAAAA0000A1Z5' })}
-          <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test mode.</b> No money is taken yet: payments switch on when Razorpay is connected.</span></p>
-          <p className="atp-fine">One payment; each partner is paid their share and sends you a GST invoice. By paying you agree to the <a className="atp-link" href="/terms">booking terms</a> and each partner’s rules above.</p>
-          <AskWhatsApp about="I have a question before I pay for my trip." lines={[`${rows.length} bookings · total ${E.inr(tot)} including GST`]} path="/checkout" label="A question before you pay?" hint="Ask on WhatsApp. Your dates, group and total go with the message." />
+          <p className="atp-fine">One payment after confirmation; each partner is paid their share and sends you a GST invoice. By sending your trip you agree to the <a className="atp-link" href="/terms">booking terms</a> and each partner’s rules above.</p>
+          <AskWhatsApp about="I have a question before I pay for my trip." lines={[`${rows.length} bookings · total ${E.inr(tot)} including GST`]} path="/checkout" label="A question first?" hint="Ask on WhatsApp. Your dates, group and total go with the message." />
           <div className="atp-sec">You are booking with</div>
           <address className="atp-coinfo"><b>{COMPANY.name}</b><span>CIN {COMPANY.cin} · GSTIN {COMPANY.gstin}</span><span>{DPIIT_LINE}</span><span>{COMPANY.address}</span><span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span></address>
         </section>
 
       <div className="cta wrap abovenav">
-        <span className="tot"><b>{E.inr(tot)}</b><small>for {n} · {E.inr(Math.round(tot / n))} each</small></span>
-        <button type="button" className="atp-btn is-action" onClick={pay}>Pay {E.inr(tot)}</button>
+        <span className="tot"><b>{E.inr(tot)}</b><small>Nothing to pay now</small></span>
+        <button type="button" className="atp-btn is-action" onClick={send}><WaIcon s={20} />Send for confirmation</button>
       </div>
     </div>
   );

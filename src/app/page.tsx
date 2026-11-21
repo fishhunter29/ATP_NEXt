@@ -9,6 +9,7 @@ import { TideIcon } from '@/components/Brand';
 import { HOTELS, SAILS, zonePhoto } from '@/lib/catalogue';
 import { COUNTS, ISLES, actItems, isleName, signatureItems, tripItems } from '@/lib/browse';
 import { RECOGNITIONS } from '@/lib/company';
+import Promises from '@/components/Promises';
 import data from '@/data/catalogue.json';
 import { pageMeta } from '@/lib/seo';
 
@@ -34,6 +35,13 @@ export default function Page() {
         <div className="atp-hhero-b"><HomeNow /><h1>Andaman, planned to the minute.</h1><p>Ferries, stays, cabs and things to do, checked against each other before you pay.</p></div>
       </section>
       <HomePlan trips={COUNTS.trips} />
+
+      <section className="atp-promband" aria-label="Our promise">
+        <span className="atp-eyebrow">Our promise</span>
+        <h2>You choose the trip. We confirm it in 30 minutes.</h2>
+        <p>Send us the trip you built, or any single stay, ferry, cab or activity. We check it with the partner and reply on WhatsApp. You pay only when everything is confirmed.</p>
+        <Promises dark />
+      </section>
       </div>
 
       <section className="atp-hs">
