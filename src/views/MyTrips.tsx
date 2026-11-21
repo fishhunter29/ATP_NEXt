@@ -6,7 +6,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { commit, showToast, useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
-import { TideIcon } from '@/components/Brand';
+import { TideIcon, WaIcon } from '@/components/Brand';
+import AskWhatsApp from '@/components/AskWhatsApp';
+import { waLink, waText } from '@/lib/whatsapp';
 
 const KIND: Record<string, [string, string, string]> = { stay: ['k-stay', 'bed', 'Stay'], ferry: ['k-boat', 'boat', 'Ferry'], cab: ['k-cab', 'car', 'Cab'], rent: ['k-cab', 'car', 'Rental'], act: ['k-sight', 'sunset', 'Activity'] };
 const PAYN: Record<string, string> = { upi: 'UPI', card: 'card', nb: 'netbanking' };
@@ -64,7 +66,7 @@ export default function MyTrips() {
                 <span className="atp-pass-mid"><i /><em>{E.tcDur(E.tm(s.arr) - E.tm(s.dep)).toLowerCase()}</em><i /></span>
                 <span className="atp-pass-pt is-to"><b>{E.clock(E.tm(s.arr))}</b><span>{zt}</span><small>{s.toPt}</small></span>
               </span>
-              <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(E.tm(s.dep) - (s.rep || 45))}</b></span><span><small>Seats</small><b>{p.seats || 'At the counter'}</b></span><span><small>Travellers</small><b>{p.pax}</b></span></span>
+              <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(E.tm(s.dep) - (s.rep || 45))}</b></span><span><small>Seats</small><b>We ask you</b></span><span><small>Travellers</small><b>{p.pax}</b></span></span>
             </span>
             <span className="atp-pass-stub"><span><small>Ticket</small><b>{p.code}</b></span><span className="atp-pass-bar" aria-hidden="true">{Array.from(p.code as string).map((c, i) => <i key={i} style={{ width: 1 + (c.charCodeAt(0) % 3) }} />)}</span><span className="atp-pass-p">{on ? 'Hide' : 'Show code'}</span></span>
           </button>
@@ -86,8 +88,10 @@ export default function MyTrips() {
                 <div><dt>Be ready</dt><dd>{p.report}</dd></div>
                 <div><dt>Travellers</dt><dd>{p.pax}</dd></div>
                 {p.vendor && <div><dt>Partner</dt><dd>{p.vendor}</dd></div>}
+                {p.kind === 'ferry' && <div><dt>Ticket</dt><dd>Booked by our team within 15 minutes of your confirmation, then sent on WhatsApp. We ask you for seats.</dd></div>}
               </dl>
               <p className="atp-fine"><TideIcon n="check" s={14} /> Saved on this phone. It opens without network; turn the brightness up at the gate.</p>
+              <a className="atp-link atp-wa-text" href={waLink(waText(`I need help with this booking: ${p.title}.`, [`${short(p.date)}${/^\d\d:\d\d$/.test(p.time) ? ` · ${E.clock(E.tm(p.time))}` : ''} · ${p.pax} traveller${p.pax > 1 ? 's' : ''}`, `Code: ${p.code}`, S.bookingCode ? `Booking: ${S.bookingCode}` : '']))} target="_blank" rel="noopener noreferrer">Ask about this booking on WhatsApp</a>
             </div>
           </div>
         )}
@@ -133,9 +137,10 @@ export default function MyTrips() {
               {rec && <div><dt>With</dt><dd>{PAYN[rec.method] || 'UPI'}</dd></div>}
             </dl>
             {rec && rec.test && <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test booking.</b> No money was taken and the partners were not contacted.</span></p>}
+            {list.some((p) => p.kind === 'ferry') && <p className="atp-checked atp-ferrynote"><TideIcon n="boat" s={16} /><span>Ferry tickets: our team books them within 15 minutes and sends them on WhatsApp. We ask you directly which seats you would like.</span></p>}
             <div className="atp-first"><span className="atp-sec">First up</span><b>{short(first.date)}{/^\d\d:\d\d$/.test(first.time) ? ` · ${E.clock(E.tm(first.time))}` : ''}</b><span>{first.title}</span><small>{first.report}</small></div>
             <div className="atp-done-acts">
-              <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><TideIcon n="chat" s={18} />Share on WhatsApp</a>
+              <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Share on WhatsApp</a>
               <button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button>
             </div>
           </div>
@@ -152,7 +157,7 @@ export default function MyTrips() {
         ) : (
           <>
             <p className="atp-lead">{paid ? 'Tap a booking to show its code at the gate. Everything opens without network.' : `${range} · ${list.length} bookings, saved on this phone. Tap one to show its code.`}</p>
-            {!paid && <div className="atp-mt-tools"><a className="atp-btn is-outline" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><TideIcon n="chat" s={18} />Share</a><button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button></div>}
+            {!paid && <div className="atp-mt-tools"><a className="atp-btn is-outline" href={`https://wa.me/?text=${encodeURIComponent(shareTxt)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={20} />Share</a><button type="button" className="atp-btn is-outline" onClick={cal}><TideIcon n="cal" s={18} />Add to calendar</button></div>}
             <div className="atp-vlist">
               {days.map((d) => (
                 <section key={d.date} className="atp-vday" aria-label={`Day ${dayNo(d.date)}, ${short(d.date)}`}>
@@ -161,7 +166,8 @@ export default function MyTrips() {
                 </section>
               ))}
             </div>
-            <p className="atp-fine">Need to change something? Write to <a className="atp-link" href="mailto:info@andamantravelplanner.com">info@andamantravelplanner.com</a> with your booking code. Refund rules are in <Link className="atp-link" href="/refunds" prefetch={false}>refunds and cancellation</Link>.</p>
+            <AskWhatsApp withTrip={false} about={`I need to change or cancel something in my booking${S.bookingCode ? ` ${S.bookingCode}` : ''}.`} lines={[`${range} · ${first.pax} traveller${first.pax > 1 ? 's' : ''} · ${list.length} bookings`, `Name: ${(S.lead && S.lead.name) || ''}`]} label="Change or cancel on WhatsApp" hint="Your booking code and dates go with the message." />
+            <p className="atp-fine">Refund rules are in <Link className="atp-link" href="/refunds" prefetch={false}>refunds and cancellation</Link>. You can also write to <a className="atp-link" href="mailto:info@andamantravelplanner.com">info@andamantravelplanner.com</a>.</p>
           </>
         )}
       </section>

@@ -2,10 +2,13 @@
 /* Bottom sheets in React: dates & travellers & flights, price breakdown, fix menu, fix report, help, move & swap,
    ferry added, day plans and the planned-trip loader.
    They read the trip from the engine and call its functions; nothing here is HTML text any more. */
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { commit, dispatch, lang, useEngine, type Engine } from '@/engine/client';
 import { Ic, Raw } from '../ui';
 import { TideIcon } from '../Brand';
+import { COMPANY } from '@/lib/company';
+import { waLink, waText } from '@/lib/whatsapp';
+import { tripLines } from '../AskWhatsApp';
 
 export function close(E: Engine) { E.S.sheet = null; commit(); }
 
@@ -60,9 +63,9 @@ export function DatesSheet({ E }: { E: Engine }) {
     S.win = { start, end }; S.datesAssumed = false;
     S.pax = { adults, kids, infants, ages: ages.slice(0, kids), sen };
     if (E.pax() !== before) {
-      let n = 0; S.cart.filter((i: any) => i.kind === 'ferry' && !i.own).forEach((i: any) => { i.seats = E.autoSeats({ sid: i.ref, cls: i.cls, date: i.date }); n++; });
+      /* no seat numbers are kept: our team asks for seats when it books each ferry */
+      S.cart.filter((i: any) => i.kind === 'ferry').forEach((i: any) => { i.seats = []; });
       S.cart.filter((i: any) => i.kind === 'act').forEach((i: any) => { delete i.pa; delete i.pk; });
-      if (n) setTimeout(() => E.toast(tr(`Ferry seats updated for ${E.pax()} travellers`, `${E.pax()} यात्रियों के लिए फ़ेरी सीटें बदली गईं`)), 50);
     }
     S.fin = fin ? { no: fin, date: start } : null; S.fout = fout ? { no: fout, date: end } : null;
     if (!S.planDate || S.planDate < start || S.planDate > end) S.planDate = start;
@@ -140,7 +143,7 @@ export function BreakdownSheet({ E }: { E: Engine }) {
             </div>
           );
         })}
-        <span className="hr" /><span>{tr('Subtotal', 'उप-योग')}</span><span className="v">{E.inr(E.subtotal())}</span><span>GST</span><span className="v">{E.inr(E.gstTotal())}</span>
+        <span className="hr" /><span>{tr('Subtotal', 'उप-योग')}</span><span className="v">{E.inr(E.subtotal())}</span>{E.fee() > 0 && <><span>Convenience fee<span className="sub" style={{ display: 'block' }}>We manage everything on the ground for you: bookings, timings and help through the trip.</span></span><span className="v">{E.inr(E.fee())}</span></>}<span>GST</span><span className="v">{E.inr(E.gstTotal() + E.feeGst())}</span>
         <span className="hr" /><span><b>{tr('Total', 'कुल')}</b></span><span className="v" style={{ fontSize: 18 }}>{E.inr(E.total())}</span>
         {E.onReq() > 0 && <span className="sub">{tr(`${E.onReq()} item(s) priced on request are confirmed before you pay for them.`, `अनुरोध पर कीमत वाली ${E.onReq()} चीज़ें भुगतान से पहले पक्की की जाती हैं।`)}</span>}
       </div>
@@ -182,14 +185,14 @@ export function AutoFixSheet({ E }: { E: Engine }) {
 /* ---------------- help ---------------- */
 export function HelpSheet({ E }: { E: Engine }) {
   const tr = lang(E);
-  const num = process.env.NEXT_PUBLIC_WHATSAPP || '+91 00000 00000';
+  const num = COMPANY.whatsapp;
   return (
-    <Sheet label={tr('Help', 'मदद')} onClose={() => close(E)}>
-      <h2>{tr('Talk to us on WhatsApp', 'WhatsApp पर हमसे बात करें')}</h2>
-      <p className="note">{tr('A local team member replies in Hindi, English, Bengali or Tamil, 7 am to 10 pm.', 'हमारी स्थानीय टीम हिंदी, अंग्रेज़ी, बांग्ला या तमिल में सुबह 7 से रात 10 बजे तक जवाब देती है।')}</p>
+    <Sheet label="Help" onClose={() => close(E)}>
+      <h2>Talk to us on WhatsApp</h2>
+      <p className="note">A planner in Port Blair replies. Your dates and group go with the message, so you do not have to type them.</p>
       <div className="card" style={{ flexDirection: 'row', alignItems: 'center' }}><b className="mono" style={{ flex: 1, fontSize: 17, userSelect: 'all' }}>{num}</b>
-        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast(tr('Number copied', 'नंबर कॉपी हो गया')); }}>{tr('Copy', 'कॉपी')}</button></div>
-      <a className="btn primary block" href={`https://wa.me/${num.replace(/\D/g, '')}`} target="_blank" rel="noopener">{tr('Open WhatsApp', 'WhatsApp खोलें')}</a>
+        <button className="btn sm quiet" onClick={() => { navigator.clipboard?.writeText(num); E.toast('Number copied'); }}>Copy</button></div>
+      <a className="btn primary block" href={waLink(waText('I need help with my Andaman trip.', tripLines(E)))} target="_blank" rel="noopener noreferrer">Open WhatsApp</a>
       <button className="btn ghost block" onClick={() => close(E)}>{tr('Done', 'हो गया')}</button>
     </Sheet>
   );
@@ -198,37 +201,71 @@ export function HelpSheet({ E }: { E: Engine }) {
 
 /* ---------------- move or swap one plan (opened from the ⋮⋮ handle) ---------------- */
 export function MoveSheet({ E }: { E: Engine }) {
-  const tr = lang(E);
+  /* Moving a plan is always a choice made here, never a drag on the page: pick the day, pick the time (every time it
+     can run is listed, and a time can be typed where the plan is not tied to set departures), then press Move. */
   const { S } = E; const it = S.cart.find((x: any) => x.uid === S.moveUid); const a = it && E.ACT[it.ref];
+  const curT: string = it ? it.t || (a && a.t) || '' : '';
+  const [day, setDay] = useState<string>(it ? it.date : '');
+  const [time, setTime] = useState<string>(curT);
+  const [typed, setTyped] = useState('');
+  const [err, setErr] = useState('');
+  const why = (d: string, t: string): string => { const f = E.fitOf(Object.assign({}, it, { date: d, t })); if (f.state !== 'bad') return ''; const h = f.hard[0]; return h ? `${h.title}${h.msg ? `: ${String(h.msg).split('.')[0]}` : ''}` : 'It clashes with another plan'; };
+  /* Each day is tried at every time the plan can run, nearest to the current time first, so a day is offered whenever
+     any time on it works. Worked out once for the sheet, not on every tap. */
+  const sig = it && a ? `${it.uid}|${it.date}|${curT}|${S.cart.length}` : '';
+  const days = useMemo<{ n: number; d: string; t: string | null }[]>(() => {
+    if (!it || !a) return [];
+    const cur = E.tm(curT); const c: string[] = E.slotCands(a).slice().sort((p: number, q: number) => Math.abs(p - cur) - Math.abs(q - cur)).map((m: number) => E.hm(m));
+    return Array.from({ length: E.nDays() }, (_, n) => { const d = E.addD(S.trip.start, n); return { n, d, t: d === it.date ? curT : c.find((t) => !why(d, t)) || null }; });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig]);
+  const times = useMemo<{ t: string; bad: string }[]>(() => {
+    if (!it || !a) return [];
+    return E.slotCands(a).map((m: number) => E.hm(m)).map((t: string) => ({ t, bad: day === it.date && t === curT ? '' : why(day, t) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig, day]);
   if (!it || !a) return null;
-  const cur = E.tm(it.t || a.t);
-  const ear = E.fitOn(it, it.date, cur, -1), lat = E.fitOn(it, it.date, cur, 1);
-  const days: { n: number; d: string; t: string }[] = [];
-  for (let n = 0; n < E.nDays(); n++) { const d = E.addD(S.trip.start, n); if (d === it.date) continue; const t = E.fitOn(it, d, cur, 0); if (t) days.push({ n, d, t }); }
+  const flex = !!(a.entry || !E.slotsFor(a).length || a.slot === 'Any' || a.slot === 'Open') && !a.sched;
+  const pick = typed || time; const dn = E.dayIdx(day) + 1; const same = day === it.date && pick === curT;
+  const short = (d: string) => { const x = E.pDate(d); return `${E.DOW[x.getUTCDay()]} ${x.getUTCDate()} ${E.MON[x.getUTCMonth()]}`; };
+  const chooseDay = (x: { d: string; t: string | null }) => { setDay(x.d); setTyped(''); setErr(''); if (x.t) setTime(x.t); };
+  const move = () => {
+    if (!/^\d\d:\d\d$/.test(pick)) { setErr('Choose a time, or type one like 10:30.'); return; }
+    if (typed) { const lo = a.open ? E.tm(a.open) : 360, hi = (a.close ? E.tm(a.close) : 1110) - (a.d || 60); const m = E.tm(typed); if (m < lo || m > hi) { setErr(`${typed} is outside its hours. It can start between ${E.hm(lo)} and ${E.hm(hi)}.`); return; } }
+    const bad = same ? '' : why(day, pick); if (bad) { setErr(`${pick} on Day ${dn} does not work. ${bad}.`); return; }
+    dispatch('mvto', { date: day, t: pick });
+  };
   const sw: any[] = a.meal || a.sched ? [] : E.swapsFor(it);
-  const Mv = ({ label, sub, date, t }: { label: string; sub: string; date?: string; t?: string }) => (
-    <button className="lx-mv" disabled={!t} onClick={() => t && dispatch('mvto', { date, t })}><b>{label}</b><small>{sub}</small></button>
-  );
   return (
-    <Sheet label={tr('Move or swap', 'बदलें या अदला-बदली')} onClose={() => close(E)}>
+    <Sheet label="Move or swap" onClose={() => close(E)}>
       <h2>{E.shortName(a)}</h2>
-      <p className="note" style={{ marginTop: -6 }}>{tr(`Now on Day ${E.dayIdx(it.date) + 1}, ${E.fD(it.date)} at ${it.t || a.t}. We only show options that work with your ferries, opening hours and travel time.`, `अभी दिन ${E.dayIdx(it.date) + 1}, ${E.fD(it.date)} को ${it.t || a.t} बजे। हम सिर्फ़ वही विकल्प दिखाते हैं जो आपकी फ़ेरी, खुलने के समय और सफ़र के साथ चलें।`)}</p>
-      <div className="eyebrow">{tr('Same day', 'उसी दिन')}</div>
-      <div className="lx-mvrow"><Mv label={tr('Earlier', 'पहले')} sub={ear || tr('Nothing earlier fits', 'पहले कुछ फिट नहीं')} date={it.date} t={ear || undefined} /><Mv label={tr('Later', 'बाद में')} sub={lat || tr('Nothing later fits', 'बाद में कुछ फिट नहीं')} date={it.date} t={lat || undefined} /></div>
-      <div className="eyebrow">{tr('Another day', 'दूसरा दिन')}</div>
-      {days.length ? <div className="lx-mvrow wrap">{days.map((x) => <Mv key={x.d} label={tr(`Day ${x.n + 1}`, `दिन ${x.n + 1}`)} sub={`${E.fD(x.d)} · ${x.t}`} date={x.d} t={x.t} />)}</div>
-        : <p className="note">{tr(`No other day works${a.z !== 'PBL' ? `: you are on ${E.ZN[a.z].name} only on this day, or the other days are full` : ''}.`, `कोई दूसरा दिन नहीं चलता${a.z !== 'PBL' ? `: आप सिर्फ़ इसी दिन ${E.ZN[a.z].name} पर हैं, या बाकी दिन भरे हैं` : ''}।`)}</p>}
+      <p className="note" style={{ marginTop: -6 }}>Now on Day {E.dayIdx(it.date) + 1}, {short(it.date)} at {curT}. Choose the day and the time, then press Move. Nothing changes until you do.</p>
+      <div className="eyebrow" id="mv-day">Day</div>
+      <div className="atp-mvdays" role="radiogroup" aria-labelledby="mv-day">
+        {days.map((x) => <button key={x.d} type="button" className="atp-mvday" role="radio" aria-checked={day === x.d} disabled={!x.t} onClick={() => chooseDay(x)}><b>Day {x.n + 1}</b><small>{x.d === it.date ? `${short(x.d)} · now` : x.t ? short(x.d) : 'No time fits'}</small></button>)}
+      </div>
+      <div className="eyebrow" id="mv-time">Time on Day {dn}</div>
+      <div className="atp-mvtimes" role="radiogroup" aria-labelledby="mv-time">
+        {times.map(({ t, bad }) => <button key={t} type="button" className="atp-mvt" role="radio" aria-checked={!typed && time === t} disabled={!!bad} title={bad || undefined} onClick={() => { setTime(t); setTyped(''); setErr(''); }}>{t}{day === it.date && t === curT && <small>now</small>}</button>)}
+      </div>
+      <p className="note">{times.some((x) => x.bad) ? 'Times in grey clash with a ferry, a check-in, opening hours or another plan on that day.' : 'Every time shown works with the rest of that day.'}</p>
+      {flex ? (
+        <label className="atp-mvtype"><span>Or type a time</span>
+          <input type="time" step={300} value={typed} onChange={(e) => { setTyped(e.target.value); setErr(''); }} aria-label="Type a time" /></label>
+      ) : <p className="note">This runs at set times, so only those can be chosen.</p>}
+      {err && <p className="atp-err" role="alert">{err}</p>}
+      <button type="button" className="btn primary block" disabled={same} onClick={move}>{same ? 'Choose another day or time' : `Move to Day ${dn} · ${pick}`}</button>
       {sw.length > 0 && (
         <>
-          <div className="eyebrow">{tr('Swap for something similar', 'मिलती-जुलती चीज़ से बदलें')}</div>
+          <div className="eyebrow">Swap for something similar</div>
           <div className="lx-mvcol">{sw.map(({ x, t }: any) => { const u = E.actUnit(x, it.date); return (
-            <button key={x.id} className="lx-sw" onClick={() => dispatch('swapact', { ref: x.id, t })}><span><b>{x.n}</b><small>{x.v || ''} · {t} · {E.durOf(x)}</small></span><span className="price">{u ? E.inr(u) : tr('Free', 'मुफ़्त')}</span></button>
+            <button key={x.id} className="lx-sw" onClick={() => dispatch('swapact', { ref: x.id, t })}><span><b>{x.n}</b><small>{x.v || ''} · {t} · {E.durOf(x)}</small></span><span className="price">{u ? E.inr(u) : 'Free'}</span></button>
           ); })}</div>
         </>
       )}
       <div className="lx-mvrow" style={{ marginTop: 14 }}>
-        <button className="btn ghost block" onClick={() => { const uid = it.uid; S.sheet = null; commit(); dispatch('edit', { uid }); }}>{tr('Open details', 'जानकारी खोलें')}</button>
-        <button className="btn ghost block" style={{ color: 'var(--bad)' }} onClick={() => dispatch('mvdel')}>{tr('Remove', 'हटाएँ')}</button>
+        <button className="btn ghost block" onClick={() => { const uid = it.uid; S.sheet = null; commit(); dispatch('edit', { uid }); }}>Open details</button>
+        <button className="btn ghost block" style={{ color: 'var(--bad)' }} onClick={() => dispatch('mvdel')}>Remove</button>
       </div>
     </Sheet>
   );
@@ -244,7 +281,7 @@ export function FerryAddedSheet({ E }: { E: Engine }) {
   return (
     <Sheet label={tr('Ferry added', 'फ़ेरी जोड़ी गई')} onClose={() => close(E)}>
       <h2>{it.own ? tr('Ferry added to your trip', 'फ़ेरी आपकी यात्रा में जोड़ी गई') : tr('Ferry added', 'फ़ेरी जोड़ी गई')}</h2>
-      <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr}{it.seats && it.seats.length ? ` · ${tr('seats', 'सीटें')} ${it.seats.join(', ')}` : ''}</p>
+      <p className="note" style={{ marginTop: -6 }}>{E.ZN[s.f].name} → {E.ZN[s.to].name} · {E.fD(it.date)} · {s.dep}–{s.arr} · our team books it within 15 minutes of your confirmation and asks you for seats</p>
       <div className="menu">
         {!hasStay && !(s.to === 'PBL' && fo && fo.date === it.date) && <button onClick={() => dispatch('fasheet', { go: 'stay' })}><Ic n="bed" s={22} /><div><b>{tr(`Find a stay on ${E.ZN[s.to].name}`, `${E.ZN[s.to].name} पर होटल खोजें`)}</b><small>{tr(`Check-in ${E.fD(it.date)}, ${sz === 'pk' ? 'peak' : sz === 'ln' ? 'lean' : 'high'}-season prices`, `चेक-इन ${E.fD(it.date)}, ${sz === 'pk' ? 'पीक' : sz === 'ln' ? 'कम भीड़ वाले' : 'हाई'} सीज़न की कीमतें`)}</small></div></button>}
         {!hasRet && s.to !== 'PBL' && <button onClick={() => dispatch('fasheet', { go: 'ret' })}><Ic n="ferry" s={22} /><div><b>{E.t('addReturn')}</b><small>{E.ZN[s.to].name} → {E.ZN[s.f].name}</small></div></button>}

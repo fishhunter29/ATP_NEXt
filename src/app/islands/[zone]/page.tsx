@@ -1,3 +1,7 @@
+import Faq from '@/components/seo/Faq';
+import MapFrame from '@/components/MapFrame';
+import { inIsles, mapPlace } from '@/lib/maps';
+import AskWhatsApp from '@/components/AskWhatsApp';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
@@ -27,6 +31,14 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
   const q = `?island=${zone}`;
   const ld = { '@context': 'https://schema.org', '@type': 'TouristDestination', name: `${z.name} (${z.official})`, alternateName: z.official, description: z.notes, url: abs(`/islands/${zone}`), image: abs(`/img/f/${zonePhoto(z.id)}.webp`), containedInPlace: { '@type': 'Place', name: 'Andaman and Nicobar Islands, India' },
     includesAttraction: acts.slice(0, 10).map((a) => ({ '@type': 'TouristAttraction', name: a.n, url: abs(a.href) })) };
+  const fastest = routes.flatMap((r) => r.list.map((s) => ({ m: (Number(s.arr.slice(0, 2)) * 60 + Number(s.arr.slice(3, 5)) - Number(s.dep.slice(0, 2)) * 60 - Number(s.dep.slice(3, 5)) + 1440) % 1440, from: ZN[r.from]?.name }))).filter((x) => x.m > 0).sort((x, y) => x.m - y.m)[0];
+  const faq: [string, string][] = [
+    [`How do I reach ${z.name}?`, [z.reach ? `${z.reach}.` : '', z.jetty ? `Jetty: ${z.jetty}.` : '', fastest ? `The fastest ferry from ${fastest.from} takes about ${fastest.m >= 60 ? `${Math.floor(fastest.m / 60)} h${fastest.m % 60 ? ` ${fastest.m % 60} min` : ''}` : `${fastest.m} min`}.` : ''].filter(Boolean).join(' ')],
+    [`How many nights should I stay on ${z.name}?`, stays.length ? `${nights} suits most trips.${(z as any).nNote ? ` ${(z as any).nNote}.` : ''}` : `Most people visit ${z.name} as a day trip.`],
+    [`What is ${z.name} best for?`, BEST_FOR[z.id] ? `${BEST_FOR[z.id]}. ${z.notes}` : z.notes],
+    [`What is there to do on ${z.name}?`, acts.length ? `${acts.length} things to do are listed here: ${cats.slice(0, 5).map((x) => `${x.n} ${x.c.n.toLowerCase()}`).join(', ')}.` : ''],
+    [`Is ${z.name} the same as ${z.official}?`, z.official && z.official !== z.name ? `Yes. ${z.official} is the official name; most travellers and boat operators still say ${z.name}.` : ''],
+  ];
   return (
     <div className="atp-pg atp-isle">
       <section className="atp-hhero is-page">
@@ -41,6 +53,8 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
           <li><small>Stay</small><b>{stays.length ? nights : 'Day trip'}</b></li>
           <li><small>To do</small><b>{acts.length} things</b></li>
         </ul>
+        {(() => { const m = mapPlace({ q: `${z.official && z.official !== z.name ? `${z.official} (${z.name})` : z.name}, Andaman and Nicobar Islands` }, 11); return <MapFrame embed={m.embed} href={m.href} title={`Map of ${z.name}`} cta={`See ${z.name} on a map`} />; })()}
+        <AskWhatsApp about={`I’m planning to visit ${z.name}. Can you help me plan it?`} path={`/islands/${zone}`} hint="Ask a planner who lives here." />
       </section>
       {routes.length > 0 && (
         <section className="atp-cs">
@@ -78,6 +92,7 @@ export default async function Page({ params }: { params: Promise<{ zone: string 
         <h2>Everything on {z.name}</h2>
         <ul>{acts.map((a) => <li key={a.id}><a href={a.href}>{a.n}{a.l1 ? `: ${a.l1}` : ''}</a></li>)}{stays.map((h) => <li key={h.id}><a href={h.href}>{h.n}</a></li>)}</ul>
       </nav>
+      <Faq items={faq} title={`${z.name}: questions people ask`} />
       <JsonLd data={[ld, crumbs([['Home', '/'], [z.name, `/islands/${zone}`]])]} />
     </div>
   );

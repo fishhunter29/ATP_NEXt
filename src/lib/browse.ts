@@ -123,3 +123,30 @@ export function tripItems(): Item[] {
 export const COUNTS = {
   acts: ACTS.filter((a) => actCat(a)).length, stays: HOTELS.length, trips: (PKGS as unknown[]).length, zones: ZONES.length,
 };
+
+/* The eight experiences the islands are known for, in the order they are shown (the same list the trip engine uses). */
+export const SIGNATURE = ['ACV-BARREN-SHARED', 'ACV-KAYAK-HAV-NIGHT', 'ACV-DSD-HAV-BOAT', 'ACV-BOAT-ROSSSMITH-2', 'ACV-TOUR-BARATANG', 'ACV-TREK-SADDLE', 'ACV-SNK-JOLLY', 'ACV-FISH-HALF-AM'];
+export function signatureItems(): Item[] { const all = actItems(); return SIGNATURE.map((id) => all.find((x) => x.id === id)).filter(Boolean) as Item[]; }
+
+/* "More like this" for one thing to do.
+   - Never the same thing twice: variants that share a name (shore and boat, one tank and two) show once.
+   - Closest first: the same kind of activity before the wider category.
+   - Places stay on their island: a beach on Havelock is not "like" a museum in Port Blair. Activities you can do
+     on several islands (scuba, snorkelling, water sports, kayaking, fishing) may fill up from other islands,
+     after everything on this one. */
+const ANY_ISLAND = ['scuba', 'snorkel', 'water', 'kayak', 'fishing'];
+export function moreLike(a: Act, max = 8): { items: Item[]; mixed: boolean } {
+  const cat = actCat(a); if (!cat) return { items: [], mixed: false };
+  const fam = new Map(ACTS.map((x) => [x.id, x.fam])); const name = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const pool = actItems().filter((x) => x.id !== a.id && x.cs.includes(cat.k) && name(x.n) !== name(a.n));
+  /* other things at the very same place come first, whatever their kind (snorkelling at the beach a boat goes to) */
+  const place = new Map(ACTS.map((x) => [x.id, x.g?.k || ''])); const here = a.g?.k || '';
+  const same = here ? actItems().filter((x) => x.id !== a.id && x.z === a.z && place.get(x.id) === here && name(x.n) !== name(a.n)) : [];
+  const rank = (x: Item) => (x.z === a.z ? 0 : 2) + (fam.get(x.id) === a.fam ? 0 : 1);
+  const sorted = [...same.sort((p, q) => q.s - p.s), ...pool.filter((x) => x.z === a.z || ANY_ISLAND.includes(cat.k)).sort((p, q) => rank(p) - rank(q) || q.s - p.s)];
+  const seen = new Set<string>(); const items: Item[] = [];
+  for (const x of sorted) { const k = name(x.n); if (seen.has(k)) continue; seen.add(k); items.push(x); if (items.length >= max) break; }
+  /* for a place, things of another family in the same wide category are not alike (a boat trip is not a photoshoot) */
+  const close = ANY_ISLAND.includes(cat.k) ? items : items.filter((x) => same.includes(x) || ((fam.get(x.id) === a.fam || cat.fams.length === 1) && !/photoshoot|transfer/i.test(x.n)));
+  return { items: close, mixed: close.some((x) => x.z !== a.z) };
+}

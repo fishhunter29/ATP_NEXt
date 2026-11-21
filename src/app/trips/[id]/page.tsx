@@ -1,3 +1,4 @@
+import AskWhatsApp from '@/components/AskWhatsApp';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PlannedTripBuy } from '@/views/Packages';
@@ -42,7 +43,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <ul className="atp-ul is-ok">{p.hl.map((h) => <li key={h}><TideIcon n="check" s={18} /><span>{h}</span></li>)}</ul>
           <div className="atp-fits"><span className="atp-tile k-ok"><TideIcon n="check" /></span><div><b>Checked as one trip</b><span>{p.bookings} bookings, 0 clashes: ferry times, opening days and check-in times all fit. {counts}.</span></div></div>
         </section>
-        <section className="atp-cs atp-dbuy" aria-label="Use this trip"><PlannedTripBuy id={p.id} /></section>
+        <section className="atp-cs atp-dbuy" aria-label="Use this trip"><PlannedTripBuy id={p.id} />
+          <AskWhatsApp about={`I’m interested in the trip “${p.n}” (${p.nights} nights: ${routeTxt(p)}).`} path={path} hint="Ask us to change it for your dates, group or budget." withTrip={false} /></section>
         <section className="atp-cs"><h2>Day by day</h2>
           {p.days.map((items, i) => { const zs = [...new Set(items.map((x) => x.zone).filter(Boolean))]; const zl = zs[zs.length - 1]; return (
             <div key={i}>

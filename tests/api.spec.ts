@@ -11,6 +11,10 @@ const good = () => ({
   trip: { cart: [] },
 });
 
+/* Long trips open folded, one line a day. Most tests look inside the days, so they start with every day open;
+   the test for folding itself asks for the normal behaviour ('auto'). */
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => { try { if (!sessionStorage.getItem('atp_days')) sessionStorage.setItem('atp_days', 'all'); } catch {} }); });
+
 test('bookings API checks what it is sent', async ({ request }) => {
   const send = (b: any) => request.post('/api/bookings', { data: b });
   const bad = async (b: any, msg: RegExp) => { const r = await send(b); expect(r.status(), JSON.stringify(b).slice(0, 80)).toBe(400); expect((await r.json()).error).toMatch(msg); };
@@ -23,6 +27,7 @@ test('bookings API checks what it is sent', async ({ request }) => {
   await bad({ ...good(), items: [good().items[0], { ...good().items[1], code: 'ATP-AAA001' }] }, /share a pass code/);
   await bad({ ...good(), subtotal: 2500, total: 2650 }, /add up to the subtotal/);
   await bad({ ...good(), total: 9999 }, /add up to the total/);
+  await bad({ ...good(), fee: 2000, total: 5150 }, /fee is out of range/);
   const r = await send(good()); expect(r.status()).toBe(200);
   expect(await r.json()).toMatchObject({ ok: true, stored: false, items: 2 });   // no database in CI
 });
@@ -51,7 +56,8 @@ test('checkout: the booking code and any renamed pass codes come back to the pho
   // what checkout sent adds up, with the trip's dates and every pass
   expect(sent.start).toMatch(/^\d{4}-\d{2}-\d{2}$/); expect(sent.end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(Math.abs(sent.items.reduce((s: number, i: any) => s + (i.price || 0), 0) - sent.subtotal)).toBeLessThanOrEqual(1);
-  expect(Math.abs(sent.subtotal + sent.gst - sent.total)).toBeLessThanOrEqual(1);
+  expect(Math.abs(sent.subtotal + sent.fee + sent.gst - sent.total)).toBeLessThanOrEqual(1);
+  expect(Math.abs(sent.fee - Math.round(sent.subtotal * 0.05))).toBeLessThanOrEqual(1); // the convenience fee
   expect(new Set(sent.items.map((i: any) => i.code)).size).toBe(sent.items.length);
   await expect(page.locator('.atp-rcpt')).toContainText('ATP-TEST01');
   // only the contact goes in `lead`; every traveller goes with the trip

@@ -1,9 +1,10 @@
+import AskWhatsApp from '@/components/AskWhatsApp';
 import CabList, { type CabRoute, type Rental } from '@/views/CabList';
 import JsonLd from '@/components/seo/JsonLd';
 import { ISLES } from '@/lib/browse';
 import data from '@/data/catalogue.json';
 import { crumbs, pageMeta } from '@/lib/seo';
-export const metadata = pageMeta({ title: 'Cabs and transfers in the Andamans', description: 'Airport, jetty and sightseeing cabs in Port Blair, Havelock and Neil, timed to your ferries.', path: '/cabs' });
+export const metadata = pageMeta({ title: 'Andaman cab fares: airport, jetty and sightseeing taxis', description: 'Taxi fares in Port Blair, Havelock and Neil for airport and jetty transfers and day sightseeing, with scooter and bike rentals. Every ride can be timed to your ferry.', path: '/cabs' });
 
 const D = data as any;
 export default function Page() {
@@ -15,6 +16,7 @@ export default function Page() {
       <header className="atp-ph"><span className="atp-eyebrow">{routes.length} routes · {rentals.length} rentals</span><h1>Airport, jetty and sightseeing rides</h1>
         <p>Cabs run as loops from your hotel and back. Add a sight to your trip and its cab is planned with it; here you can book one ride on its own.</p></header>
       <CabList routes={routes} rentals={rentals} isles={isles} />
+      <section className="atp-cs"><AskWhatsApp about="I need help with a cab or a rental in the Andamans." path="/cabs" hint="Tell us the pickup, the stops and the time. We reply with the fare." /></section>
       <JsonLd data={crumbs([['Home', '/'], ['Cabs', '/cabs']])} />
     </div>
   );

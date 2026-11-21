@@ -6,7 +6,7 @@ export type BookingIn = {
   pay: 'upi' | 'card' | 'nb' | 'simulated';
   pax: { adults: number; kids: number; infants: number };
   start?: string; end?: string;
-  subtotal: number; gst: number; total: number;
+  subtotal: number; gst: number; total: number; fee?: number;
   items: BookingItem[];
   trip?: unknown;
 };
@@ -33,7 +33,9 @@ export function checkBooking(b: any): { ok: true; value: BookingIn } | { ok: fal
   if (![b.subtotal, b.gst, b.total].every(num)) return { ok: false, error: 'Totals are missing' };
   const sum = b.items.reduce((s: number, i: any) => s + (i.price || 0), 0);
   if (Math.abs(sum - b.subtotal) > 1) return { ok: false, error: 'Item prices do not add up to the subtotal' };
-  if (Math.abs(b.subtotal + b.gst - b.total) > 1) return { ok: false, error: 'Subtotal and GST do not add up to the total' };
+  if (b.fee != null && (!num(b.fee) || b.fee < 0 || b.fee > b.subtotal * 0.1 + 1)) return { ok: false, error: 'The fee is out of range' };
+  const fee = num(b.fee) ? b.fee! : 0;   // the convenience fee; its GST is inside `gst`
+  if (Math.abs(b.subtotal + fee + b.gst - b.total) > 1) return { ok: false, error: 'Subtotal, fee and GST do not add up to the total' };
   const pax = b.pax || {};
   const p = { adults: Math.max(1, Math.min(30, Math.round(+pax.adults || 1))), kids: Math.max(0, Math.min(30, Math.round(+pax.kids || 0))), infants: Math.max(0, Math.min(30, Math.round(+pax.infants || 0))) };
   const json = JSON.stringify(b.trip ?? {}); if (json.length > 200_000) return { ok: false, error: 'Trip is too large' };

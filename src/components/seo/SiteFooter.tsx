@@ -4,6 +4,7 @@ import { ZONES, ferryRoutes, slug } from '@/lib/catalogue';
 import PKGS from '@/data/packages.json';
 import { Logo } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE, RECOGNITIONS } from '@/lib/company';
+import AskWhatsApp from '@/components/AskWhatsApp';
 
 const TOP_ROUTES = ['pbl-hav', 'hav-pbl', 'pbl-nei', 'nei-pbl', 'hav-nei', 'nei-hav'];
 
@@ -17,6 +18,7 @@ export default function SiteFooter() {
         <span className="atp-brandl"><Logo /><span className="atp-brandn"><b>Andaman Travel Planner</b></span></span>
         <span className="sf-dpiit">{DPIIT_LINE}</span>
         <span>Ferries, stays, transfers and experiences across the Andaman Islands, booked as one itinerary.</span>
+        <AskWhatsApp about="I’d like help planning an Andaman trip." label="Chat with us on WhatsApp" hint={`${COMPANY.whatsapp} · a planner in Port Blair replies`} />
       </div>
       <nav className="sf-cols" aria-label="Browse">
         <div><b>Islands</b>{ZONES.map((z) => <a key={z.id} href={`/islands/${slug(z.id)}`}>{z.name}</a>)}</div>
@@ -37,6 +39,7 @@ export default function SiteFooter() {
           <span>{DPIIT_LINE}</span>
           <span>Registered office: {COMPANY.address}</span>
           <span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span>
+          <span>WhatsApp <a href={`https://wa.me/${COMPANY.whatsapp.replace(/\D/g, '')}`}>{COMPANY.whatsapp}</a></span>
         </address>
         <nav className="sf-pol" aria-label="Terms and policies"><a href="/terms">Booking terms</a><a href="/refunds">Refunds and cancellation</a><a href="/privacy">Privacy</a></nav>
       </div>

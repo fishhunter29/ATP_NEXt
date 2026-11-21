@@ -26,24 +26,27 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   manifest: '/manifest.webmanifest',
   icons: { icon: [{ url: '/icons/icon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png', sizes: '192x192' }], apple: '/icons/icon-180.png' },
-  openGraph: { type: 'website', siteName: SITE_NAME, locale: 'en_IN', images: ['/img/f/i179.webp'] },
-  twitter: { card: 'summary_large_image', images: ['/img/f/i179.webp'] },
+  openGraph: { type: 'website', siteName: SITE_NAME, locale: 'en_IN', images: [{ url: '/og.jpg', width: 1200, height: 630, alt: 'Andaman Travel Planner' }] },
+  twitter: { card: 'summary_large_image', images: ['/og.jpg'] },
   formatDetection: { telephone: false },
   verification: { ...(GSC ? { google: GSC } : {}), ...(BING ? { other: { 'msvalidate.01': BING } } : {}) },
 };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#FFFFFF' };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: '#FCF9F2' };
 
 const ORG = [
   { '@context': 'https://schema.org', '@type': 'TravelAgency', '@id': abs('/#org'), name: SITE_NAME, url: SITE, logo: abs('/icons/icon-512.png'), description: DESC,
-    legalName: COMPANY.name, email: COMPANY.email, taxID: COMPANY.gstin,
+    legalName: COMPANY.name, email: COMPANY.email, taxID: COMPANY.gstin, telephone: COMPANY.whatsapp.replace(/\s/g, ''), image: abs('/og.jpg'),
+    contactPoint: { '@type': 'ContactPoint', contactType: 'customer service', telephone: COMPANY.whatsapp.replace(/\s/g, ''), email: COMPANY.email, areaServed: 'IN', url: `https://wa.me/${COMPANY.whatsapp.replace(/\D/g, '')}` },
+    identifier: [{ '@type': 'PropertyValue', propertyID: 'DPIIT', value: COMPANY.dpiit }, { '@type': 'PropertyValue', propertyID: 'CIN', value: COMPANY.cin }],
+    knowsAbout: ['Andaman and Nicobar Islands', 'Havelock Island (Swaraj Dweep)', 'Neil Island (Shaheed Dweep)', 'Port Blair (Sri Vijaya Puram)', 'Andaman ferry tickets', 'Scuba diving in the Andamans'],
     address: { '@type': 'PostalAddress', streetAddress: COMPANY.street, addressLocality: COMPANY.locality, addressRegion: 'Andaman and Nicobar Islands', postalCode: COMPANY.postalCode, addressCountry: 'IN' }, areaServed: { '@type': 'Place', name: 'Andaman and Nicobar Islands' } },
   { '@context': 'https://schema.org', '@type': 'WebSite', '@id': abs('/#site'), name: SITE_NAME, url: SITE, inLanguage: 'en-IN', publisher: { '@id': abs('/#org') } },
 ];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en-IN" data-theme="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

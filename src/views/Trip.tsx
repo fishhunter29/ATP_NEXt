@@ -1,13 +1,17 @@
 'use client';
 /* The Trip page (Tide): cover, what fits and what does not, where you sleep, then every day in time order.
    Cabs are shown the way they run in the islands: one car, from the hotel round the stops and back.
-   Ferries are boarding passes; a tap opens class and seats. Timings and prices come from the trip engine. */
+   Ferries are boarding passes; a tap opens the class. Our team books the ticket and asks for seats. Timings and prices come from the trip engine. */
+import { waLink, waText } from '@/lib/whatsapp';
+import { packTrip } from '@/lib/sharelink';
+import MapFrame from '@/components/MapFrame';
+import { inIsles, mapPlace, mapRoute, type Stop } from '@/lib/maps';
 import { useRouter } from 'next/navigation';
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { commit, dispatch, showToast, useEngine, type Engine } from '@/engine/client';
 import { Art, Loading, Raw } from '@/components/ui';
-import { TideIcon } from '@/components/Brand';
+import { TideIcon, WaIcon } from '@/components/Brand';
 import { DayTools, ExtendBtn, PairRail, StayCompare } from '@/components/trip/TripTools';
 
 type Row = { at: number; key: string; node: ReactNode; t?: 'cab' | 'stop' | 'meal'; e?: any };
@@ -21,6 +25,12 @@ export default function Trip() {
   const router = useRouter();
   const [ferry, setFerry] = useState<string | null>(null);
   const closeFerry = useCallback(() => setFerry(null), []);
+  const [share, setShare] = useState<string | null>(null);
+  const closeShare = useCallback(() => setShare(null), []);
+  /* Long trips open as one line a day. Which days are open is remembered while the tab is open:
+     'all', or the day numbers; nothing saved means the first day and any day that needs a fix. */
+  const [openDays, setOpenDays] = useState<string | null>(() => { try { const v = sessionStorage.getItem('atp_days'); return v && v !== 'auto' ? v : null; } catch { return null; } });
+  const saveDays = useCallback((v: string) => { setOpenDays(v); try { sessionStorage.setItem('atp_days', v); } catch {} }, []);
   const shape = E && E.S.trip ? `${E.S.trip.start}|${E.S.trip.end}` : '';
   /* The day rail follows the day you are reading. Done on the page itself, not through React state: the photos
      in the itinerary are the engine's, and redrawing the whole trip on every scroll would make them reload. */
@@ -44,6 +54,8 @@ export default function Trip() {
   if (!S.trip && (S.cart.length || S.win)) { try { E.syncTrip(); } catch {} }
   if (!S.trip || (!S.cart.length && !S.win)) return <EmptyTrip E={E} />;
 
+  const openShare = async () => { try { setShare(`${location.origin}/trip/shared#${await packTrip(S)}`); } catch { showToast('This phone could not make the link.'); } };
+
   E.__resetIdeas();
   const R = E.run(S.cart); const evs = E.expand(S.cart); const pos = E.makePos(evs); const N = E.nDays();
   const fi = E.flightIn(), fo = E.flightOut();
@@ -58,6 +70,9 @@ export default function Trip() {
   }
   const dayZone = (n: number) => { const z0 = pos(E.abs(n, 720)), zE = pos(E.abs(n, 1380)); return z0 === 'transit' ? (zE === 'transit' ? 'PBL' : zE) : z0; };
   const dmeta = Array.from({ length: N }, (_, n) => ({ zz: dayZone(n), bad: evs.some((e: any) => E.dayOf(e.s) === n && (R.by[e.it.uid] || []).some((a: any) => a.sev === 'hard')) }));
+  const fold = N > 3;
+  const openList: number[] = !fold || openDays === 'all' ? dmeta.map((_, n) => n) : openDays == null ? dmeta.map((m, n) => (n === 0 || m.bad ? n : -1)).filter((n) => n >= 0) : openDays.split(',').filter(Boolean).map(Number).filter((n) => n < N);
+  const toggleDay = (n: number, on?: boolean) => { const want = on == null ? !openList.includes(n) : on; const next = want ? [...new Set([...openList, n])] : openList.filter((x) => x !== n); saveDays(next.length === N ? 'all' : next.length ? next.join(',') : 'none'); };
   const cover = dmeta.map((m) => m.zz).find((z) => z !== 'PBL') || 'PBL';
   const isles = [...new Set(dmeta.map((m) => m.zz))].map((z) => E.ZN[z].name).join(', ');
   const fixAll = () => dispatch('fixmenu');
@@ -126,8 +141,11 @@ export default function Trip() {
         )}
 
         {S.cart.length > 0 && (
+          <button type="button" className="atp-share" onClick={openShare}><span className="atp-share-i"><TideIcon n="users" /></span><span><b>Planning with others?</b><small>Share this plan. They see it on the site and can reply.</small></span><TideIcon n="chev" s={18} /></button>
+        )}
+        {S.cart.length > 0 && (
           <details className="atp-ttools">
-            <summary><TideIcon n="sort" s={18} />Pace, saving and sharing<TideIcon n="down" s={18} /></summary>
+            <summary><TideIcon n="sort" s={18} />Pace and saving<TideIcon n="down" s={18} /></summary>
             <div className="atp-seg2 is-inline" role="radiogroup" aria-label="Pace">
               {[['relaxed', 'Relaxed', 'One half-day plan a day'], ['balanced', 'Balanced', 'A plan for each free day'], ['packed', 'Packed', 'Fill every free slot']].map(([k, l, h]) => (
                 <button key={k} type="button" role="radio" aria-checked={(S.pace || 'balanced') === k} aria-pressed={(S.pace || 'balanced') === k} title={h} onClick={() => dispatch('pace', { k })}>{l}</button>
@@ -137,14 +155,14 @@ export default function Trip() {
               <button type="button" onClick={() => dispatch('trsave')}><TideIcon n="check" s={18} />{S.tripId ? 'Save changes' : 'Save itinerary'}</button>
               <button type="button" onClick={() => router.push('/my-trips')}><TideIcon n="ticket" s={18} />My trips{S.trips.length ? ` (${S.trips.length})` : ''}</button>
               <button type="button" onClick={() => router.push('/plan')}><TideIcon n="spark" s={18} />Build it another way</button>
-              <a href={`https://wa.me/?text=${encodeURIComponent(E.shareText())}`} target="_blank" rel="noopener"><TideIcon n="chat" s={18} />Share on WhatsApp</a>
+              <a href={waLink(waText('please look at my trip plan and tell me if anything can be better.', [E.shareText()]))} target="_blank" rel="noopener noreferrer"><WaIcon s={18} />Ask a planner about this trip</a>
               <button type="button" onClick={() => dispatch('mealsall')}><TideIcon n="cup" s={18} />Keep time for lunch and dinner every day</button>
             </div>
           </details>
         )}
 
         <div className="atp-tbuy">
-          <button type="button" className="atp-total" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)}</b><small>{req ? `+ ${req} on request · ` : ''}incl. GST · {S.cart.length} booking{S.cart.length === 1 ? '' : 's'} · breakdown</small></button>
+          <button type="button" className="atp-total" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)}</b><small>{req ? `+ ${req} on request · ` : ''}incl. GST and fee · {S.cart.length} booking{S.cart.length === 1 ? '' : 's'} · breakdown</small></button>
           {!S.cart.length ? <button type="button" className="atp-btn is-action" disabled>Checkout</button> : hardN ? <button type="button" className="atp-btn is-action" onClick={fixAll}>Fix {hardN}</button> : <button type="button" className="atp-btn is-action" onClick={() => router.push('/checkout')}>Checkout</button>}
         </div>
       </aside>
@@ -153,24 +171,26 @@ export default function Trip() {
         {N > 1 && (
           <nav className="atp-rail" aria-label="Jump to a day" style={{ ['--n' as any]: Math.min(N, 7) }}>
             {dmeta.map((m, n) => { const d = E.pDate(E.addD(S.trip.start, n)); return (
-              <a key={n} href={`#day${n + 1}`} className={`atp-day${m.bad ? ' has-clash' : ''}`} aria-label={`Day ${n + 1}, ${E.ZN[m.zz].name}${m.bad ? ', something does not fit' : ''}`}>
+              <a key={n} href={`#day${n + 1}`} onClick={() => { if (fold && !openList.includes(n)) toggleDay(n, true); }} className={`atp-day${m.bad ? ' has-clash' : ''}`} aria-label={`Day ${n + 1}, ${E.ZN[m.zz].name}${m.bad ? ', something does not fit' : ''}`}>
                 <i style={{ background: `var(--z-${m.zz})` }} /><small>{E.DOW[d.getUTCDay()]}</small>{d.getUTCDate()}
               </a>
             ); })}
           </nav>
         )}
-        {S.cart.length > 0 && <p className="atp-hint"><TideIcon n="swap" s={14} />Tap anything to change, move or remove it.</p>}
+        {S.cart.length > 0 && <p className="atp-hint"><TideIcon n="swap" s={14} /><span>{fold ? 'Tap a day to open it. Tap anything inside to change it.' : 'Tap anything to change, move or remove it.'}</span>
+          {fold && <button type="button" className="atp-foldall" onClick={() => saveDays(openList.length === N ? 'none' : 'all')}>{openList.length === N ? 'Close all days' : 'Open all days'}</button>}</p>}
         <ExtendBtn E={E} dir="before" />
-        {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} first={n === 0 || dmeta[n - 1].zz !== dmeta[n].zz} fi={fi} fo={fo} onFerry={setFerry} />)}
+        {Array.from({ length: N }, (_, n) => <Day key={n} E={E} n={n} N={N} R={R} evs={evs} zz={dmeta[n].zz} first={n === 0 || dmeta[n - 1].zz !== dmeta[n].zz} fi={fi} fo={fo} onFerry={setFerry} fold={fold} open={openList.includes(n)} bad={dmeta[n].bad} onToggle={() => toggleDay(n)} />)}
         <ExtendBtn E={E} dir="after" />
         <p className="atp-fine atp-pad">Everything is in day and time order. Reporting times and the travel in between are already counted.</p>
       </div>
 
       <div className="cta wrap abovenav">
-        <button type="button" className="tot bd" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)} <TideIcon n="down" s={14} /></b><small>{req ? `+ ${req} on request · incl. GST` : 'incl. GST · breakdown'}</small></button>
+        <button type="button" className="tot bd" onClick={() => dispatch('breakdown')} aria-label="See the price breakdown"><b>{E.inr(total)} <TideIcon n="down" s={14} /></b><small>{req ? `+ ${req} on request · incl. GST and fee` : 'incl. GST and fee · breakdown'}</small></button>
         {!S.cart.length ? <button type="button" className="atp-btn is-action" disabled>Checkout</button> : hardN ? <button type="button" className="atp-btn is-action" onClick={fixAll}>Fix {hardN}</button> : <button type="button" className="atp-btn is-action" onClick={() => router.push('/checkout')}>Checkout</button>}
       </div>
       {ferryIt && <FerrySheet E={E} it={ferryIt} onClose={closeFerry} />}
+      {share && <ShareSheet url={share} text={`Our Andaman trip, ${E.fD(S.trip.start)} – ${E.fD(S.trip.end)}, ${E.paxTxt()}. Have a look and tell me what you think:`} onClose={closeShare} />}
     </div>
   );
 }
@@ -188,7 +208,7 @@ function EmptyTrip({ E }: { E: Engine }) {
   );
 }
 
-function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: number; N: number; R: any; evs: any[]; zz: string; first: boolean; fi: any; fo: any; onFerry: (uid: string) => void }) {
+function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry, fold, open, bad, onToggle }: { E: Engine; n: number; N: number; R: any; evs: any[]; zz: string; first: boolean; fi: any; fo: any; onFerry: (uid: string) => void; fold: boolean; open: boolean; bad: boolean; onToggle: () => void }) {
   const router = useRouter();
   const { S } = E; const date = E.addD(S.trip.start, n); const nat = E.NAT[date];
   const rows: Row[] = [];
@@ -233,18 +253,50 @@ function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: nu
   const zm = zz === 'WAN' ? 'PBL' : zz; const wait = waitRate(E, zm);
   const mealOpts = S.cart.length ? ['bf', 'lunch', 'dinner', 'shop'].filter((k) => !meals.includes(k) && (E.ACT[E.MEALK[k].id + zm] || k !== 'shop')) : [];
   const d = E.pDate(date);
+  /* the day on a map: from where you wake up, round the places you visit on this island, to where you sleep */
+  const isle = E.ZN[zz].name; const pts: Stop[] = [];
+  const woke = n > 0 ? E.nightStay(evs, n - 1) : null;
+  if (woke && woke.zone === zz) pts.push({ q: inIsles(woke.I.title, isle), label: 'Hotel' });
+  rows.forEach((r) => { if (r.t !== 'stop' || !r.e || r.e.zone !== zz) return; const a = E.ACT[r.e.it.ref]; if (!a || !a.g || !a.g.k) return; const q = inIsles(a.g.k, isle); if (pts.length && pts[pts.length - 1].q === q) return; pts.push({ q, pid: a.g.pid, label: a.g.k }); });
+  if (st && st.zone === zz && pts.length) pts.push({ q: inIsles(st.I.title, isle), label: 'Hotel' });
+  const dayMap = pts.length > 1 ? mapRoute(pts) : pts.length === 1 && pts[0].label !== 'Hotel' ? mapPlace(pts[0]) : null;
+
+  /* the day in one line, for a folded day: what happens, how many plans, from when to when, what it costs */
+  const seen = new Set<string>(); const evRows = rows.filter((r) => r.e && !seen.has(r.e.it.uid) && !!seen.add(r.e.it.uid));
+  const checkIn = evs.filter((e) => e.kind === 'stay' && E.dayIdx(e.it.date) === n);
+  const named = evRows.filter((r) => r.t !== 'cab' && r.t !== 'meal').map((r) => { const e = r.e; if (e.kind === 'ferry') return `Ferry to ${E.ZN[e.to] ? E.ZN[e.to].name : ''}`; const a = E.ACT[e.it.ref]; return a && E.shortName ? E.shortName(a) : e.I.title; });
+  const cabTo = evRows.filter((r) => r.t === 'cab').map((r) => `Cab to ${String(r.e.I.title).split(/\s*→\s*/).pop()}`);
+  const sumTxt = [...new Set([fi && E.dayIdx(fi.date) === n ? 'Land at Port Blair' : '', ...named, ...(named.length ? [] : cabTo.slice(-1)), ...checkIn.map((e) => `Check in at ${e.I.title}`), fo && E.dayIdx(fo.date) === n ? 'Fly home' : ''].filter(Boolean))].join(' · ');
+  const sumN = evRows.filter((r) => r.t !== 'cab').length;
+  const timed = evRows; const sumFrom = timed.length ? E.clock(timed[0].e.s) : ''; const sumTo = timed.length ? E.clock(timed[timed.length - 1].e.s) : '';
+  const sumCost = evRows.reduce((t, r) => t + (r.e.I.price || 0), 0);
+  const sumArt = (evRows.find((r) => r.t === 'stop') || { e: checkIn[0] || null }).e;
 
   return (
-    <section className="atp-dsec day" id={`day${n + 1}`} aria-label={`Day ${n + 1}`} data-date={date}>
-      {first && <div className="atp-banner"><Art z={zz} icon="beach" seed={'DAYHD:' + zz + ':' + date} big /><span>{E.ZN[zz].name}</span></div>}
+    <section className={`atp-dsec day${fold ? (open ? ' is-open' : ' is-folded') : ''}`} id={`day${n + 1}`} aria-label={`Day ${n + 1}`} data-date={date}>
+      {first && open && <div className="atp-banner"><Art z={zz} icon="beach" seed={'DAYHD:' + zz + ':' + date} big /><span>{E.ZN[zz].name}</span></div>}
       <div className="atp-dh">
-        <h2><b>Day {n + 1}</b><span>{E.DOW[d.getUTCDay()]} {d.getUTCDate()} {E.MON[d.getUTCMonth()]}</span></h2>
+        <h2>{fold
+          ? <button type="button" className="atp-dtog" aria-expanded={open} aria-controls={`day${n + 1}-body`} onClick={onToggle}><b>Day {n + 1}</b><span>{E.DOW[d.getUTCDay()]} {d.getUTCDate()} {E.MON[d.getUTCMonth()]}</span></button>
+          : <><b>Day {n + 1}</b><span>{E.DOW[d.getUTCDay()]} {d.getUTCDate()} {E.MON[d.getUTCMonth()]}</span></>}</h2>
         <span className="atp-zone"><i style={{ background: `var(--z-${zz})` }} />{E.ZN[zz].name}</span>
         {load && <span className="atp-fit">{load.label.replace(' day', '')}<span className="atp-meter" role="img" aria-label={`${Math.round(load.r * 100)} percent of the day is planned`}>{[0, 1, 2, 3, 4].map((i) => <i key={i} className={i < bars ? 'on' : ''} />)}</span></span>}
-        <button type="button" className="atp-iconbtn" aria-label={`Add to day ${n + 1}`} onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><TideIcon n="plus" /></button>
+        {fold
+          ? <button type="button" className="atp-iconbtn atp-dchev" aria-label={open ? `Close day ${n + 1}` : `Open day ${n + 1}`} onClick={onToggle}><TideIcon n="down" /></button>
+          : <button type="button" className="atp-iconbtn" aria-label={`Add to day ${n + 1}`} onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><TideIcon n="plus" /></button>}
       </div>
+      {!open && (
+        <button type="button" className="atp-dsum" onClick={onToggle} aria-label={`Open day ${n + 1}: ${sumTxt || 'nothing planned yet'}`}>
+          {sumArt && <span className="atp-dsum-ph"><Art z={sumArt.zone} icon={sumArt.I.icon} seed={sumArt.it.ref} /></span>}
+          <span className="atp-dsum-b"><span className="atp-dsum-t">{sumTxt || 'Nothing planned yet'}</span>
+            <span className="atp-dsum-m">{bad && <b className="is-bad">Needs a fix</b>}{sumN > 0 && <span>{sumN} plan{sumN > 1 ? 's' : ''}{sumFrom ? ` · ${sumFrom}${sumTo && sumTo !== sumFrom ? `–${sumTo}` : ''}` : ''}</span>}{sumCost > 0 && <span>{E.inr(sumCost)}</span>}</span></span>
+        </button>
+      )}
+      {open && <div id={`day${n + 1}-body`}>
+        {fold && <button type="button" className="atp-dadd" onClick={() => router.push(`/islands/${zz.toLowerCase()}?date=${date}`)}><TideIcon n="plus" s={16} />Add to day {n + 1}</button>}
       {(nat || E.season(date) === 'pk') && <p className="atp-sun">{nat && <><span><TideIcon n="sunrise" s={14} />{nat.sr}</span><span><TideIcon n="sunset" s={14} />{nat.ss}</span></>}{E.season(date) === 'pk' && <span>Peak season</span>}</p>}
       <DayTools E={E} date={date} zz={zz} />
+      {dayMap && <MapFrame embed={dayMap.embed} href={dayMap.href} title={`Day ${n + 1} on ${isle}`} cta={pts.length > 1 ? 'See the day on a map' : 'See it on a map'} stops={pts.map((p) => p.label || '')} open={pts.length > 1 ? 'Directions in Google Maps' : 'Open in Google Maps'} />}
       {out.length ? out : <p className="atp-fine atp-pad">Nothing planned yet.</p>}
       {mealOpts.length > 0 && (
         <div className="atp-eat" role="group" aria-label={`Eating out on day ${n + 1}, optional`}>
@@ -257,6 +309,7 @@ function Day({ E, n, N, R, evs, zz, first, fi, fo, onFerry }: { E: Engine; n: nu
       ) : miss ? (
         <div className="atp-night is-missing"><TideIcon n="moon" s={16} /><span><b>{miss.title}</b></span><button type="button" className="atp-btn is-outline" onClick={() => router.push(`/stays?zone=${miss.zone}&date=${date}`)}>Find a stay</button></div>
       ) : null)}
+      </div>}
     </section>
   );
 }
@@ -393,7 +446,7 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
   const status = bk && bk !== 'instant' ? <Raw html={E.bkTag(it) || ''} style={{ display: 'contents' }} /> : null;
   /* a plan you can move opens the sheet with every way to change it (time, day, swap, remove, details); the rest open their page */
   const open = () => { if (drag) { S.moveUid = it.uid; S.sheet = 'move'; commit(); } else dispatch('edit', { uid: it.uid }); };
-  /* `ev` and data-uid are what the engine's drag-to-move looks for */
+  /* `ev` and data-uid mark the row for the engine; nothing here can be dragged */
   const cls = `atp-item ev${hard ? ' is-clash' : ''}${S.flashUid === it.uid ? ' flash' : ''}${meal ? ' atp-mealrow' : ''}`;
   const extra = (
     <>
@@ -405,10 +458,10 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
 
   if (k === 'ferry' && E.SAIL[it.ref]) {
     const s = E.SAIL[it.ref]; const zf = E.ZN[s.f]?.name || s.f, zt = E.ZN[s.to]?.name || s.to;
-    const seats: string[] = it.seats || []; const d = E.pDate(it.date);
+    const d = E.pDate(it.date);
     return (
       <div className={cls + ' is-pass'} data-uid={it.uid} data-k={e.kind} data-c={k}>
-        <button type="button" className="atp-pass" onClick={() => (it.own ? open() : onFerry(it.uid))} aria-label={`Ferry ${zf} to ${zt}, ${E.clock(e.s)} to ${E.clock(e.e)}: class and seats`}>
+        <button type="button" className="atp-pass" onClick={() => (it.own ? open() : onFerry(it.uid))} aria-label={`Ferry ${zf} to ${zt}, ${E.clock(e.s)} to ${E.clock(e.e)}: change class`}>
           <span className="atp-pass-band"><span><TideIcon n="boat" s={16} /><b>{s.gov ? 'Government ship' : s.op.replace(/ \d$/, '')}</b></span><span>{it.own ? 'Booked elsewhere' : it.cls || ''}</span></span>
           <span className="atp-pass-main">
             <span className="atp-pass-r">
@@ -418,9 +471,9 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
             </span>
             <span className="atp-pass-f"><span><small>Be there by</small><b>{E.clock(e.s - (e.rep || s.rep || 45))}</b></span><span><small>Date</small><b>{d.getUTCDate()} {E.MON[d.getUTCMonth()]}</b></span><span><small>Travellers</small><b>{E.pax()}</b></span></span>
           </span>
-          <span className="atp-pass-stub"><span><small>Seats</small><b>{seats.length ? seats.join(' ') : 'At the jetty'}</b></span><span className="atp-pass-bar" aria-hidden="true">{Array.from(String(E.hash(it.uid + it.ref) % 1e9).padStart(9, '3')).map((c, i) => <i key={i} style={{ width: 1 + (Number(c) % 3) }} />)}</span><span className="atp-pass-p">{price}</span></span>
+          <span className="atp-pass-stub"><span><small>Seats</small><b>We ask you</b></span><span className="atp-pass-bar" aria-hidden="true">{Array.from(String(E.hash(it.uid + it.ref) % 1e9).padStart(9, '3')).map((c, i) => <i key={i} style={{ width: 1 + (Number(c) % 3) }} />)}</span><span className="atp-pass-p">{price}</span></span>
         </button>
-        {!it.own && <div className="atp-under"><button type="button" className="atp-btn is-text" onClick={() => onFerry(it.uid)}>Class and seats</button><button type="button" className="atp-btn is-text" onClick={open}>Change sailing</button>{status}</div>}
+        {!it.own && <div className="atp-under"><button type="button" className="atp-btn is-text" onClick={() => onFerry(it.uid)}>Change class</button><button type="button" className="atp-btn is-text" onClick={open}>Change sailing</button>{status}</div>}
         {extra}
       </div>
     );
@@ -442,18 +495,46 @@ function Ev({ E, e, R, onFerry }: { E: Engine; e: any; R: any; onFerry: (uid: st
         <span><span className="atp-n">{title}</span><span className="atp-s">{sub}</span>{A.g && A.g.rt && photo ? <span className="atp-rate"><TideIcon n="starf" s={12} />{A.g.rt}</span> : null}{status}</span>
         <span className="atp-p">{price}{per && <small>{per}</small>}</span>
       </button>
-      {drag && <button type="button" className="lx-grip atp-grip" aria-label={`Move or swap ${I.title}`} data-drag={it.uid}><TideIcon n="swap" s={16} /><span>Move</span></button>}
+      {/* a plain button: moving is chosen in the sheet (day and time), never by sliding the row */}
+      {drag && <button type="button" className="atp-grip" aria-label={`Move or swap ${I.title}`} onClick={() => { E.S.moveUid = it.uid; E.S.sheet = 'move'; commit(); }}><TideIcon n="swap" s={16} /><span>Move</span></button>}
       {extra}
     </div>
   );
 }
 
 /* Class and seats for a ferry: the classes with what each costs more or less, and the cabin as the engine lays it out. */
+/* Share the plan as a link to the site. The plan travels inside the link; nothing is uploaded. */
+function ShareSheet({ url, text, onClose }: { url: string; text: string; onClose: () => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); }; const from = document.activeElement as HTMLElement | null;
+    window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; box.current?.focus();
+    return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; from?.focus?.(); };
+  }, [onClose]);
+  const copy = async () => { try { await navigator.clipboard.writeText(url); showToast('Link copied'); } catch { showToast('Could not copy. Press and hold the link to copy it.'); } };
+  const more = typeof navigator !== 'undefined' && typeof (navigator as any).share === 'function';
+  return createPortal(
+    <div className="atp-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Share this plan" tabIndex={-1} ref={box}>
+        <div className="atp-sheet-h"><b>Share this plan</b><button type="button" className="atp-iconbtn" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button></div>
+        <div className="atp-sheet-b">
+          <p className="atp-lead">Anyone with the link opens your plan on our site: every day, time and price. They can reply on WhatsApp or open a copy in their own planner. Your trip does not change.</p>
+          <div className="atp-sharebtns">
+            <a className="atp-btn is-commit" href={`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`} target="_blank" rel="noopener noreferrer"><WaIcon s={22} />Send on WhatsApp</a>
+            <button type="button" className="atp-btn is-outline" onClick={copy}><TideIcon n="plus" s={18} />Copy link</button>
+            {more && <button type="button" className="atp-btn is-outline" onClick={() => { (navigator as any).share({ title: 'Our Andaman trip', text, url }).catch(() => {}); }}>More ways to share</button>}
+          </div>
+          <label className="atp-sharelink"><span>The link</span><input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="The link to this plan" /></label>
+          <p className="atp-fine">The link holds the plan itself: what is in it, the travellers and the dates. No name, phone number or payment detail is in it.</p>
+        </div>
+      </div>
+    </div>, document.body);
+}
+
 function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => void }) {
   const s = E.SAIL[it.ref]; const n: number = E.pax();
   const fares: { n: string; f: number }[] = s.fares && s.fares.length ? s.fares : [{ n: it.cls || String(s.cls || '').split(',')[0].trim(), f: s.fare }];
   const [cls, setCls] = useState<string>(it.cls || fares[0].n);
-  const [seats, setSeats] = useState<string[]>(it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: it.cls || fares[0].n, date: it.date }));
   const box = useRef<HTMLDivElement>(null);
   /* Escape closes; the page behind does not scroll; focus goes into the sheet and back to where it was */
   useEffect(() => {
@@ -461,17 +542,16 @@ function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => voi
     window.addEventListener('keydown', k); document.body.style.overflow = 'hidden'; box.current?.focus();
     return () => { window.removeEventListener('keydown', k); document.body.style.overflow = ''; from?.focus?.(); };
   }, [onClose]);
-  const st = E.seatState(s, cls, it.date); const cur = (fares.find((f) => f.n === (it.cls || fares[0].n)) || fares[0]).f;
-  const mine = (id: string) => seats.includes(id); const free = (id: string) => st.free.has(id) || (cls === it.cls && (it.seats || []).includes(id));
-  const pick = (c: string) => { setCls(c); setSeats(c === it.cls && it.seats && it.seats.length ? it.seats : E.autoSeats({ sid: it.ref, cls: c, date: it.date })); };
-  const tap = (id: string) => setSeats(mine(id) ? seats.filter((x) => x !== id) : [...seats, id].slice(-n));
+  const cur = (fares.find((f) => f.n === (it.cls || fares[0].n)) || fares[0]).f;
+  const pick = (c: string) => setCls(c);
   const fare = (fares.find((f) => f.n === cls) || fares[0]).f; const diff = (fare - cur) * n;
-  const apply = () => { it.cls = cls; it.seats = seats; E.S.flashUid = it.uid; E.syncTrip(); commit(); E.toast(`${cls} · seats ${seats.join(' ')}`); onClose(); };
+  /* no seat numbers are chosen here: our team books the ticket and asks the traveller for seats */
+  const apply = () => { it.cls = cls; delete it.seats; E.S.flashUid = it.uid; E.syncTrip(); commit(); E.toast(`${cls} class`); onClose(); };
   /* on the page body, so it sits above the header and the dock */
   return createPortal(
     <div className="atp-scrim" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Class and seats" tabIndex={-1} ref={box}>
-        <div className="atp-sheet-h"><b>Class and seats</b><button type="button" className="atp-iconbtn" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button></div>
+      <div className="atp-sheet" role="dialog" aria-modal="true" aria-label="Ferry class" tabIndex={-1} ref={box}>
+        <div className="atp-sheet-h"><b>Ferry class</b><button type="button" className="atp-iconbtn" aria-label="Close" onClick={onClose}><TideIcon n="x" /></button></div>
         <div className="atp-sheet-b">
           <p className="atp-lead">{s.gov ? 'Government ship' : s.op} · {E.ZN[s.f]?.name} to {E.ZN[s.to]?.name} · {E.fD(it.date)} · {s.dep}</p>
           <div role="radiogroup" aria-label="Class">
@@ -482,22 +562,11 @@ function FerrySheet({ E, it, onClose }: { E: Engine; it: any; onClose: () => voi
               </button>
             ); })}
           </div>
-          <div className="atp-sec">Pick {n} seat{n > 1 ? 's' : ''} · {seats.length} chosen</div>
-          <div className="atp-seatmap" role="group" aria-label="Seats">
-            <span className="atp-bow">Front of the boat</span>
-            {Array.from({ length: st.rows }, (_, r) => (
-              <div key={r} className="atp-srow"><span className="rn">{r + 1}</span>
-                {st.cols.map((c: string | null, i: number) => { if (!c) return <span key={i} className="atp-aisle" />; const id = r + 1 + c; const ok = free(id); return (
-                  <button key={i} type="button" className={`atp-seat${ok ? '' : ' is-taken'}`} disabled={!ok} aria-pressed={mine(id)} aria-label={`Seat ${id}${ok ? '' : ', taken'}`} onClick={() => tap(id)}>{c}</button>
-                ); })}
-              </div>
-            ))}
-            <div className="atp-legend"><span><i />Free</span><span><i className="t" />Taken</span><span><i className="s" />Yours</span></div>
-          </div>
-          <p className="atp-fine">Seats are held when you pay. If the operator moves a seat, you are kept together and told before you travel.</p>
+          <div className="atp-pol"><TideIcon n="clock" /><span><b>Booked by us within 15 minutes</b><small>When you confirm the trip, our team books this ticket with the operator within 15 minutes and sends it on WhatsApp.</small></span></div>
+          <div className="atp-pol"><TideIcon n="chat" /><span><b>Seats</b><small>We ask you directly which seats you would like for {n} traveller{n > 1 ? 's' : ''}, and keep your group together.</small></span></div>
         </div>
-        <div className="atp-sheet-f"><span className="atp-total"><b>{diff === 0 ? 'No change' : `${diff > 0 ? '+' : '−'}${E.inr(Math.abs(diff))}`}</b><small>{cls} · {seats.join(' ') || 'no seats yet'}</small></span>
-          <button type="button" className="atp-btn is-action" disabled={seats.length !== Math.min(n, st.free.size + seats.length)} onClick={apply}>Use these seats</button></div>
+        <div className="atp-sheet-f"><span className="atp-total"><b>{diff === 0 ? 'No change' : `${diff > 0 ? '+' : '−'}${E.inr(Math.abs(diff))}`}</b><small>{cls} · {n} traveller{n > 1 ? 's' : ''}</small></span>
+          <button type="button" className="atp-btn is-action" onClick={apply}>Use {cls}</button></div>
       </div>
     </div>,
     document.body,

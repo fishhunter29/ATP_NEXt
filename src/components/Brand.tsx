@@ -68,3 +68,9 @@ export function TideIcon({ n, s = 20 }: { n: string; s?: number }) {
 export function Logo() {
   return <span className="atp-logo" aria-hidden="true"><TideIcon n="waves" s={18} /></span>;
 }
+
+/** The WhatsApp mark, from the file the company supplied (public/img/logos/whatsapp.png), used as it is. */
+export function WaIcon({ s = 20 }: { s?: number }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="atp-wai" src="/img/logos/whatsapp.png" alt="" width={s} height={s} decoding="async" />;
+}

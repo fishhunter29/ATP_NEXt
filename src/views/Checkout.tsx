@@ -9,6 +9,7 @@ import { commit, showToast, useEngine } from '@/engine/client';
 import { Art, Loading } from '@/components/ui';
 import { TideIcon } from '@/components/Brand';
 import { COMPANY, DPIIT_LINE } from '@/lib/company';
+import AskWhatsApp from '@/components/AskWhatsApp';
 
 type Person = { name: string; age: string; gender: string; pp: string };
 type Lead = { name: string; phone: string; email: string; people?: Person[]; gstin?: string };
@@ -19,7 +20,7 @@ const GENDERS = ['Female', 'Male', 'Other'];
 export default function Checkout() {
   const E = useEngine();
   const router = useRouter();
-  const [busy, setBusy] = useState<{ steps: [string, string][]; done: number } | null>(null);
+  const [busy, setBusy] = useState<{ steps: [string, string, string][]; done: number } | null>(null);
   const [people, setPeople] = useState<Person[] | null>(null);
   const [contact, setContact] = useState<{ phone: string; email: string } | null>(null);
   const [indian, setIndian] = useState(true);
@@ -37,10 +38,10 @@ export default function Checkout() {
         <h1 className="atp-h1">Booking your trip</h1>
         <p className="atp-lead">Each booking goes to its own partner. This takes under a minute.</p>
         <ol className="atp-conf" aria-live="polite">
-          {busy.steps.map(([b, s], i) => (
+          {busy.steps.map(([b, s, ok], i) => (
             <li key={i} className={i < busy.done ? 'is-done' : i === busy.done ? 'is-now' : ''}>
               <span className="atp-st">{i < busy.done ? <TideIcon n="check" s={18} /> : <i className="atp-spin" />}</span>
-              <span><b>{b}</b><small>{s}</small></span><em>{i < busy.done ? 'Confirmed' : i === busy.done ? 'Confirming' : 'Waiting'}</em>
+              <span><b>{b}</b><small>{s}</small></span><em>{i < busy.done ? ok : i === busy.done ? 'Confirming' : 'Waiting'}</em>
             </li>
           ))}
         </ol>
@@ -74,10 +75,11 @@ export default function Checkout() {
   const meals = rows.filter((x: any) => x.meal).length;
   const groups = KINDS.map(([k, n, tile, icon]) => { const list = rows.filter((x: any) => !x.meal && (k === 'cab' ? x.it.kind === 'cab' || x.it.kind === 'rent' : x.it.kind === k)).sort((a: any, b: any) => String(a.it.date).localeCompare(String(b.it.date))); return { k, n, tile, icon, list, sum: list.reduce((s: number, x: any) => s + (x.I.price || 0), 0) }; }).filter((g) => g.list.length);
   const vendors = [...new Set<string>(groups.flatMap((g) => g.list.map((x: any) => x.I.vendor)).filter(Boolean))];
-  const sub = E.subtotal(), gst = E.gstTotal(), tot = E.total(); const n: number = E.pax() || 1; const req = E.onReq();
+  const sub = E.subtotal(), fee = E.fee(), gst = E.gstTotal() + E.feeGst(), tot = E.total(); const n: number = E.pax() || 1; const req = E.onReq();
   /* GST by rate, from the bookings themselves */
   const rates: Record<string, number> = {};
   rows.forEach((x: any) => { if (!x.meal && x.I.gst && x.I.price) rates[x.I.gst] = (rates[x.I.gst] || 0) + x.I.price; });
+  if (fee) rates[E.FEE_GST] = (rates[E.FEE_GST] || 0) + fee;
   /* what each booking's own cancellation rule means for this trip */
   const KW: Record<string, string> = { stay: 'Stays', ferry: 'Ferries', cab: 'Cabs', rent: 'Rentals', act: 'Activities' };
   const paidRows = rows.filter((x: any) => !x.meal && x.I.price);
@@ -118,18 +120,19 @@ export default function Checkout() {
     if (first) { showToast(`${Object.keys(bad).length} detail${Object.keys(bad).length > 1 ? 's' : ''} missing. They are marked in red.`); const el = document.querySelector<HTMLElement>(`[data-f="${first}"]`); el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(() => el?.querySelector<HTMLElement>('input,button')?.focus({ preventScroll: true }), 350); return; }
     S.lead = { name: P[0].name.trim(), phone: C.phone.trim(), email: C.email.trim(), people: P.map((p) => ({ name: p.name.trim(), age: p.age, gender: p.gender, pp: '' })), ...(biz != null ? { gstin: biz.trim().toUpperCase() } : {}) };
     const method = (PAYS.find((p) => p[0] === S.pay) || PAYS[0])[1];
-    const steps: [string, string][] = [['Payment received', `${E.inr(tot)} by ${method}`], ...vendors.map((v): [string, string] => { const c = rows.filter((x: any) => x.I.vendor === v).length; return [v, `${c} booking${c > 1 ? 's' : ''}`]; })];
+    const steps: [string, string, string][] = [['Payment received', `${E.inr(tot)} by ${method}`, 'Confirmed'], ...vendors.map((v): [string, string, string] => { const mine = rows.filter((x: any) => x.I.vendor === v); const c = mine.length; const boat = mine.every((x: any) => x.it.kind === 'ferry');
+      return [v, boat ? `${c} ticket${c > 1 ? 's' : ''} · our team books within 15 minutes` : `${c} booking${c > 1 ? 's' : ''}`, boat ? 'Received' : 'Confirmed']; })];
     S.lead.paid = { total: tot, method: S.pay || 'upi', at: Date.now(), test: true };
     E.bookAll();
     /* what My trips needs to draw a ticket: the sailing, the class, the nights (same order as the trip) */
-    S.booked.forEach((b: any, i: number) => { const it = S.cart[i]; if (!it) return; b.ref = it.ref; if (it.cls) b.cls = it.cls; if (it.nights) b.nights = it.nights; if (it.own) b.own = true; if (it.kind === 'ferry' && E.SAIL[it.ref]) b.arr = E.SAIL[it.ref].arr; });
+    S.booked.forEach((b: any, i: number) => { const it = S.cart[i]; if (!it) return; b.ref = it.ref; if (it.cls) b.cls = it.cls; if (it.nights) b.nights = it.nights; if (it.own) b.own = true; if (it.kind === 'ferry') { if (E.SAIL[it.ref]) b.arr = E.SAIL[it.ref].arr; b.seats = ''; } });
     setBusy({ steps, done: 0 }); commit(); window.scrollTo(0, 0);
     /* send it to the server (saved in the database once Supabase is connected); the vouchers stay on the phone either way */
     E.syncTrip(); const trip = S.trip || S.win || {};
     const send = fetch('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
       lead: { name: S.lead.name, phone: S.lead.phone, email: S.lead.email }, pay: 'simulated', pax: { adults: S.pax.adults, kids: S.pax.kids, infants: S.pax.infants },
-      start: trip.start, end: trip.end, subtotal: sub, gst, total: tot,
-      items: S.booked, trip: { cart: S.cart, pax: S.pax, win: S.win, fin: S.fin, fout: S.fout, method: S.pay, travellers: P.map((p, i) => ({ name: p.name.trim(), age: p.age, gender: p.gender, role: roles[i].k, ...(indian ? {} : { passport: p.pp.trim() }) })), gstin: S.lead.gstin, indian },
+      start: trip.start, end: trip.end, subtotal: sub, fee, gst, total: tot,
+      items: S.booked, trip: { cart: S.cart, pax: S.pax, win: S.win, fin: S.fin, fout: S.fout, method: S.pay, fee, travellers: P.map((p, i) => ({ name: p.name.trim(), age: p.age, gender: p.gender, role: roles[i].k, ...(indian ? {} : { passport: p.pp.trim() }) })), gstin: S.lead.gstin, indian },
     }) }).then((r) => r.json()).then((j) => {
       if (!j || !j.stored) return;
       S.bookingCode = j.code;
@@ -164,6 +167,7 @@ export default function Checkout() {
         <section className="atp-cs">
           <h1 className="atp-h1">Who’s travelling</h1>
           <p className="atp-lead">{hasFerry ? 'Ferry operators need every name, age and gender for the passenger list. Carry the same photo ID.' : 'One contact for the trip. Carry a photo ID for hotel check-in.'}</p>
+          {hasFerry && <p className="atp-checked atp-ferrynote"><TideIcon n="boat" s={16} /><span>Ferry tickets are booked by our team within 15 minutes of your confirmation and sent on WhatsApp. We ask you directly which seats you would like.</span></p>}
           {roles.map((r, i) => (
             <div key={i} className="atp-trav">
               <div className="atp-trav-h"><span className="atp-tile"><TideIcon n="user" s={18} /></span><b>{hasFerry ? `Traveller ${i + 1}` : 'Your details'}</b><span>{hasFerry ? r.label + (i === 0 ? ' · contact for the trip' : '') : `Booking for ${E.paxTxt()}`}</span></div>
@@ -198,6 +202,8 @@ export default function Checkout() {
               </div>
             ))}
             <div className="atp-tl"><span>Subtotal</span><b>{E.inr(sub)}</b></div>
+          {fee > 0 && <><div className="atp-tl"><span>Convenience fee</span><b>{E.inr(fee)}</b></div>
+            <p className="atp-fine atp-feenote">We manage everything on the ground: each booking is made and confirmed with the partner, your cabs are timed to your ferries, and our team in Port Blair is on WhatsApp through the trip.</p></>}
             <div className="atp-tl"><span>GST</span><b>{E.inr(gst)}</b></div>
             {Object.keys(rates).length > 0 && <p className="atp-fine">{Object.keys(rates).sort((a, b) => Number(a) - Number(b)).map((r) => `${r}% on ${E.inr(rates[r])}`).join(' · ')}</p>}
             <div className="atp-tl is-total"><span>Total<small>{E.inr(Math.round(tot / n))} a person</small></span><b>{E.inr(tot)}</b></div>
@@ -223,6 +229,7 @@ export default function Checkout() {
           {biz != null && field('gstin', 'gstin', 'Company GSTIN', biz, (v) => { setBiz(v.toUpperCase().slice(0, 15)); if (errs.gstin) setErrs({ ...errs, gstin: '' }); }, { ph: '22AAAAA0000A1Z5' })}
           <p className="atp-draft"><TideIcon n="alert" s={18} /><span><b>Test mode.</b> No money is taken yet: payments switch on when Razorpay is connected.</span></p>
           <p className="atp-fine">One payment; each partner is paid their share and sends you a GST invoice. By paying you agree to the <a className="atp-link" href="/terms">booking terms</a> and each partner’s rules above.</p>
+          <AskWhatsApp about="I have a question before I pay for my trip." lines={[`${rows.length} bookings · total ${E.inr(tot)} including GST`]} path="/checkout" label="A question before you pay?" hint="Ask on WhatsApp. Your dates, group and total go with the message." />
           <div className="atp-sec">You are booking with</div>
           <address className="atp-coinfo"><b>{COMPANY.name}</b><span>CIN {COMPANY.cin} · GSTIN {COMPANY.gstin}</span><span>{DPIIT_LINE}</span><span>{COMPANY.address}</span><span>Email <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a></span></address>
         </section>
